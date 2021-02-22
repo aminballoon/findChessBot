@@ -35,7 +35,15 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_usb.h \
- ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h
+ ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h \
+ ../Core/Inc/ros.h ../Core/Inc/ros/node_handle.h \
+ ../Core/Inc/std_msgs/Time.h ../Core/Inc/ros/msg.h ../Core/Inc/ros/time.h \
+ ../Core/Inc/ros/duration.h ../Core/Inc/rosserial_msgs/TopicInfo.h \
+ ../Core/Inc/rosserial_msgs/Log.h \
+ ../Core/Inc/rosserial_msgs/RequestParam.h ../Core/Inc/ros/publisher.h \
+ ../Core/Inc/ros/node_handle.h ../Core/Inc/ros/subscriber.h \
+ ../Core/Inc/ros/service_server.h ../Core/Inc/ros/service_client.h \
+ ../Core/Inc/STM32Hardware.h ../Core/Inc/std_msgs/String.h
 
 ../Core/Inc/main.h:
 
@@ -112,3 +120,35 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_usb.h:
 
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h:
+
+../Core/Inc/ros.h:
+
+../Core/Inc/ros/node_handle.h:
+
+../Core/Inc/std_msgs/Time.h:
+
+../Core/Inc/ros/msg.h:
+
+../Core/Inc/ros/time.h:
+
+../Core/Inc/ros/duration.h:
+
+../Core/Inc/rosserial_msgs/TopicInfo.h:
+
+../Core/Inc/rosserial_msgs/Log.h:
+
+../Core/Inc/rosserial_msgs/RequestParam.h:
+
+../Core/Inc/ros/publisher.h:
+
+../Core/Inc/ros/node_handle.h:
+
+../Core/Inc/ros/subscriber.h:
+
+../Core/Inc/ros/service_server.h:
+
+../Core/Inc/ros/service_client.h:
+
+../Core/Inc/STM32Hardware.h:
+
+../Core/Inc/std_msgs/String.h:
