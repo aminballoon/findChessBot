@@ -5,4 +5,4 @@ stm32h7xx_hal_msp.c:222:6:HAL_TIM_Base_MspDeInit	16	static
 stm32h7xx_hal_msp.c:277:6:HAL_UART_MspInit	232	static
 stm32h7xx_hal_msp.c:360:6:HAL_UART_MspDeInit	16	static
 stm32h7xx_hal_msp.c:392:6:HAL_PCD_MspInit	232	static
-stm32h7xx_hal_msp.c:450:6:HAL_PCD_MspDeInit	16	static
+stm32h7xx_hal_msp.c:447:6:HAL_PCD_MspDeInit	16	static
