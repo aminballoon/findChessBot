@@ -1,5 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
+# Toolchain: GNU Tools for STM32 (9-2020-q2-update)
 ################################################################################
 
 -include ../makefile.init
@@ -15,18 +16,6 @@ RM := rm -rf
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(strip $(CC_DEPS)),)
--include $(CC_DEPS)
-endif
-ifneq ($(strip $(C++_DEPS)),)
--include $(C++_DEPS)
-endif
-ifneq ($(strip $(C_UPPER_DEPS)),)
--include $(C_UPPER_DEPS)
-endif
-ifneq ($(strip $(CXX_DEPS)),)
--include $(CXX_DEPS)
-endif
 ifneq ($(strip $(S_DEPS)),)
 -include $(S_DEPS)
 endif
@@ -36,56 +25,59 @@ endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
 endif
-ifneq ($(strip $(CPP_DEPS)),)
--include $(CPP_DEPS)
-endif
 endif
 
 -include ../makefile.defs
 
-BUILD_ARTIFACT_NAME := STM32H743ZI2ROS01
+OPTIONAL_TOOL_DEPS := \
+$(wildcard ../makefile.defs) \
+$(wildcard ../makefile.init) \
+$(wildcard ../makefile.targets) \
+
+
+BUILD_ARTIFACT_NAME := STM32H743ZI2_Module8-9
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX := 
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME).$(BUILD_ARTIFACT_EXTENSION)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-STM32H743ZI2ROS01.elf \
+STM32H743ZI2_Module8-9.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-STM32H743ZI2ROS01.list \
+STM32H743ZI2_Module8-9.list \
 
 OBJCOPY_BIN += \
-STM32H743ZI2ROS01.bin \
+STM32H743ZI2_Module8-9.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: STM32H743ZI2ROS01.elf secondary-outputs
+main-build: STM32H743ZI2_Module8-9.elf secondary-outputs
 
 # Tool invocations
-STM32H743ZI2ROS01.elf: $(OBJS) $(USER_OBJS) D:\My\ Github\ IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld
-	arm-none-eabi-g++ -o "STM32H743ZI2ROS01.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\My Github IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32H743ZI2ROS01.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+STM32H743ZI2_Module8-9.elf: $(OBJS) $(USER_OBJS) D:\My\ Github\ IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "STM32H743ZI2_Module8-9.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\My Github IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32H743ZI2_Module8-9.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-default.size.stdout: $(EXECUTABLES)
+default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	arm-none-eabi-size  $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-STM32H743ZI2ROS01.list: $(EXECUTABLES)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "STM32H743ZI2ROS01.list"
+STM32H743ZI2_Module8-9.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "STM32H743ZI2_Module8-9.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-STM32H743ZI2ROS01.bin: $(EXECUTABLES)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "STM32H743ZI2ROS01.bin"
+STM32H743ZI2_Module8-9.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "STM32H743ZI2_Module8-9.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 

@@ -94,10 +94,6 @@ void Error_Handler(void);
 #define PUL_4_GPIO_Port GPIOD
 #define USB_OTG_FS_OVCR_Pin GPIO_PIN_7
 #define USB_OTG_FS_OVCR_GPIO_Port GPIOG
-#define STLINK_RX1_Pin GPIO_PIN_0
-#define STLINK_RX1_GPIO_Port GPIOD
-#define STLINK_TX1_Pin GPIO_PIN_1
-#define STLINK_TX1_GPIO_Port GPIOD
 #define PUL_5_Pin GPIO_PIN_5
 #define PUL_5_GPIO_Port GPIOB
 #define DIR_1_Pin GPIO_PIN_6
