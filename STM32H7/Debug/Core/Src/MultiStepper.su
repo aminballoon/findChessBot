@@ -1,0 +1,6 @@
+std_abs.h:56:3:long int std::abs(long int)	16	static
+MultiStepper.cpp:9:1:MultiStepper::MultiStepper()	16	static
+MultiStepper.cpp:14:6:bool MultiStepper::addStepper(AccelStepper&)	16	static
+MultiStepper.cpp:22:6:void MultiStepper::moveTo(long int*)	56	static
+MultiStepper.cpp:52:6:bool MultiStepper::run()	24	static
+MultiStepper.cpp:81:9:void MultiStepper::runSpeedToPosition()	16	static

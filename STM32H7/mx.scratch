@@ -12,7 +12,7 @@
     <IocFile>STM32H743ZI2_Module8-9.ioc</IocFile>
     <Project>
       <ProjectName>STM32H743ZI2_Module8-9</ProjectName>
-      <ProjectNature>C</ProjectNature>
+      <ProjectNature>CPP</ProjectNature>
       <Secure/>
       <filestoremove/>
       <sourceEntriesToRemove>
