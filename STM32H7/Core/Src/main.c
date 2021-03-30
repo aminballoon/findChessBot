@@ -24,7 +24,6 @@
 /* USER CODE BEGIN Includes */
 #include "stdlib.h"
 #include "stdbool.h"
-#include "AccelStepper.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -39,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define NUM_STEPPERS 5
+#define FCY 480000000U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +51,7 @@
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart3;
@@ -72,58 +72,19 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_UART4_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 void PID_Control_Loop(void);
 void Casade_Control_Loop(void);
 //int uart_data;
 volatile char flag = 0;
+volatile unsigned int freq = 25600;
+volatile unsigned int FREQ = freq;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void initStepperMotors(Stepper_t *stp_j1, Stepper_t *stp_j2, Stepper_t *stp_j3, Stepper_t *stp_j4, Stepper_t *stp_gripper){
 
-	/*## Initialize Stepper of Joint 1. ###*/
-	InitStepper(stp_j1, DRIVER, STEP_1_Pin, STEP_1_GPIO_Port, DIR_1_Pin, DIR_1_GPIO_Port, 0, NULL, 0, NULL, 0);
-	setMaxSpeed(stp_j1, 500);
-	setSpeed(stp_j1, 500);
-	setAcceleration(stp_j1, 500);
-	moveTo(stp_j1, 10000000);
-//	enableOutputs(stepper_x);
-
-	/*## Initialize Stepper of Joint 2. ###*/
-	InitStepper(stp_j2, DRIVER, STEP_2_Pin, STEP_2_GPIO_Port, DIR_2_Pin, DIR_2_GPIO_Port, 0, NULL, 0, NULL, 0);
-	setMaxSpeed(stp_j2, 500);
-	setSpeed(stp_j2, 500);
-	setAcceleration(stp_j2, 500);
-//	moveTo(stepper_y, -10000000);
-//	enableOutputs(stepper_y);
-
-	/*## Initialize Stepper of Joint 3. ###*/
-	InitStepper(stp_j3, DRIVER, STEP_3_Pin, STEP_3_GPIO_Port, 0, NULL, 0, NULL, 0, NULL, 0);
-	setMaxSpeed(stp_j3, 500);
-	setSpeed(stp_j3, 500);
-	setAcceleration(stp_j3, 500);
-//	moveTo(stepper_z, -10000000);
-//	enableOutputs(stepper_z);
-
-	/*## Initialize Z axis stepper. ###*/
-	InitStepper(stp_j4, DRIVER, STEP_4_Pin, STEP_4_GPIO_Port, 0, NULL, 0, NULL, 0, NULL, 0);
-	setMaxSpeed(stp_j4, 500);
-	setSpeed(stp_j4, 500);
-	setAcceleration(stp_j4, 500);
-//	moveTo(stepper_z, -10000000);
-//	enableOutputs(stepper_z);
-
-	/*## Initialize Z axis stepper. ###*/
-	InitStepper(stp_gripper, DRIVER, STEP_5_Pin, STEP_5_GPIO_Port, 0, NULL, 0, NULL, 0, NULL, 0);
-	setMaxSpeed(stp_gripper, 500);
-	setSpeed(stp_gripper, 500);
-	setAcceleration(stp_gripper, 500);
-//	moveTo(stepper_z, -10000000);
-//	enableOutputs(stepper_z);
-
-}
 /* USER CODE END 0 */
 
 /**
@@ -159,20 +120,18 @@ int main(void)
   MX_TIM2_Init();
   MX_UART4_Init();
   MX_SPI1_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-
-  /* Stepper motors struts */
-  Stepper_t stepMotorJoint1;
-  Stepper_t stepMotorJoint2;
-  Stepper_t stepMotorJoint3;
-  Stepper_t stepMotorJoint4;
-  Stepper_t stepMotorJointGripper;
-
-  /* Stepper motors initialization */
-  initStepperMotors(&stepMotorJoint1, &stepMotorJoint2, &stepMotorJoint3, &stepMotorJoint4, &stepMotorJointGripper);
+//  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
 
   HAL_TIM_Base_Start_IT(&htim2);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+	 HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+	  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
+	  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
+	 HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -201,7 +160,7 @@ void SystemClock_Config(void)
   HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
   /** Configure the main internal regulator output voltage
   */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
   /** Initializes the RCC Oscillators according to the specified parameters
@@ -212,9 +171,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 3;
-  RCC_OscInitStruct.PLL.PLLN = 50;
+  RCC_OscInitStruct.PLL.PLLN = 60;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
+  RCC_OscInitStruct.PLL.PLLQ = 5;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
@@ -236,7 +195,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -332,6 +291,65 @@ static void MX_TIM2_Init(void)
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 24-1;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 500-1;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 250;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+  HAL_TIM_MspPostInit(&htim4);
 
 }
 
@@ -479,8 +497,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(DIR_5_GPIO_Port, DIR_5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin
-                          |STEP_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, DIR_3_Pin|STEP_3_Pin|STEP_2_Pin|DIR_2_Pin
@@ -508,10 +525,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DIR_5_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin STEP_5_Pin DIR_1_Pin
-                           STEP_1_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin
-                          |STEP_1_Pin;
+  /*Configure GPIO pins : LD1_Pin LD3_Pin STEP_5_Pin DIR_1_Pin */
+  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -570,16 +585,37 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		flag ^= 0x01;
 		 if(flag == 0x01)
 		 {
-			HAL_TIM_Base_Stop_IT(&htim2);
-			 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-			 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+//			 HAL_TIM_Base_Start_IT(&htim2);
+			 HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+			 HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
+			 HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 		 }
 		 else
 		 {
-			 HAL_TIM_Base_Start_IT(&htim2);
-			 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-			 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
+//			 HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+//			 HAL_TIM_Base_Stop_IT(&htim2);
+			 HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+			 HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
+			 HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 		 }
+	}
+	else if(GPIO_Pin == LM1_Pin)
+	{
+		if(freq > 10000)
+		{
+			freq -= 100;
+			  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
+			  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
+		}
+	}
+	else if(GPIO_Pin == LM2_Pin)
+	{
+		if(freq < 40000)
+		{
+			freq += 100;
+			  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
+			  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
+		}
 	}
 	else
 	{
@@ -590,7 +626,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim == &htim2)
   {
-	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
+	  if(freq == FREQ)
+	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_SET);
+	  }
+	  else
+	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
+	  }
   }
 }
 /* USER CODE END 4 */
