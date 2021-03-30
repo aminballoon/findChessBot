@@ -101,8 +101,6 @@ void Error_Handler(void);
 #define USB_OTG_FS_OVCR_Pin GPIO_PIN_7
 #define USB_OTG_FS_OVCR_GPIO_Port GPIOG
 #define USB_OTG_FS_OVCR_EXTI_IRQn EXTI9_5_IRQn
-#define STEP_5_Pin GPIO_PIN_5
-#define STEP_5_GPIO_Port GPIOB
 #define DIR_1_Pin GPIO_PIN_6
 #define DIR_1_GPIO_Port GPIOB
 #define STEP_1_Pin GPIO_PIN_7

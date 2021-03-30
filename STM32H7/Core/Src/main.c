@@ -38,7 +38,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define FCY 480000000U
+#define _FCY 240000000U
+#define _PSC 240
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,8 +79,7 @@ void PID_Control_Loop(void);
 void Casade_Control_Loop(void);
 //int uart_data;
 volatile char flag = 0;
-volatile unsigned int freq = 25600;
-volatile unsigned int FREQ = freq;
+volatile unsigned int freq = 1600;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -127,11 +127,11 @@ int main(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_RESET);
 
   HAL_TIM_Base_Start_IT(&htim2);
-	 HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
-	  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
-	  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
-	 HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-
+  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+  TIM4->PSC = 240-1;
+  TIM4->ARR = 625-1;
+  TIM4->CCR2 = round(((TIM4->ARR)+1)/2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -166,14 +166,15 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 3;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 60;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 5;
+  RCC_OscInitStruct.PLL.PLLQ = 6;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
@@ -314,9 +315,9 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 24-1;
+  htim4.Init.Prescaler = 240-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 500-1;
+  htim4.Init.Period = 625-1;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
@@ -339,7 +340,7 @@ static void MX_TIM4_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 250;
+  sConfigOC.Pulse = 100;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
@@ -497,7 +498,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(DIR_5_GPIO_Port, DIR_5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|DIR_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, DIR_3_Pin|STEP_3_Pin|STEP_2_Pin|DIR_2_Pin
@@ -525,8 +526,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DIR_5_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin STEP_5_Pin DIR_1_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|STEP_5_Pin|DIR_1_Pin;
+  /*Configure GPIO pins : LD1_Pin LD3_Pin DIR_1_Pin */
+  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|DIR_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -601,21 +602,29 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 	else if(GPIO_Pin == LM1_Pin)
 	{
-		if(freq > 10000)
+		if(freq > 1000)
 		{
 			freq -= 100;
-			  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
-			  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
 		}
+		else if (freq <= 1000)
+		{
+			freq = 1000;
+		}
+		TIM4->ARR = (round(_FCY/(((TIM4->PSC)+1)*freq)))-1;
+		TIM4->CCR2 = round(((TIM4->ARR)+1)/2);
 	}
 	else if(GPIO_Pin == LM2_Pin)
 	{
-		if(freq < 40000)
+		if(freq < 10000)
 		{
 			freq += 100;
-			  TIM4->ARR = (FCY/(((TIM4->PSC)+1)*freq))-1;
-			  TIM4->CCR2 = ((TIM4->ARR)+1)/2;
 		}
+		else if (freq >= 10000)
+		{
+			freq = 10000;
+		}
+		  TIM4->ARR = (round(_FCY/(((TIM4->PSC)+1)*freq)))-1;
+		  TIM4->CCR2 = round(((TIM4->ARR)+1)/2);
 	}
 	else
 	{
@@ -626,7 +635,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim == &htim2)
   {
-	  if(freq == FREQ)
+	  if(freq == 1600)
 	  {
 		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_SET);
 	  }
