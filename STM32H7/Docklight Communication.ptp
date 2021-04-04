@@ -21,21 +21,21 @@ VERSATAP
 SEND
 0
 Test Command
-
+A1 3B 2B FF
 0
 5
 
 SEND
 1
 Connect MCU
-
+A1 3B 2B FF
 0
 5
 
 SEND
 2
 Disconnect MCU
-
+A1 3B 2B FF
 0
 5
 

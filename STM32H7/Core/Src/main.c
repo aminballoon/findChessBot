@@ -47,8 +47,7 @@
 #define STEPJ4 4
 #define STEPGripper 5
 
-#define RXBUFFSIZE 4
-#define TXBUFFSIZE 4
+#define BUFFSIZE 4
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,22 +91,32 @@ static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
-volatile int uartbuff;
+volatile int uartbuf;
 uint8_t UART3_rxBuffer[10];
+uint8_t TXBUFFER[1];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//int package_uart(uint8_t data)
-//{
-////    int result = 0;
-////    static unsigned char state = 0;
-////    static int checksum = 0;
-//	return 0xFA;
-//}
-//void send_package(uint8_t *data) {
-//	HAL_UART_Transmit_IT(&huart3, *data, 1);
-//}
+uint8_t package_uart(uint8_t *pData[4])
+{
+     int result = 0;
+//    static unsigned char state = 0;
+//    static int checksum = 0;
+		char mode = 0;
+		switch (mode)
+		{
+			case 1:
+			{
+				result = 0xFA;
+			}
+			default:
+			{
+				result = 0xAC;
+			}
+		}
+		return result;
+}
 
 void StepDriveRad(char _ch, double _ang_v)
 {
@@ -434,8 +443,9 @@ int main(void)
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
 //  HAL_TIM_Base_Start_IT(&htim2);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
 //  HAL_TIM_Base_Start_IT(&htim2);
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -445,7 +455,7 @@ int main(void)
 //  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
-//  HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, 4);
+  HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, 4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -455,11 +465,19 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  StepDriveRad(1, 6.23);
-	  HAL_Delay(2000);
-	  StepDriveRad(1, -6.23);
-	  HAL_Delay(2000);
+      if (TXBUFFER[0] != 0) {
+    	  HAL_UART_Transmit_IT(&huart3, TXBUFFER, 1);
+
+    	  TXBUFFER[0] = 0;
+      }
+//      printf("\nHello World!\n");
+//      HAL_Delay(500);
+//	  StepDriveRad(1, 6.23);
+//	  HAL_Delay(2000);
+//	  StepDriveRad(1, -6.23);
+//	  HAL_Delay(2000);
   }
+  return 0;
   /* USER CODE END 3 */
 }
 
@@ -1151,14 +1169,35 @@ static void MX_GPIO_Init(void)
 //{
 //	double err, errValue, diffValue;
 //}
+
+/** Usable for printf function **/
+int __io_putchar(int ch)
+{
+ uint8_t c[1];
+ c[0] = ch & 0x00FF;
+ HAL_UART_Transmit(&huart3, &*c, 1, 10);
+ return ch;
+}
+
+int _write(int file,char *ptr, int len)
+{
+ int DataIdx;
+ for(DataIdx= 0; DataIdx< len; DataIdx++)
+ {
+ __io_putchar(*ptr++);
+ }
+return len;
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart3)
 	{
-		HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, 4);
+		TXBUFFER[0] = (uint8_t)package_uart(0);
+		HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, BUFFSIZE);
 //		uint8_t data = *UART3_rxBuffer;
 //		uartbuff = package_uart(data);
-		HAL_UART_Transmit_IT(&huart3, UART3_rxBuffer, 4);
+//		HAL_UART_Transmit_IT(&huart3, UART3_rxBuffer, 4);
 	}
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
