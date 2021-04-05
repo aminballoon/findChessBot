@@ -89,6 +89,8 @@ void Error_Handler(void);
 #define LD3_GPIO_Port GPIOB
 #define USB_OTG_FS_PWR_EN_Pin GPIO_PIN_10
 #define USB_OTG_FS_PWR_EN_GPIO_Port GPIOD
+#define SPI3_CS_Pin GPIO_PIN_9
+#define SPI3_CS_GPIO_Port GPIOC
 #define LM5_Pin GPIO_PIN_14
 #define LM5_GPIO_Port GPIOG
 #define LM5_EXTI_IRQn EXTI15_10_IRQn

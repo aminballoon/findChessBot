@@ -48,6 +48,12 @@
 #define STEPGripper 5
 
 #define BUFFSIZE 4
+
+#define ACK_ReceivedData_Address 0x46
+#define ACK_ProcessIsCompleted_Address 0x47
+#define ACK_CheckSumError_Address 0x48
+
+#define ENC1POS 0x2C
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -73,6 +79,11 @@ DMA_HandleTypeDef hdma_uart4_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
+DMA_HandleTypeDef hdma_memtomem_dma1_stream3;
+DMA_HandleTypeDef hdma_memtomem_dma2_stream2;
+DMA_HandleTypeDef hdma_memtomem_dma2_stream3;
+DMA_HandleTypeDef hdma_memtomem_dma2_stream4;
+DMA_HandleTypeDef hdma_memtomem_dma2_stream5;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -92,17 +103,18 @@ static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 volatile int uartbuf;
-uint8_t UART3_rxBuffer[10];
-uint8_t TXBUFFER[1];
+uint8_t UART3_RXBUFFER[10];
+uint8_t UART3_TXBUFFER[1];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t package_uart(uint8_t *pData[4])
+uint8_t package_uart(uint8_t pData[4])
 {
      int result = 0;
 //    static unsigned char state = 0;
 //    static int checksum = 0;
+
 		char mode = 0;
 		switch (mode)
 		{
@@ -401,6 +413,19 @@ void StepStop(char _ch)
 			}
 		}
 }
+uint16_t RS485_Encoder(uint8_t _address)
+{
+	uint8_t _lowByte, _highByte, _buff[2];
+	HAL_UART_Transmit_DMA(&huart4, &_address, 1, 1);
+	HAL_Delay(3);
+	HAL_UART_Receive(&huart4, &_address, 1, 3);
+
+	return _buff;
+}
+uint16_t SPI_Encoder()
+{
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -447,7 +472,7 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-//  HAL_TIM_Base_Start_IT(&htim2);
+//  HAL_TIM_Base_Start_IT(&htim5);
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -455,7 +480,7 @@ int main(void)
 //  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
-  HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, 4);
+  HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -465,11 +490,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      if (TXBUFFER[0] != 0) {
-    	  HAL_UART_Transmit_IT(&huart3, TXBUFFER, 1);
-
-    	  TXBUFFER[0] = 0;
-      }
 //      printf("\nHello World!\n");
 //      HAL_Delay(500);
 //	  StepDriveRad(1, 6.23);
@@ -1061,6 +1081,12 @@ static void MX_USART3_UART_Init(void)
 
 /**
   * Enable DMA controller clock
+  * Configure DMA for memory to memory transfers
+  *   hdma_memtomem_dma1_stream3
+  *   hdma_memtomem_dma2_stream2
+  *   hdma_memtomem_dma2_stream3
+  *   hdma_memtomem_dma2_stream4
+  *   hdma_memtomem_dma2_stream5
   */
 static void MX_DMA_Init(void)
 {
@@ -1069,13 +1095,108 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
   __HAL_RCC_DMA2_CLK_ENABLE();
 
+  /* Configure DMA request hdma_memtomem_dma1_stream3 on DMA1_Stream3 */
+  hdma_memtomem_dma1_stream3.Instance = DMA1_Stream3;
+  hdma_memtomem_dma1_stream3.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma1_stream3.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma1_stream3.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma1_stream3.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma1_stream3.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma1_stream3.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma1_stream3.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma1_stream3.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma1_stream3.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma1_stream3.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma1_stream3.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma1_stream3.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma1_stream3) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
+  /* Configure DMA request hdma_memtomem_dma2_stream2 on DMA2_Stream2 */
+  hdma_memtomem_dma2_stream2.Instance = DMA2_Stream2;
+  hdma_memtomem_dma2_stream2.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma2_stream2.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma2_stream2.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma2_stream2.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma2_stream2.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream2.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream2.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma2_stream2.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma2_stream2.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma2_stream2.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma2_stream2.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma2_stream2.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream2) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
+  /* Configure DMA request hdma_memtomem_dma2_stream3 on DMA2_Stream3 */
+  hdma_memtomem_dma2_stream3.Instance = DMA2_Stream3;
+  hdma_memtomem_dma2_stream3.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma2_stream3.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma2_stream3.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma2_stream3.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma2_stream3.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream3.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream3.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma2_stream3.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma2_stream3.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma2_stream3.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma2_stream3.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma2_stream3.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream3) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
+  /* Configure DMA request hdma_memtomem_dma2_stream4 on DMA2_Stream4 */
+  hdma_memtomem_dma2_stream4.Instance = DMA2_Stream4;
+  hdma_memtomem_dma2_stream4.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma2_stream4.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma2_stream4.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma2_stream4.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma2_stream4.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream4.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream4.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma2_stream4.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma2_stream4.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma2_stream4.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma2_stream4.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma2_stream4.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream4) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
+  /* Configure DMA request hdma_memtomem_dma2_stream5 on DMA2_Stream5 */
+  hdma_memtomem_dma2_stream5.Instance = DMA2_Stream5;
+  hdma_memtomem_dma2_stream5.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma2_stream5.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma2_stream5.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma2_stream5.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma2_stream5.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream5.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream5.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma2_stream5.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma2_stream5.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma2_stream5.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma2_stream5.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma2_stream5.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream5) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
   /* DMA interrupt init */
-  /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  /* DMA1_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -1113,6 +1234,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_OTG_FS_PWR_EN_GPIO_Port, USB_OTG_FS_PWR_EN_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : LD1_Pin DIR_2_Pin LD3_Pin DIR_3_Pin
                            DIR_4_Pin */
   GPIO_InitStruct.Pin = LD1_Pin|DIR_2_Pin|LD3_Pin|DIR_3_Pin
@@ -1141,6 +1265,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(USB_OTG_FS_PWR_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI3_CS_Pin */
+  GPIO_InitStruct.Pin = SPI3_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SPI3_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LM5_Pin */
   GPIO_InitStruct.Pin = LM5_Pin;
@@ -1193,11 +1324,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart3)
 	{
-		TXBUFFER[0] = (uint8_t)package_uart(0);
-		HAL_UART_Receive_IT(&huart3, UART3_rxBuffer, BUFFSIZE);
-//		uint8_t data = *UART3_rxBuffer;
-//		uartbuff = package_uart(data);
-//		HAL_UART_Transmit_IT(&huart3, UART3_rxBuffer, 4);
+		HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, BUFFSIZE);
 	}
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
