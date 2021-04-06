@@ -6,6 +6,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/AccelStepper.c \
+../Core/Src/dwt_stm32_delay.c \
 ../Core/Src/main.c \
 ../Core/Src/stm32h7xx_hal_msp.c \
 ../Core/Src/stm32h7xx_it.c \
@@ -15,6 +16,7 @@ C_SRCS += \
 
 C_DEPS += \
 ./Core/Src/AccelStepper.d \
+./Core/Src/dwt_stm32_delay.d \
 ./Core/Src/main.d \
 ./Core/Src/stm32h7xx_hal_msp.d \
 ./Core/Src/stm32h7xx_it.d \
@@ -24,6 +26,7 @@ C_DEPS += \
 
 OBJS += \
 ./Core/Src/AccelStepper.o \
+./Core/Src/dwt_stm32_delay.o \
 ./Core/Src/main.o \
 ./Core/Src/stm32h7xx_hal_msp.o \
 ./Core/Src/stm32h7xx_it.o \
@@ -35,6 +38,8 @@ OBJS += \
 # Each subdirectory must supply rules for building sources it contributes
 Core/Src/AccelStepper.o: ../Core/Src/AccelStepper.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/AccelStepper.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
+Core/Src/dwt_stm32_delay.o: ../Core/Src/dwt_stm32_delay.c Core/Src/subdir.mk
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/dwt_stm32_delay.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/main.o: ../Core/Src/main.c Core/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/stm32h7xx_hal_msp.o: ../Core/Src/stm32h7xx_hal_msp.c Core/Src/subdir.mk

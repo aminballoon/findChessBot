@@ -25,6 +25,7 @@
 #include "stdlib.h"
 #include "stdbool.h"
 #include <stdio.h>
+#include "dwt_stm32_delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -415,17 +416,18 @@ void StepStop(char _ch)
 }
 uint16_t RS485_Encoder(uint8_t _address)
 {
-	uint8_t _lowByte, _highByte, _buff[2];
-	HAL_UART_Transmit_DMA(&huart4, &_address, 1, 1);
-	HAL_Delay(3);
-	HAL_UART_Receive(&huart4, &_address, 1, 3);
-
-	return _buff;
+	uint8_t _buff[2];
+	DWT_Delay_us(20);
+	HAL_UART_Transmit_DMA(&huart4, &_address, 1);
+	DWT_Delay_us(30);
+	HAL_UART_Receive_DMA(&huart4, _buff, 2);
+	DWT_Delay_us(40);
+	return _buff[0] + (((_buff[1] & 0xFC) >> 2) << 8);
 }
-uint16_t SPI_Encoder()
-{
-
-}
+//uint16_t SPI_Encoder()
+//{
+//
+//}
 /* USER CODE END 0 */
 
 /**
@@ -490,8 +492,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//      printf("\nHello World!\n");
-//      HAL_Delay(500);
+      printf("%u", RS485_Encoder(0x2C));
+      HAL_Delay(100);
 //	  StepDriveRad(1, 6.23);
 //	  HAL_Delay(2000);
 //	  StepDriveRad(1, -6.23);
