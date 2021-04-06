@@ -71,6 +71,7 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim12;
 TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart4;
@@ -102,6 +103,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
+static void MX_TIM12_Init(void);
 /* USER CODE BEGIN PFP */
 volatile int uartbuf;
 uint8_t UART3_RXBUFFER[10];
@@ -416,6 +418,7 @@ void StepStop(char _ch)
 }
 uint16_t RS485_Encoder(uint8_t _address)
 {
+	/* I don't know this is work correctly. */
 	uint8_t _buff[2];
 	DWT_Delay_us(20);
 	HAL_UART_Transmit_DMA(&huart4, &_address, 1);
@@ -468,6 +471,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   MX_TIM15_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
 //  HAL_TIM_Base_Start_IT(&htim2);
   HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
@@ -885,7 +889,7 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 240-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 1000-1;
+  htim5.Init.Period = 500-1;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -906,6 +910,44 @@ static void MX_TIM5_Init(void)
   /* USER CODE BEGIN TIM5_Init 2 */
 
   /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
+  * @brief TIM12 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM12_Init(void)
+{
+
+  /* USER CODE BEGIN TIM12_Init 0 */
+
+  /* USER CODE END TIM12_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+
+  /* USER CODE BEGIN TIM12_Init 1 */
+
+  /* USER CODE END TIM12_Init 1 */
+  htim12.Instance = TIM12;
+  htim12.Init.Prescaler = 240-1;
+  htim12.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim12.Init.Period = 500-1;
+  htim12.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim12.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim12) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim12, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM12_Init 2 */
+
+  /* USER CODE END TIM12_Init 2 */
 
 }
 
@@ -1328,6 +1370,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, BUFFSIZE);
 	}
+	if(huart == &huart4)
+	{
+
+	}
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -1340,7 +1386,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	/*
+	 * Default of Sampling Frequency : 2kHz.
+	 *
+	 * How to change frequency as follows:
+	 * Change on TIMx's ARR Register (Input is frequency).
+	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
+	 *
+	 */
+  /* Timer5 Interrupt */
   if (htim == &htim5)
+  {
+
+  }
+  /* Timer12 Interrupt */
+  if (htim == &htim12)
   {
 
   }
