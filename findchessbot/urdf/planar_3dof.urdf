@@ -1,130 +1,158 @@
 <?xml version="1.0"?>
-<robot name="planar_3dof" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="findchessbot">
 
-  <material name="red">
-    <color rgba="0.8 0.0 0.0 1.0"/>
-  </material>
-  <material name="grey">
-    <color rgba="0.4 0.4 0.4 1.0" />
+  <material name="blue">
+    <color rgba="0 0 0.6 1"/>
   </material>
 
+  <material name="pink">
+    <color rgba="1 0.6 1 1"/>
+  </material>
+
+  <material name="silver">
+    <color rgba="0.75294 0.75294 0.75294 1" />
+  </material>
 
   <link name="world" />
 
   <link name="base_link">
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 0" />
-      <geometry>
-        <cylinder length="0.1" radius="0.2" />
-      </geometry>
-      <material name="Cyan">
-        <color rgba="0 1.0 1.0 1.0"/>
-      </material>
-    </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0 0 0" />
-    <geometry>
-      <cylinder length="0.1" radius="0.2" />
-    </geometry>
-    <material name="grey"/>
-  </collision>
     
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lesson_urdf/meshes/base_link.STL" />
+      </geometry>
+
+    <material name="silver"></material>
+
+    </visual>
+
+    <collision>
+      <origin
+        xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lesson_urdf/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+
+
+
   </link>
 
   <joint name="fixed" type="fixed">
     <parent link="world" />
     <child link="base_link" />
   </joint>
+    
 
   <link name="link_1">
+    
     <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://lesson_urdf/meshes/visual/arm_link.stl" scale="1 1 1" />
+        <mesh filename="package://lesson_urdf/meshes/link_1.STL" />
       </geometry>
-      <material name="red"/>
+      <material name="silver"></material>
     </visual>
+
     <collision>
-      <origin rpy="0 1.5708 0" xyz="0.25 0 0" />
+      <origin xyz="0.017 0 0.30625" rpy="0 0 0" />
       <geometry>
-        <cylinder length="0.5" radius="0.05" />
+        <mesh filename="package://lesson_urdf/meshes/link_1.STL" />
       </geometry>
-      <material name="red"/>
     </collision>
-    <inertial>
-      <origin xyz="0 0 .25" rpy="0 0 0" />
-      <mass value="1" />
-      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
-    </inertial>
+
   </link>
+
   <joint name="joint_1" type="revolute">
     <parent link="base_link" />
     <child link="link_1" />
-    <origin xyz="0 0 0.05" rpy="0 0 0" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
     <axis xyz="0 0 1" />
     <limit lower="-1.57" upper="1.57" effort="0" velocity="0.5" />
   </joint>
 
   <link name="link_2">
+    
     <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://lesson_urdf/meshes/visual/arm_link.stl" scale="1 1 1" />
+        <mesh filename="package://lesson_urdf/meshes/link_2.STL" />
       </geometry>
-      <material name="red"/>
+      <material name="silver"></material>
     </visual>
+
     <collision>
+      <origin xyz="0.387 0 0.30625" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://lesson_urdf/meshes/collision/arm_link.stl" scale="1 1 1" />
+        <mesh filename="package://lesson_urdf/meshes/link_2.STL" />
       </geometry>
-      <material name="red"/>
     </collision>
-    <inertial>
-      <origin xyz="0 0 0.25" rpy="0 0 0" />
-      <mass value="1" />
-      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
-    </inertial>
+
   </link>
 
-  <joint name="joint_2" type="revolute">
+  <joint name="joint_2" type='prismatic'>
     <parent link="link_1" />
     <child link="link_2" />
-    <origin xyz="0.5 0.0 0.0" rpy="0.0 0 0.0" />
+    <origin xyz="0 0 0.125" rpy="0 0 0" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.57" upper="1.57" effort="0" velocity="0.5" />
+    <limit lower="0" upper="0.1" effort="0" velocity="0.5" />
   </joint>
 
-  <link name="gripper">
+  <link name="link_3">
+    
     <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://lesson_urdf/meshes/visual/gripper.stl" scale="1 1 1" />
+        <mesh filename="package://lesson_urdf/meshes/link_3.STL" />
       </geometry>
-      <material name="grey"/>
+      <material name="silver"></material>
     </visual>
+
     <collision>
+      <origin xyz="0.720 0 0.37125" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://lesson_urdf/meshes/collision/gripper.stl" scale="1 1 1" />
+        <mesh filename="package://lesson_urdf/meshes/link_3.STL" />
       </geometry>
-      <material name="grey"/>
     </collision>
-    <inertial>
-      <origin xyz="0 0 0.1" rpy="0 0 0" />
-      <mass value="1" />
-      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
-    </inertial>
+
   </link>
 
   <joint name="joint_3" type="revolute">
     <parent link="link_2" />
-    <child link="gripper" />
-    <origin xyz="0.5 0.0 0.0" rpy="0.0 0 0.0" />
+    <child link="link_3" />
+    <origin xyz="0.370 0 0" rpy="0 0 0" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.57" upper="1.57" effort="0" velocity="0.5" />
+    <limit lower="-3.14" upper="3.14" effort="0" velocity="0.5" />
   </joint>
-  <link name="end" />
 
-  <joint name="gripper_end" type="fixed">
-    <parent link="gripper" />
-    <child link="end" />
-    <origin xyz="0.18 0 0" rpy="0 0 0" />
+
+  <link name="link_4">
+    
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lesson_urdf/meshes/link_4.STL" />
+      </geometry>
+      <material name="silver"></material>
+    </visual>
+
+    <collision>
+      <origin xyz="0.315 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lesson_urdf/meshes/link_4.STL" />
+      </geometry>
+    </collision>
+
+  </link>
+
+  <joint name="joint_4" type="revolute">
+    <parent link="link_3" />
+    <child link="link_4" />
+    <origin xyz="0.315 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <limit lower="-3.14" upper="3.14" effort="0" velocity="0.5" />
   </joint>
+
 
 </robot>

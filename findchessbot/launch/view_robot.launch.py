@@ -41,7 +41,7 @@ def generate_launch_description():
 
     declare_urdf_cmd = DeclareLaunchArgument(
         'urdf_file',
-        default_value=os.path.join(bringup_dir, 'urdf', 'FindChessBot.SLDASM.urdf'),
+        default_value=os.path.join(bringup_dir, 'urdf', 'planar_3dof.urdf'),
         description='Whether to start RVIZ')
  
 
@@ -54,14 +54,22 @@ def generate_launch_description():
         #parameters=[{'use_sim_time': use_sim_time}],
         arguments=[urdf_file])
     
+    # start_joint_state_publisher_cmd = Node(
+    #     condition=IfCondition(use_joint_state_pub),
+    #     package='joint_state_publisher_gui',
+    #     executable='joint_state_publisher_gui',
+    #     name='joint_state_publisher_gui',
+    #     output='screen',
+    #     arguments=[urdf_file])
+
     start_joint_state_publisher_cmd = Node(
         condition=IfCondition(use_joint_state_pub),
-        package='joint_state_publisher_gui',
-        executable='joint_state_publisher_gui',
-        name='joint_state_publisher_gui',
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
         output='screen',
         arguments=[urdf_file])
-    
+
     rviz_cmd = Node(
         condition=IfCondition(use_rviz),
         package='rviz2',

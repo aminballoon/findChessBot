@@ -7,25 +7,28 @@ from sensor_msgs.msg import JointState
 
 class MinimalPublisher(Node):
 
-    def __init__(self):
+    def __init__(self,t):
+        self.t = t
         super().__init__('minimal_publisher')
         self.publisher_ = self.create_publisher(JointState, 'topic', 10)
-        timer_period = 0.5  # seconds
+        timer_period = self.t   # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.i = 0
+
 
     def timer_callback(self):
         msg = JointState()
         # msg.data = 'Hello World: %d' % self.i
+        msg.position = [0.1,0.02,0.5,-1.]
+        msg.name = ["joint_1,joint_2,joint_3,joint_4"]
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing: "%s"' % msg)
-        self.i += 1
+ 
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_publisher = MinimalPublisher()
+    minimal_publisher = MinimalPublisher(t=0.5)
 
     rclpy.spin(minimal_publisher)
 
