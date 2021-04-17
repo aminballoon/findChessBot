@@ -117,7 +117,7 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER[1];
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile int16_t RS485Encoder(uint8_t _address)
+int16_t RS485Encoder(uint8_t _address)
 {
 	uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
