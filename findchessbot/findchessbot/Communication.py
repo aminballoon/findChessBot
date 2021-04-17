@@ -6,7 +6,7 @@ class Communication:
         self.baud = baud
         self.port = port
     def bytesy(self,integer):
-    return divmod(integer, 0x100)
+        return divmod(integer, 0x100)
 
     def set_mode(self,mode_input):
         self.mode = mode_input

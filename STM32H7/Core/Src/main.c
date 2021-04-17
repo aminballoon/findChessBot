@@ -50,11 +50,14 @@
 
 #define BUFFSIZE 4
 
-#define ACK_ReceivedData_Address 0x46
-#define ACK_ProcessIsCompleted_Address 0x47
-#define ACK_CheckSumError_Address 0x48
+#define ACK_ReceivedData_Address 0xAC
+#define ACK_ProcessIsCompleted_Address 0xFD
+#define ACK_CheckSumError_Address 0xEE
 
-#define ENC1POS 0x2C
+#define ENC_JOINT1_Address 0x2C
+#define ENC_JOINT2_Address 0x2C
+#define ENC_JOINT3_Address 0x2C
+#define ENC_JOINT4_Address 0x2C
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,6 +66,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
+CRC_HandleTypeDef hcrc;
 
 SPI_HandleTypeDef hspi3;
 
@@ -104,14 +109,67 @@ static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
+static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-volatile int uartbuf;
-uint8_t UART3_RXBUFFER[10];
-uint8_t UART3_TXBUFFER[1];
+uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER[1];
+//volatile int16_t POS1CNT, POS2CNT, POS3CNT, POS4CNT;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+volatile int16_t RS485Encoder(uint8_t _address)
+{
+	uint8_t _buff[2];
+	volatile uint8_t checkbit_odd[7], checkbit_even[7];
+	volatile char checkbit_odd_result = 0, checkbit_even_result = 0;
+	static int16_t POSCNT[4];
+	HAL_UART_Transmit(&huart4, &_address, 1, 1);
+	if(HAL_UART_Receive(&huart4, _buff, 2, 1) == HAL_OK) // Check received data is completed.
+	{
+		/*** Checksum ***/
+		for (register int i = 0; i < 7; i++)
+		{
+			if(i < 3){
+			  checkbit_odd[i] = (_buff[1] >> (7-(2*(i+1)))) & 0x01;
+			  checkbit_even[i] = (_buff[1] >> (6-(2*(i+1)))) & 0x01;
+			}
+			else{
+			  checkbit_odd[i] = (_buff[0] >> (7-(2*(i-3)))) & 0x01;
+			  checkbit_even[i] = (_buff[0] >> (6-(2*(i-3)))) & 0x01;
+			}
+		}
+		for (register int i = 0; i < 7; i++)
+		{
+			checkbit_odd_result ^= checkbit_odd[i];
+			checkbit_even_result ^= checkbit_even[i];
+		}
+		checkbit_odd_result = !checkbit_odd_result;
+		checkbit_even_result = !checkbit_even_result;
+		if(!(checkbit_odd_result) && (checkbit_even_result)) //  If checksum is correct.
+		{
+			switch (_address){
+				case ENC_JOINT1_Address:
+					POSCNT[0] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					break;
+			}
+		}
+		else{ //  If checksum isn't correct.
+			switch (_address){
+				case ENC_JOINT1_Address:
+					return POSCNT[0];
+					break;
+			}
+		}
+
+	}
+	switch (_address){
+		case ENC_JOINT1_Address:
+			return POSCNT[0];
+			break;
+	}
+	return -1;
+}
+
 uint8_t package_uart(uint8_t pData[4])
 {
      int result = 0;
@@ -123,11 +181,15 @@ uint8_t package_uart(uint8_t pData[4])
 		{
 			case 1:
 			{
-				result = 0xFA;
+				result = ACK_ProcessIsCompleted_Address;
+			}
+			case 2:
+			{
+				result = ACK_CheckSumError_Address;
 			}
 			default:
 			{
-				result = 0xAC;
+				result = ACK_ReceivedData_Address;
 			}
 		}
 		return result;
@@ -416,17 +478,6 @@ void StepStop(char _ch)
 			}
 		}
 }
-uint16_t RS485_Encoder(uint8_t _address)
-{
-	/* I don't know this is work correctly. */
-	uint8_t _buff[2];
-	DWT_Delay_us(20);
-	HAL_UART_Transmit_DMA(&huart4, &_address, 1);
-	DWT_Delay_us(30);
-	HAL_UART_Receive_DMA(&huart4, _buff, 2);
-	DWT_Delay_us(40);
-	return _buff[0] + (((_buff[1] & 0xFC) >> 2) << 8);
-}
 //uint16_t SPI_Encoder()
 //{
 //
@@ -472,6 +523,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM15_Init();
   MX_TIM12_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 //  HAL_TIM_Base_Start_IT(&htim2);
   HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
@@ -496,8 +548,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      printf("%u", RS485_Encoder(0x2C));
-      HAL_Delay(100);
+      printf("%d\n", RS485Encoder(0x2C));
 //	  StepDriveRad(1, 6.23);
 //	  HAL_Delay(2000);
 //	  StepDriveRad(1, -6.23);
@@ -561,6 +612,37 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  hcrc.Init.DefaultPolynomialUse = DEFAULT_POLYNOMIAL_ENABLE;
+  hcrc.Init.DefaultInitValueUse = DEFAULT_INIT_VALUE_ENABLE;
+  hcrc.Init.InputDataInversionMode = CRC_INPUTDATA_INVERSION_NONE;
+  hcrc.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+  hcrc.InputDataFormat = CRC_INPUTDATA_FORMAT_BYTES;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
 }
 
 /**
@@ -1043,7 +1125,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 2000000;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -1344,7 +1426,10 @@ static void MX_GPIO_Init(void)
 //{
 //	double err, errValue, diffValue;
 //}
-
+//void Casade_Control(double _setpoint, double _current_pos)
+//{
+//
+//}
 /** Usable for printf function **/
 int __io_putchar(int ch)
 {
@@ -1377,7 +1462,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
+	if(huart == &huart4)
+	{
 
+	}
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -1393,6 +1481,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 * Change on TIMx's ARR Register (Input is frequency).
 	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
 	 *
+	 * To turn ON/OFF
 	 */
   /* Timer5 Interrupt */
   if (htim == &htim5)

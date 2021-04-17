@@ -7,6 +7,8 @@
 C_SRCS += \
 ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c \
 ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c \
+../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.c \
+../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.c \
 ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c \
 ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c \
 ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c \
@@ -31,6 +33,8 @@ C_SRCS += \
 C_DEPS += \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.d \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.d \
+./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.d \
+./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.d \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.d \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.d \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.d \
@@ -55,6 +59,8 @@ C_DEPS += \
 OBJS += \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
+./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.o \
+./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.o \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
 ./Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
@@ -82,6 +88,10 @@ Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o: ../Drivers/STM32H7xx_HAL_Drive
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.o: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.c Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
+Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.o: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.c Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_crc_ex.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m7 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32H743xx -c -I../Core/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc -I../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.d" -MT"$@" --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -o "$@"
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o: ../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
