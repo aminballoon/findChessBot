@@ -55,9 +55,9 @@
 #define ACK_CheckSumError_Address 0xEE
 
 #define ENC_JOINT1_Address 0x2C
-#define ENC_JOINT2_Address 0x2C
-#define ENC_JOINT3_Address 0x2C
-#define ENC_JOINT4_Address 0x2C
+#define ENC_JOINT2_Address 0x2D
+#define ENC_JOINT3_Address 0x2E
+#define ENC_JOINT4_Address 0x2F
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -151,13 +151,30 @@ volatile int16_t RS485Encoder(uint8_t _address)
 				case ENC_JOINT1_Address:
 					POSCNT[0] = _buff[0] + ((_buff[1] & 0x3F) << 8);
 					break;
+				case ENC_JOINT2_Address:
+					POSCNT[1] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					break;
+				case ENC_JOINT3_Address:
+					POSCNT[2] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					break;
+				case ENC_JOINT4_Address:
+					POSCNT[3] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					break;
 			}
 		}
-
 	}
 	switch (_address){
 		case ENC_JOINT1_Address:
 			return POSCNT[0];
+			break;
+		case ENC_JOINT2_Address:
+			return POSCNT[1];
+			break;
+		case ENC_JOINT3_Address:
+			return POSCNT[2];
+			break;
+		case ENC_JOINT4_Address:
+			return POSCNT[3];
 			break;
 	}
 	return -1;
