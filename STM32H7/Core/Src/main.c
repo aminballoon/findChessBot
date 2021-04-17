@@ -156,17 +156,12 @@ volatile int16_t RS485Encoder(uint8_t _address)
 			  checkbit_odd[i] = (_buff[0] >> (7-(2*(i-3)))) & 0x01;
 			  checkbit_even[i] = (_buff[0] >> (6-(2*(i-3)))) & 0x01;
 			}
-		}
-
-		for (register int i = 0; i < 7; i++)
-		{
 			checkbit_odd_result ^= checkbit_odd[i];
 			checkbit_even_result ^= checkbit_even[i];
 		}
 
 		checkbit_odd_result = !checkbit_odd_result;
 		checkbit_even_result = !checkbit_even_result;
-
 
 		if(!(checkbit_odd_result) && (checkbit_even_result)) //  If checksum is correct.
 		{
