@@ -126,9 +126,21 @@ volatile int16_t RS485Encoder(uint8_t _address)
 	HAL_UART_Transmit(&huart4, &_address, 1, 1);
 	if(HAL_UART_Receive(&huart4, _buff, 2, 1) == HAL_OK) // Check received data is completed.
 	{
-		/*** Checksum ***/
-
 		/*
+		 * Checksum
+		 *
+		 * The AMT21 encoder uses a checksum calculation for detecting transmission errors.
+		 *
+		 * The upper two bits of every response from the encoder are check bits.
+		 *
+		 * Those values are shown in the examples below as K1 and K0.
+		 *
+		 * The check bits are odd parity; K1 for the odd bits in the response,
+		 * and K0 for the even bits in the response.
+		 *
+		 * These check bits are not part of the position,
+		 * but are used to verify its validity. The remaining lower 14 bits are the useful data.
+		 *
 		 * Checkbit Formula
 		 * Odd: K1 = !(H5^H3^H1^L7^L5^L3^L1)
 		 * Even: K0 = !(H4^H2^H0^L6^L4^L2^L0)
