@@ -153,13 +153,6 @@ volatile int16_t RS485Encoder(uint8_t _address)
 					break;
 			}
 		}
-		else{ //  If checksum isn't correct.
-			switch (_address){
-				case ENC_JOINT1_Address:
-					return POSCNT[0];
-					break;
-			}
-		}
 
 	}
 	switch (_address){
