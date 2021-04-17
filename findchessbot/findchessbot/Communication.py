@@ -40,7 +40,7 @@ class Communication:
         if Joint_1 >= 0:
             buff_J1 = Joint_1
         else:
-            buff_J1 = -Joint_1 + 128
+            buff_J1 = -Joint_1 + 32768
 
         buff = ([self.mode_to_start(6),self.bytesy(buff_J1)])
         return buff + self.checksum(buff)
@@ -54,7 +54,7 @@ class Communication:
         if Joint_3 >= 0:
             buff_J3 = Joint_3
         else:
-            buff_J3 = -Joint_3 + 128
+            buff_J3 = -Joint_3 + 32768
         buff = ([self.mode_to_start(8),self.bytesy(buff_J3)])
         return buff + self.checksum(buff)
 
@@ -63,7 +63,7 @@ class Communication:
         if Joint_4 >= 0:
             buff_J4 = Joint_4
         else:
-            buff_J4 = -Joint_4 + 128
+            buff_J4 = -Joint_4 + 32768
         buff = ([self.mode_to_start(9),self.bytesy(buff_J4)])
         return buff + self.checksum(buff)
 
