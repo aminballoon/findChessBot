@@ -5,6 +5,9 @@ class Communication:
         self.mode = 0
         self.baud = baud
         self.port = port
+    def bytesy(self,integer):
+    return divmod(integer, 0x100)
+
     def set_mode(self,mode_input):
         self.mode = mode_input
     def mode_to_start(self,num_mode):
@@ -32,60 +35,59 @@ class Communication:
         buff = ([self.mode_to_start(5)])
         return buff + self.checksum(buff)
 
-    def mode_6(self,J1,J2,J3,J4): # 4 Joint State Command
-        Joint_1 = J1 # rad
-        Joint_2 = J2 # mm
-        Joint_3 = J3 # rad
-        Joint_4 = J4 # rad
-
+    def mode_6(self,q1,q2,q3,q4): # q1 mode
+        Joint_1 = q1 # rad
         if Joint_1 >= 0:
             buff_J1 = Joint_1
         else:
             buff_J1 = -Joint_1 + 128
 
+        buff = ([self.mode_to_start(6),self.bytesy(buff_J1)])
+        return buff + self.checksum(buff)
+
+    def mode_7(self,q2): # q1 mode
+        buff = ([self.mode_to_start(7),q2])
+        return buff + self.checksum(buff)
+
+    def mode_8(self,q3): 
+        Joint_3 = q3 # rad
         if Joint_3 >= 0:
-            buff_J2 = Joint_2
             buff_J3 = Joint_3
         else:
-            buff_J2 = (Joint_2 << 1) + 1
-            buff_J3 = -Joint_3
-            
+            buff_J3 = -Joint_3 + 128
+        buff = ([self.mode_to_start(8),self.bytesy(buff_J3)])
+        return buff + self.checksum(buff)
+
+    def mode_9(self,q4): 
+        Joint_4 = q4 # rad
         if Joint_4 >= 0:
             buff_J4 = Joint_4
         else:
             buff_J4 = -Joint_4 + 128
-
-        buff = ([self.mode_to_start(6),buff_J1,buff_J2,buff_J3,buff_J4])
+        buff = ([self.mode_to_start(9),self.bytesy(buff_J4)])
         return buff + self.checksum(buff)
 
-    def mode_7(self): 
-        return 0
 
-    def mode_8(self): # Set Home
-        buff = ([self.mode_to_start(8)])
-        return buff + self.checksum(buff) 
 
-    def mode_9(self): # Request 4 Joint State
-        buff = ([self.mode_to_start(9)])
-        return buff + self.checksum(buff)
-
-    def mode_10(self): # Request Gripper State
+    def mode_10(self): # Set Home
         buff = ([self.mode_to_start(10)])
         return buff + self.checksum(buff)
 
-    def mode_11(self): # Activate Gripper
+    def mode_11(self): # Request 4 Joint State
         buff = ([self.mode_to_start(11)])
         return buff + self.checksum(buff)
 
-    def mode_12(self): # Deactivate Gripper
+    def mode_12(self): # Request Gripper State
         buff = ([self.mode_to_start(12)])
         return buff + self.checksum(buff)
 
-    def mode_13(self):
-        return 0
+    def mode_13(self): # Activate Gripper
+        buff = ([self.mode_to_start(13)])
+        return buff + self.checksum(buff)
 
-    def mode_14(self):
-        return 0
+    def mode_14(self): # Deactivate Gripper
+        buff = ([self.mode_to_start(14)])
+        return buff + self.checksum(buff)
 
     def mode_15(self):
         return 0
