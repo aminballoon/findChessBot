@@ -121,12 +121,19 @@ volatile int16_t RS485Encoder(uint8_t _address)
 {
 	uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
-	volatile char checkbit_odd_result = 0, checkbit_even_result = 0;
+	volatile char checkbit_odd_result, checkbit_even_result;
 	static int16_t POSCNT[4];
 	HAL_UART_Transmit(&huart4, &_address, 1, 1);
 	if(HAL_UART_Receive(&huart4, _buff, 2, 1) == HAL_OK) // Check received data is completed.
 	{
 		/*** Checksum ***/
+
+		/*
+		 * Checkbit Formula
+		 * Odd: K1 = !(H5^H3^H1^L7^L5^L3^L1)
+		 * Even: K0 = !(H4^H2^H0^L6^L4^L2^L0)
+		 */
+
 		for (register int i = 0; i < 7; i++)
 		{
 			if(i < 3){
@@ -138,13 +145,17 @@ volatile int16_t RS485Encoder(uint8_t _address)
 			  checkbit_even[i] = (_buff[0] >> (6-(2*(i-3)))) & 0x01;
 			}
 		}
+
 		for (register int i = 0; i < 7; i++)
 		{
 			checkbit_odd_result ^= checkbit_odd[i];
 			checkbit_even_result ^= checkbit_even[i];
 		}
+
 		checkbit_odd_result = !checkbit_odd_result;
 		checkbit_even_result = !checkbit_even_result;
+
+
 		if(!(checkbit_odd_result) && (checkbit_even_result)) //  If checksum is correct.
 		{
 			switch (_address){
