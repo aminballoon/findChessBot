@@ -51,13 +51,13 @@
 #define BUFFSIZE 4
 
 #define ACK_ReceivedData_Address 0xAC
-#define ACK_ProcessIsCompleted_Address 0xFD
+#define ACK_ProcessIsCompleted_Address 0xAD
 #define ACK_CheckSumError_Address 0xEE
 
-#define ENC_JOINT1_Address 0x2C
-#define ENC_JOINT2_Address 0x2D
-#define ENC_JOINT3_Address 0x2E
-#define ENC_JOINT4_Address 0x2F
+#define ENC_JOINT1_Address 0xA4
+#define ENC_JOINT2_Address 0xB4
+#define ENC_JOINT3_Address 0xC4
+#define ENC_JOINT4_Address 0xD4
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -111,12 +111,19 @@ static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER[1];
-//volatile int16_t POS1CNT, POS2CNT, POS3CNT, POS4CNT;
+int q1, q2, q3, q4;
+volatile int16_t _POSCNT[4];
+
+uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/*
+ * Polling RS485-Encoder Communication Non-void Function
+ * Updated : 18 Mar 2021 16:44
+ * */
 int16_t RS485Encoder(uint8_t _address)
 {
 	uint8_t _buff[2];
@@ -163,7 +170,7 @@ int16_t RS485Encoder(uint8_t _address)
 		checkbit_odd_result = !checkbit_odd_result;
 		checkbit_even_result = !checkbit_even_result;
 
-		if(!(checkbit_odd_result) && (checkbit_even_result)) //  If checksum is correct.
+		if(checkbit_odd_result == ((_buff[1] >> 7) & 0x01) && (checkbit_even_result) == ((_buff[1] >> 6) & 0x01)) //  If checksum is correct.
 		{
 			switch (_address){
 				case ENC_JOINT1_Address:
@@ -197,32 +204,10 @@ int16_t RS485Encoder(uint8_t _address)
 	}
 	return -1;
 }
-
-uint8_t package_uart(uint8_t pData[4])
-{
-     int result = 0;
-//    static unsigned char state = 0;
-//    static int checksum = 0;
-
-		char mode = 0;
-		switch (mode)
-		{
-			case 1:
-			{
-				result = ACK_ProcessIsCompleted_Address;
-			}
-			case 2:
-			{
-				result = ACK_CheckSumError_Address;
-			}
-			default:
-			{
-				result = ACK_ReceivedData_Address;
-			}
-		}
-		return result;
-}
-
+/*
+ * Stepper motor driving function (Radian input)
+ * Updated : 18 Mar 2021 16:44
+ * */
 void StepDriveRad(char _ch, double _ang_v)
 {
 	switch(_ch)
@@ -348,6 +333,10 @@ void StepDriveRad(char _ch, double _ang_v)
 	}
 
 }
+/*
+ * Stepper motor driving function (RPS input)
+ * Updated : 18 Mar 2021 16:44
+ * */
 void StepDriveRPS(char _ch, double _rps)
 {
 	switch(_ch)
@@ -576,11 +565,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      printf("%d\n", RS485Encoder(0x2C));
-//	  StepDriveRad(1, 6.23);
-//	  HAL_Delay(2000);
-//	  StepDriveRad(1, -6.23);
-//	  HAL_Delay(2000);
+//	  printf("%3d %3d %3d %3d\n", q1, q2, q3, q4);
   }
   return 0;
   /* USER CODE END 3 */
@@ -1454,46 +1439,136 @@ static void MX_GPIO_Init(void)
 //{
 //	double err, errValue, diffValue;
 //}
-//void Casade_Control(double _setpoint, double _current_pos)
+//void Casade_Control()
 //{
 //
 //}
 /** Usable for printf function **/
-int __io_putchar(int ch)
-{
- uint8_t c[1];
- c[0] = ch & 0x00FF;
- HAL_UART_Transmit(&huart3, &*c, 1, 10);
- return ch;
-}
-
-int _write(int file,char *ptr, int len)
-{
- int DataIdx;
- for(DataIdx= 0; DataIdx< len; DataIdx++)
- {
- __io_putchar(*ptr++);
- }
-return len;
-}
+//int __io_putchar(int ch)
+//{
+// uint8_t c[1];
+// c[0] = ch & 0x00FF;
+// HAL_UART_Transmit(&huart3, &*c, 1, 10);
+// return ch;
+//}
+//
+//int _write(int file,char *ptr, int len)
+//{
+// int DataIdx;
+// for(DataIdx= 0; DataIdx< len; DataIdx++)
+// {
+// __io_putchar(*ptr++);
+// }
+//return len;
+//}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart3)
 	{
+		UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ReceivedData_Address;
+		HAL_UART_Transmit(&huart3, UART3_TXBUFFER_ACK, 1, 1);
+		  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+		volatile uint8_t num_mode = UART3_RXBUFFER[0] & 0x0F;
+		volatile int received_checksum = UART3_RXBUFFER[3];
+		volatile int calculate_checksum = 0;
+		for(register int i = 0; i < 3; i++)
+		{
+			calculate_checksum += UART3_RXBUFFER[i];
+		}
+		calculate_checksum = ~calculate_checksum;
+		calculate_checksum = calculate_checksum & 0xFF;
+		if (received_checksum == calculate_checksum)
+		{
+			switch(num_mode)
+			{
+				case 6:
+				{
+					break;
+				}
+				case 7:
+				{
+					break;
+				}
+				case 8:
+				{
+					break;
+				}
+				case 9:
+				{
+					break;
+				}
+				case 10:
+				{
+					//printf("10\n");
+					break;
+				}
+				case 1:
+				{
+					break;
+				}
+				case 2:
+				{
+					break;
+				}
+				case 3:
+				{
+					break;
+				}
+				case 4:
+				{
+					break;
+				}
+				case 5:
+				{
+					break;
+				}
+				case 11:
+				{
+					break;
+				}
+				case 12:
+				{
+					break;
+				}
+				case 13:
+				{
+					break;
+				}
+				case 14:
+				{
+					break;
+				}
+				case 15:
+				{
+					break;
+				}
+				default:
+				{
+					break;
+				}
+			}
+			  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+			UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		}
+		else
+		{
+			UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+			  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		}
+		HAL_UART_Transmit(&huart3, UART3_TXBUFFER_ACK, 1, 1);
 		HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, BUFFSIZE);
-	}
-	if(huart == &huart4)
-	{
-
 	}
 }
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart == &huart4)
-	{
 
-	}
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -1511,7 +1586,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 *
 	 * To turn ON/OFF
 	 */
-  /* Timer5 Interrupt */
+  /* Timer5 Interrupt PID Position Control*/
   if (htim == &htim5)
   {
 
