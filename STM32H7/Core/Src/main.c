@@ -30,11 +30,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#ifdef __GNUC__
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -54,10 +49,11 @@
 #define ACK_ProcessIsCompleted_Address 0xAD
 #define ACK_CheckSumError_Address 0xEE
 
-#define ENC_JOINT1_Address 0xA4
-#define ENC_JOINT2_Address 0xB4
-#define ENC_JOINT3_Address 0xC4
-#define ENC_JOINT4_Address 0xD4
+#define ENCPOS_JOINT1_Address 0xA4
+#define ENCPOS_JOINT2_Address 0xB4
+#define ENCPOS_JOINT3_Address 0xC4
+#define ENCPOS_JOINT4_Address 0xD4
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -112,14 +108,28 @@ static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 int q1, q2, q3, q4;
-volatile int16_t _POSCNT[4];
-
+double c0, c1, c2, c3, c4, c5;
+volatile int16_t POSCNT[4];
+bool State_Print_4_Joint_State;
+bool State_Print_Gripper_State;
+bool State_Checksum_Error;
+bool State_Set_Home;
+bool State_Activate_Gripper;
+bool State_Deactivate_Gripper;
+bool State_PID_Control_Timer;
+bool State_Casade_Control_Timer;
 uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+#ifdef __GNUC__
+/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+ set to 'Yes') calls __io_putchar() */
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
 /*
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
@@ -129,9 +139,9 @@ int16_t RS485Encoder(uint8_t _address)
 	uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
 	volatile char checkbit_odd_result, checkbit_even_result;
-	static int16_t POSCNT[4];
+//	static int16_t POSCNT[4];
 	HAL_UART_Transmit(&huart4, &_address, 1, 1);
-	if(HAL_UART_Receive(&huart4, _buff, 2, 1) == HAL_OK) // Check received data is completed.
+	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
 	{
 		/*
 		 * Checksum
@@ -173,36 +183,58 @@ int16_t RS485Encoder(uint8_t _address)
 		if(checkbit_odd_result == ((_buff[1] >> 7) & 0x01) && (checkbit_even_result) == ((_buff[1] >> 6) & 0x01)) //  If checksum is correct.
 		{
 			switch (_address){
-				case ENC_JOINT1_Address:
+				case ENCPOS_JOINT1_Address:
 					POSCNT[0] = _buff[0] + ((_buff[1] & 0x3F) << 8);
 					break;
-				case ENC_JOINT2_Address:
+				case ENCPOS_JOINT2_Address:
 					POSCNT[1] = _buff[0] + ((_buff[1] & 0x3F) << 8);
 					break;
-				case ENC_JOINT3_Address:
+				case ENCPOS_JOINT3_Address:
 					POSCNT[2] = _buff[0] + ((_buff[1] & 0x3F) << 8);
 					break;
-				case ENC_JOINT4_Address:
+				case ENCPOS_JOINT4_Address:
 					POSCNT[3] = _buff[0] + ((_buff[1] & 0x3F) << 8);
 					break;
 			}
 		}
 	}
 	switch (_address){
-		case ENC_JOINT1_Address:
+		case ENCPOS_JOINT1_Address:
 			return POSCNT[0];
 			break;
-		case ENC_JOINT2_Address:
+		case ENCPOS_JOINT2_Address:
 			return POSCNT[1];
 			break;
-		case ENC_JOINT3_Address:
+		case ENCPOS_JOINT3_Address:
 			return POSCNT[2];
 			break;
-		case ENC_JOINT4_Address:
+		case ENCPOS_JOINT4_Address:
 			return POSCNT[3];
 			break;
 	}
 	return -1;
+}
+void RS485ResetEncoder(uint8_t _address)
+{
+	if(_address == ENCPOS_JOINT1_Address || _address == ENCPOS_JOINT2_Address || _address == ENCPOS_JOINT3_Address || _address == ENCPOS_JOINT4_Address)
+	{
+		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x02, 1, 1);
+		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x0A, 1, 1);
+		switch (_address){
+			case ENCPOS_JOINT1_Address:
+				POSCNT[0] = 0;
+				break;
+			case ENCPOS_JOINT2_Address:
+				POSCNT[1] = 0;
+				break;
+			case ENCPOS_JOINT3_Address:
+				POSCNT[2] = 0;
+				break;
+			case ENCPOS_JOINT4_Address:
+				POSCNT[3] = 0;
+				break;
+		}
+	}
 }
 /*
  * Stepper motor driving function (Radian input)
@@ -565,7 +597,47 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  printf("%3d %3d %3d %3d\n", q1, q2, q3, q4);
+	  if(State_Checksum_Error)
+	  {
+		  State_Checksum_Error = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Print_4_Joint_State)
+	  {
+		  State_Print_4_Joint_State = 0;
+		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Activate_Gripper)
+	  {
+		  State_Activate_Gripper = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Deactivate_Gripper)
+	  {
+		  State_Deactivate_Gripper = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Set_Home)
+	  {
+		  State_Set_Home = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_PID_Control_Timer)
+	  {
+//		  HAL_TIM_Base_Start_IT(&htim5);
+		  State_PID_Control_Timer = 0;
+	  }
+	  if(State_Casade_Control_Timer)
+	  {
+//		  HAL_TIM_Base_Start_IT(&htim12);
+		  State_Casade_Control_Timer = 0;
+	  }
   }
   return 0;
   /* USER CODE END 3 */
@@ -1434,40 +1506,27 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-//void PID_Position_Control(double _setpoint, double _current_pos)
-//{
-//	double err, errValue, diffValue;
-//}
-//void Casade_Control()
-//{
-//
-//}
 /** Usable for printf function **/
-//int __io_putchar(int ch)
-//{
-// uint8_t c[1];
-// c[0] = ch & 0x00FF;
-// HAL_UART_Transmit(&huart3, &*c, 1, 10);
-// return ch;
-//}
-//
-//int _write(int file,char *ptr, int len)
-//{
-// int DataIdx;
-// for(DataIdx= 0; DataIdx< len; DataIdx++)
-// {
-// __io_putchar(*ptr++);
-// }
-//return len;
-//}
+/**
+ * @brief Retargets the C library printf function to the USART.
+ * @param None
+ * @retval None
+ */
+PUTCHAR_PROTOTYPE
+{
+ /* Place your implementation of fputc here */
+ /* e.g. write a character to the USART2 and Loop until the end of transmission */
+ HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+
+return ch;
+}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart3)
 	{
 		UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ReceivedData_Address;
-		HAL_UART_Transmit(&huart3, UART3_TXBUFFER_ACK, 1, 1);
+		HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 		  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
@@ -1484,25 +1543,37 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		{
 			switch(num_mode)
 			{
-				case 6:
+				case 6:		// q1 Mode
 				{
+					q1 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 					break;
 				}
-				case 7:
+				case 7:		// q2 Mode
 				{
+					q2 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 					break;
 				}
-				case 8:
+				case 8:		// q3 Mode
 				{
+					q3 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 					break;
 				}
-				case 9:
+				case 9:		// q4 Mode
 				{
+					q4 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 					break;
 				}
-				case 10:
+				case 10:	// Set Home Mode
 				{
-					//printf("10\n");
+					State_Set_Home = 1;
 					break;
 				}
 				case 1:
@@ -1525,20 +1596,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				{
 					break;
 				}
-				case 11:
+				case 11:	// Request 4 Joint State Mode
 				{
+					State_Print_4_Joint_State = 1;
 					break;
 				}
-				case 12:
+				case 12:	// Request Gripper State Mode
 				{
+					State_Print_Gripper_State = 1;
 					break;
 				}
-				case 13:
+				case 13:	// Activate Gripper Mode
 				{
+					State_Activate_Gripper = 1;
 					break;
 				}
-				case 14:
+				case 14:	// Deactivate Gripper Mode
 				{
+					State_Deactivate_Gripper = 1;
 					break;
 				}
 				case 15:
@@ -1553,16 +1628,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 			  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-			UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
 		}
 		else
 		{
-			UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+			  State_Checksum_Error = 1;
 			  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 			  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 			  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
 		}
-		HAL_UART_Transmit(&huart3, UART3_TXBUFFER_ACK, 1, 1);
 		HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, BUFFSIZE);
 	}
 }
