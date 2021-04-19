@@ -110,6 +110,7 @@ static void MX_CRC_Init(void);
 int q1, q2, q3, q4;
 double c0, c1, c2, c3, c4, c5;
 volatile int16_t POSCNT[4];
+bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
 bool State_Print_Gripper_State;
 bool State_Checksum_Error;
@@ -601,6 +602,12 @@ int main(void)
 	  {
 		  State_Checksum_Error = 0;
 		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Input_Joint_State)
+	  {
+		  State_Input_Joint_State = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
 		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 	  }
 	  if(State_Print_4_Joint_State)
@@ -1546,29 +1553,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				case 6:		// q1 Mode
 				{
 					q1 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
-					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+					State_Input_Joint_State = 1;
 					break;
 				}
 				case 7:		// q2 Mode
 				{
 					q2 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
-					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+					State_Input_Joint_State = 1;
 					break;
 				}
 				case 8:		// q3 Mode
 				{
 					q3 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
-					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+					State_Input_Joint_State = 1;
 					break;
 				}
 				case 9:		// q4 Mode
 				{
 					q4 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
-					UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-					HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+					State_Input_Joint_State = 1;
 					break;
 				}
 				case 10:	// Set Home Mode
