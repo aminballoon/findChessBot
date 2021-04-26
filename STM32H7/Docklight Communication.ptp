@@ -21,21 +21,21 @@ VERSATAP
 SEND
 0
 Test Command
-A1 3B 2B FF
+
 0
 5
 
 SEND
 1
 Connect MCU
-A1 3B 2B FF
+
 0
 5
 
 SEND
 2
 Disconnect MCU
-A1 3B 2B FF
+
 0
 5
 
@@ -55,48 +55,69 @@ Activate Trajectory
 
 SEND
 5
-4 Joint State Command
-
+Joint 1 State
+A6 00 5A FF
 0
 5
 
 SEND
 6
-Go to Home Configuration
+Joint 2 State
 
 0
 5
 
 SEND
 7
-Request 4 Joint State
-
+Joint 3 State
+A8 00 78 DF
 0
 5
 
 SEND
 8
-Request Gripper
-
+Joint 4 State
+A9 00 55 01
 0
 5
 
 SEND
 9
-Request Sensor
+Go to Home Configuration
 
 0
 5
 
 SEND
 10
-Activate Gripper
+Request 4 Joint State
 
 0
 5
 
 SEND
 11
+Request Gripper
+
+0
+5
+
+SEND
+12
+Request Sensor
+
+0
+5
+
+SEND
+13
+Activate Gripper
+
+0
+5
+
+SEND
+14
 Deactivate Gripper
 
 0

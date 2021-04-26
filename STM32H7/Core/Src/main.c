@@ -24,13 +24,14 @@
 /* USER CODE BEGIN Includes */
 #include "stdlib.h"
 #include "stdbool.h"
+#include "stdint.h"
 #include <stdio.h>
 #include "dwt_stm32_delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef RS485
+//typedef RS485
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -46,14 +47,14 @@ typedef RS485
 
 #define BUFFSIZE 4
 
-#define ACK_ReceivedData_Address 0xAC
-#define ACK_ProcessIsCompleted_Address 0xAD
-#define ACK_CheckSumError_Address 0xEE
+#define ACK_ReceivedData_Address (uint8_t)0xAC
+#define ACK_ProcessIsCompleted_Address (uint8_t)0xAD
+#define ACK_CheckSumError_Address (uint8_t)0xEE
 
-#define ENCPOS_JOINT1_Address 0xA4
-#define ENCPOS_JOINT2_Address 0xB4
-#define ENCPOS_JOINT3_Address 0xC4
-#define ENCPOS_JOINT4_Address 0xD4
+#define ENCPOS_JOINT1_Address (uint8_t)0xA4
+#define ENCPOS_JOINT2_Address (uint8_t)0xB4
+#define ENCPOS_JOINT3_Address (uint8_t)0xC4
+#define ENCPOS_JOINT4_Address (uint8_t)0xD4
 
 /* USER CODE END PD */
 
@@ -186,16 +187,16 @@ int16_t RS485Encoder(uint8_t _address)
 		{
 			switch (_address){
 				case ENCPOS_JOINT1_Address:
-					POSCNT[0] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					POSCNT[0] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT2_Address:
-					POSCNT[1] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					POSCNT[1] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT3_Address:
-					POSCNT[2] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					POSCNT[2] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT4_Address:
-					POSCNT[3] = _buff[0] + ((_buff[1] & 0x3F) << 8);
+					POSCNT[3] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 			}
 		}
@@ -220,8 +221,8 @@ void RS485ResetEncoder(uint8_t _address)
 {
 	if(_address == ENCPOS_JOINT1_Address || _address == ENCPOS_JOINT2_Address || _address == ENCPOS_JOINT3_Address || _address == ENCPOS_JOINT4_Address)
 	{
-		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x02, 1, 1);
-		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x0A, 1, 1);
+		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x02, 1, 100);
+		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x0A, 1, 100);
 		switch (_address){
 			case ENCPOS_JOINT1_Address:
 				POSCNT[0] = 0;
@@ -1553,25 +1554,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			{
 				case 6:		// q1 Mode
 				{
-					q1 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					q1 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 7:		// q2 Mode
 				{
-					q2 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					q2 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 8:		// q3 Mode
 				{
-					q3 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					q3 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 9:		// q4 Mode
 				{
-					q4 = ((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF);
+					q4 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
