@@ -123,3 +123,10 @@ Deactivate Gripper
 0
 5
 
+SEND
+15
+Checksum Error Test
+A6 00 5A FE
+0
+5
+

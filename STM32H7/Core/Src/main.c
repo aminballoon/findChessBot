@@ -26,7 +26,6 @@
 #include "stdbool.h"
 #include "stdint.h"
 #include <stdio.h>
-#include "dwt_stm32_delay.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -109,7 +108,7 @@ static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-int q1, q2, q3, q4;
+double q1, q2, q3, q4;
 double c0, c1, c2, c3, c4, c5;
 volatile int16_t POSCNT[4];
 bool State_Input_Joint_State;
@@ -144,7 +143,7 @@ int16_t RS485Encoder(uint8_t _address)
 	volatile char checkbit_odd_result, checkbit_even_result;
 //	static int16_t POSCNT[4];
 	HAL_UART_Transmit(&huart4, &_address, 1, 1);
-	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
+	if(HAL_UART_Receive(&huart4, _buff, 2, 2) == HAL_OK) // Check received data is completed.
 	{
 		/*
 		 * Checksum
@@ -221,8 +220,8 @@ void RS485ResetEncoder(uint8_t _address)
 {
 	if(_address == ENCPOS_JOINT1_Address || _address == ENCPOS_JOINT2_Address || _address == ENCPOS_JOINT3_Address || _address == ENCPOS_JOINT4_Address)
 	{
-		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x02, 1, 100);
-		HAL_UART_Transmit(&huart4, &_address + (uint8_t)0x0A, 1, 100);
+		HAL_UART_Transmit(&huart4, (&_address + (uint8_t)0x02), 1, 1);
+		HAL_UART_Transmit(&huart4, (&_address + (uint8_t)0x0A), 1, 1);
 		switch (_address){
 			case ENCPOS_JOINT1_Address:
 				POSCNT[0] = 0;
@@ -261,10 +260,15 @@ void StepDriveRad(char _ch, double _ang_v)
 			/* Angular Velocity of Joint1's Stepper Motor */
 			if(_ang_v == 0) // To avoid TIM1->ARR is undefined value.
 			{
-				TIM1->CCR2 = 0;
+				HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+//				TIM1->CCR2 = 0;
 			}
 			else
 			{
+				if(HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2) == HAL_OK)
+				{
+					HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+				}
 				TIM1->ARR = round((6.283*_FCY)/(1600*((TIM1->PSC)+1)*abs(_ang_v))) - 1;
 				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
 			}
@@ -577,12 +581,13 @@ int main(void)
   MX_TIM12_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-//  HAL_TIM_Base_Start_IT(&htim2);
+
   HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
 //  HAL_TIM_Base_Start_IT(&htim5);
+//  HAL_TIM_Base_Start_IT(&htim12);
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
@@ -615,7 +620,7 @@ int main(void)
 	  if(State_Print_4_Joint_State)
 	  {
 		  State_Print_4_Joint_State = 0;
-		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
+		  printf("\n%3f %3f %3f %3f\n\r", q1, q2, q3, q4);
 		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
 		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 	  }
@@ -1663,6 +1668,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
 	 *
 	 * To turn ON/OFF
+	 * Use function
 	 */
   /* Timer5 Interrupt PID Position Control*/
   if (htim == &htim5)
