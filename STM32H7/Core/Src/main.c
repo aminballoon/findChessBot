@@ -260,15 +260,15 @@ void StepDriveRad(char _ch, double _ang_v)
 			/* Angular Velocity of Joint1's Stepper Motor */
 			if(_ang_v == 0) // To avoid TIM1->ARR is undefined value.
 			{
-				HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-//				TIM1->CCR2 = 0;
+//				HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+				TIM1->CCR2 = 0;
 			}
 			else
 			{
-				if(HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2) == HAL_OK)
-				{
-					HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-				}
+//				if(HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2) == HAL_OK)
+//				{
+//					HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+//				}
 				TIM1->ARR = round((6.283*_FCY)/(1600*((TIM1->PSC)+1)*abs(_ang_v))) - 1;
 				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
 			}
@@ -593,6 +593,7 @@ int main(void)
 //  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 //  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
+
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
@@ -605,6 +606,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 	  if(State_Checksum_Error)
 	  {
 		  State_Checksum_Error = 0;
