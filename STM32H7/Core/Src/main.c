@@ -83,7 +83,7 @@ DMA_HandleTypeDef hdma_uart4_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
-DMA_HandleTypeDef hdma_memtomem_dma1_stream3;
+DMA_HandleTypeDef hdma_memtomem_dma2_stream6;
 DMA_HandleTypeDef hdma_memtomem_dma2_stream2;
 DMA_HandleTypeDef hdma_memtomem_dma2_stream3;
 DMA_HandleTypeDef hdma_memtomem_dma2_stream4;
@@ -1307,7 +1307,7 @@ static void MX_USART3_UART_Init(void)
 /**
   * Enable DMA controller clock
   * Configure DMA for memory to memory transfers
-  *   hdma_memtomem_dma1_stream3
+  *   hdma_memtomem_dma2_stream6
   *   hdma_memtomem_dma2_stream2
   *   hdma_memtomem_dma2_stream3
   *   hdma_memtomem_dma2_stream4
@@ -1320,21 +1320,21 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
   __HAL_RCC_DMA2_CLK_ENABLE();
 
-  /* Configure DMA request hdma_memtomem_dma1_stream3 on DMA1_Stream3 */
-  hdma_memtomem_dma1_stream3.Instance = DMA1_Stream3;
-  hdma_memtomem_dma1_stream3.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma1_stream3.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma1_stream3.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma1_stream3.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma1_stream3.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma1_stream3.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma1_stream3.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma1_stream3.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma1_stream3.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma1_stream3.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma1_stream3.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma1_stream3.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma1_stream3) != HAL_OK)
+  /* Configure DMA request hdma_memtomem_dma2_stream6 on DMA2_Stream6 */
+  hdma_memtomem_dma2_stream6.Instance = DMA2_Stream6;
+  hdma_memtomem_dma2_stream6.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma2_stream6.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma2_stream6.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma2_stream6.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma2_stream6.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream6.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+  hdma_memtomem_dma2_stream6.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma2_stream6.Init.Priority = DMA_PRIORITY_LOW;
+  hdma_memtomem_dma2_stream6.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+  hdma_memtomem_dma2_stream6.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+  hdma_memtomem_dma2_stream6.Init.MemBurst = DMA_MBURST_SINGLE;
+  hdma_memtomem_dma2_stream6.Init.PeriphBurst = DMA_PBURST_SINGLE;
+  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream6) != HAL_OK)
   {
     Error_Handler( );
   }
