@@ -83,11 +83,6 @@ DMA_HandleTypeDef hdma_uart4_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
-DMA_HandleTypeDef hdma_memtomem_dma2_stream6;
-DMA_HandleTypeDef hdma_memtomem_dma2_stream2;
-DMA_HandleTypeDef hdma_memtomem_dma2_stream3;
-DMA_HandleTypeDef hdma_memtomem_dma2_stream4;
-DMA_HandleTypeDef hdma_memtomem_dma2_stream5;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -136,13 +131,13 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
  * */
-int16_t RS485Encoder(uint8_t _address)
+uint16_t RS485Encoder(uint8_t _address)
 {
 	uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
 	volatile char checkbit_odd_result, checkbit_even_result;
-//	static int16_t POSCNT[4];
-	HAL_UART_Transmit(&huart4, &_address, 1, 1);
+//	static uint16_t POSCNT[4];
+	HAL_UART_Transmit(&huart4, &_address, 1, 2);
 	if(HAL_UART_Receive(&huart4, _buff, 2, 2) == HAL_OK) // Check received data is completed.
 	{
 		/*
@@ -186,16 +181,16 @@ int16_t RS485Encoder(uint8_t _address)
 		{
 			switch (_address){
 				case ENCPOS_JOINT1_Address:
-					POSCNT[0] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
+					POSCNT[0] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT2_Address:
-					POSCNT[1] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
+					POSCNT[1] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT3_Address:
-					POSCNT[2] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
+					POSCNT[2] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 				case ENCPOS_JOINT4_Address:
-					POSCNT[3] = (int16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
+					POSCNT[3] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 					break;
 			}
 		}
@@ -260,7 +255,7 @@ void StepDriveRad(char _ch, double _ang_v)
 			/* Angular Velocity of Joint1's Stepper Motor */
 			if(_ang_v == 0) // To avoid TIM1->ARR is undefined value.
 			{
-//				HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+				TIM1->ARR = 625-1;
 				TIM1->CCR2 = 0;
 			}
 			else
@@ -272,6 +267,7 @@ void StepDriveRad(char _ch, double _ang_v)
 				TIM1->ARR = round((6.283*_FCY)/(1600*((TIM1->PSC)+1)*abs(_ang_v))) - 1;
 				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ2:
 		{
@@ -294,6 +290,7 @@ void StepDriveRad(char _ch, double _ang_v)
 				TIM2->ARR = round((6.283*_FCY)/(1600*((TIM2->PSC)+1)*abs(_ang_v))) - 1;
 				TIM2->CCR3 = round(((TIM2->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ3:
 		{
@@ -316,6 +313,7 @@ void StepDriveRad(char _ch, double _ang_v)
 				TIM3->ARR = round((6.283*_FCY)/(1600*((TIM3->PSC)+1)*abs(_ang_v))) - 1;
 				TIM3->CCR1 = round(((TIM3->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ4:
 		{
@@ -338,6 +336,7 @@ void StepDriveRad(char _ch, double _ang_v)
 				TIM4->ARR = round((6.283*_FCY)/(1600*((TIM4->PSC)+1)*abs(_ang_v))) - 1;
 				TIM4->CCR3 = round(((TIM4->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPGripper:
 		{
@@ -360,14 +359,15 @@ void StepDriveRad(char _ch, double _ang_v)
 				TIM15->ARR = round((6.283*_FCY)/(1600*((TIM15->PSC)+1)*abs(_ang_v))) - 1;
 				TIM15->CCR2 = round(((TIM15->ARR)+1)/2);
 			}
+			break;
 		}
 		default:
 		{
-			TIM1->CCR2 = 0;
-			TIM2->CCR3 = 0;
-			TIM3->CCR1 = 0;
-			TIM4->CCR3 = 0;
-			TIM15->CCR2 = 0;
+//			TIM1->CCR2 = 0;
+//			TIM2->CCR3 = 0;
+//			TIM3->CCR1 = 0;
+//			TIM4->CCR3 = 0;
+//			TIM15->CCR2 = 0;
 		}
 	}
 
@@ -401,6 +401,7 @@ void StepDriveRPS(char _ch, double _rps)
 				TIM1->ARR = round(_FCY/(1600*((TIM1->PSC)+1)*abs(_rps))) - 1;
 				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ2:
 		{
@@ -423,6 +424,7 @@ void StepDriveRPS(char _ch, double _rps)
 				TIM2->ARR = round(_FCY/(1600*((TIM2->PSC)+1)*abs(_rps))) - 1;
 				TIM2->CCR3 = round(((TIM2->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ3:
 		{
@@ -438,6 +440,7 @@ void StepDriveRPS(char _ch, double _rps)
 			/* Angular Velocity of Joint3's Stepper Motor */
 			if(_rps == 0) // To avoid TIM3->ARR is undefined value.
 			{
+				TIM3->ARR = 625-1;
 				TIM3->CCR1 = 0;
 			}
 			else
@@ -445,6 +448,7 @@ void StepDriveRPS(char _ch, double _rps)
 				TIM3->ARR = round(_FCY/(1600*((TIM3->PSC)+1)*abs(_rps))) - 1;
 				TIM3->CCR1 = round(((TIM3->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPJ4:
 		{
@@ -460,6 +464,7 @@ void StepDriveRPS(char _ch, double _rps)
 			/* Angular Velocity of Joint4's Stepper Motor */
 			if(_rps == 0) // To avoid TIM4->ARR is undefined value.
 			{
+				TIM4->ARR = 625-1;
 				TIM4->CCR3 = 0;
 			}
 			else
@@ -467,6 +472,7 @@ void StepDriveRPS(char _ch, double _rps)
 				TIM4->ARR = round(_FCY/(1600*((TIM4->PSC)+1)*abs(_rps))) - 1;
 				TIM4->CCR3 = round(((TIM4->ARR)+1)/2);
 			}
+			break;
 		}
 		case STEPGripper:
 		{
@@ -489,14 +495,15 @@ void StepDriveRPS(char _ch, double _rps)
 				TIM15->ARR = round(_FCY/(1600*((TIM15->PSC)+1)*abs(_rps))) - 1;
 				TIM15->CCR2 = round(((TIM15->ARR)+1)/2);
 			}
+			break;
 		}
 		default:
 		{
-			TIM1->CCR2 = 0;
-			TIM2->CCR3 = 0;
-			TIM3->CCR1 = 0;
-			TIM4->CCR3 = 0;
-			TIM15->CCR2 = 0;
+//			TIM1->CCR2 = 0;
+//			TIM2->CCR3 = 0;
+//			TIM3->CCR1 = 0;
+//			TIM4->CCR3 = 0;
+//			TIM15->CCR2 = 0;
 		}
 	}
 }
@@ -526,15 +533,15 @@ void StepStop(char _ch)
 			}
 			default:
 			{
-				TIM1->CCR2 = 0;
-				TIM2->CCR3 = 0;
-				TIM3->CCR1 = 0;
-				TIM4->CCR3 = 0;
-				TIM15->CCR2 = 0;
+//				TIM1->CCR2 = 0;
+//				TIM2->CCR3 = 0;
+//				TIM3->CCR1 = 0;
+//				TIM4->CCR3 = 0;
+//				TIM15->CCR2 = 0;
 			}
 		}
 }
-//uint16_t SPI_Encoder()
+//uuint16_t SPI_Encoder()
 //{
 //
 //}
@@ -588,15 +595,22 @@ int main(void)
 
 //  HAL_TIM_Base_Start_IT(&htim5);
 //  HAL_TIM_Base_Start_IT(&htim12);
-//  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-//  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-//  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-//  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
+  TIM1->CCR2 = 0;
+  TIM2->CCR2 = 0;
+  TIM3->CCR2 = 0;
+  TIM4->CCR2 = 0;
+  TIM15->CCR2 = 0;
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
 
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
+  StepDriveRad(1, 6.23);
+//  double i = 0.00;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -606,7 +620,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  HAL_UART_Transmit_DMA(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+
 	  if(State_Checksum_Error)
 	  {
 		  State_Checksum_Error = 0;
@@ -622,7 +636,7 @@ int main(void)
 	  if(State_Print_4_Joint_State)
 	  {
 		  State_Print_4_Joint_State = 0;
-		  printf("\n%3f %3f %3f %3f\n\r", q1, q2, q3, q4);
+//		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
 		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
 		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
 	  }
@@ -654,6 +668,9 @@ int main(void)
 //		  HAL_TIM_Base_Start_IT(&htim12);
 		  State_Casade_Control_Timer = 0;
 	  }
+
+//	  i++;
+	  HAL_Delay(500);
   }
   return 0;
   /* USER CODE END 3 */
@@ -1226,7 +1243,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 2000000;
+  huart4.Init.BaudRate = 115200;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -1236,7 +1253,7 @@ static void MX_UART4_Init(void)
   huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart4.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_RS485Ex_Init(&huart4, UART_DE_POLARITY_HIGH, 0, 0) != HAL_OK)
+  if (HAL_UART_Init(&huart4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1308,12 +1325,6 @@ static void MX_USART3_UART_Init(void)
 
 /**
   * Enable DMA controller clock
-  * Configure DMA for memory to memory transfers
-  *   hdma_memtomem_dma2_stream6
-  *   hdma_memtomem_dma2_stream2
-  *   hdma_memtomem_dma2_stream3
-  *   hdma_memtomem_dma2_stream4
-  *   hdma_memtomem_dma2_stream5
   */
 static void MX_DMA_Init(void)
 {
@@ -1321,101 +1332,6 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
   __HAL_RCC_DMA2_CLK_ENABLE();
-
-  /* Configure DMA request hdma_memtomem_dma2_stream6 on DMA2_Stream6 */
-  hdma_memtomem_dma2_stream6.Instance = DMA2_Stream6;
-  hdma_memtomem_dma2_stream6.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma2_stream6.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma2_stream6.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma2_stream6.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream6.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream6.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream6.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream6.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma2_stream6.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma2_stream6.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma2_stream6.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma2_stream6.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream6) != HAL_OK)
-  {
-    Error_Handler( );
-  }
-
-  /* Configure DMA request hdma_memtomem_dma2_stream2 on DMA2_Stream2 */
-  hdma_memtomem_dma2_stream2.Instance = DMA2_Stream2;
-  hdma_memtomem_dma2_stream2.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma2_stream2.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma2_stream2.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma2_stream2.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream2.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream2.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream2.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream2.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma2_stream2.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma2_stream2.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma2_stream2.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma2_stream2.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream2) != HAL_OK)
-  {
-    Error_Handler( );
-  }
-
-  /* Configure DMA request hdma_memtomem_dma2_stream3 on DMA2_Stream3 */
-  hdma_memtomem_dma2_stream3.Instance = DMA2_Stream3;
-  hdma_memtomem_dma2_stream3.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma2_stream3.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma2_stream3.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma2_stream3.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream3.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream3.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream3.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream3.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma2_stream3.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma2_stream3.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma2_stream3.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma2_stream3.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream3) != HAL_OK)
-  {
-    Error_Handler( );
-  }
-
-  /* Configure DMA request hdma_memtomem_dma2_stream4 on DMA2_Stream4 */
-  hdma_memtomem_dma2_stream4.Instance = DMA2_Stream4;
-  hdma_memtomem_dma2_stream4.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma2_stream4.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma2_stream4.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma2_stream4.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream4.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream4.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream4.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream4.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma2_stream4.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma2_stream4.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma2_stream4.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma2_stream4.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream4) != HAL_OK)
-  {
-    Error_Handler( );
-  }
-
-  /* Configure DMA request hdma_memtomem_dma2_stream5 on DMA2_Stream5 */
-  hdma_memtomem_dma2_stream5.Instance = DMA2_Stream5;
-  hdma_memtomem_dma2_stream5.Init.Request = DMA_REQUEST_MEM2MEM;
-  hdma_memtomem_dma2_stream5.Init.Direction = DMA_MEMORY_TO_MEMORY;
-  hdma_memtomem_dma2_stream5.Init.PeriphInc = DMA_PINC_ENABLE;
-  hdma_memtomem_dma2_stream5.Init.MemInc = DMA_MINC_ENABLE;
-  hdma_memtomem_dma2_stream5.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream5.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-  hdma_memtomem_dma2_stream5.Init.Mode = DMA_NORMAL;
-  hdma_memtomem_dma2_stream5.Init.Priority = DMA_PRIORITY_LOW;
-  hdma_memtomem_dma2_stream5.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-  hdma_memtomem_dma2_stream5.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-  hdma_memtomem_dma2_stream5.Init.MemBurst = DMA_MBURST_SINGLE;
-  hdma_memtomem_dma2_stream5.Init.PeriphBurst = DMA_PBURST_SINGLE;
-  if (HAL_DMA_Init(&hdma_memtomem_dma2_stream5) != HAL_OK)
-  {
-    Error_Handler( );
-  }
 
   /* DMA interrupt init */
   /* DMA1_Stream1_IRQn interrupt configuration */
@@ -1561,25 +1477,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			{
 				case 6:		// q1 Mode
 				{
-					q1 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
+					q1 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 7:		// q2 Mode
 				{
-					q2 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
+					q2 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 8:		// q3 Mode
 				{
-					q3 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
+					q3 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 9:		// q4 Mode
 				{
-					q4 = (int16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
+					q4 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
