@@ -308,6 +308,7 @@ void StepDriveRad(char _ch, double _ang_v)
 			if(_ang_v == 0) // To avoid TIM3->ARR is undefined value.
 			{
 				TIM3->CCR1 = 0;
+				TIM3->ARR = 625-1;
 			}
 			else
 			{
@@ -331,6 +332,7 @@ void StepDriveRad(char _ch, double _ang_v)
 			if(_ang_v == 0) // To avoid TIM4->ARR is undefined value.
 			{
 				TIM4->CCR3 = 0;
+				TIM4->ARR = 625-1;
 			}
 			else
 			{
@@ -354,6 +356,7 @@ void StepDriveRad(char _ch, double _ang_v)
 			if(_ang_v == 0) // To avoid TIM2->ARR is undefined value.
 			{
 				TIM15->CCR2 = 0;
+				TIM15->ARR = 625-1;
 			}
 			else
 			{
@@ -396,6 +399,7 @@ void StepDriveRPS(char _ch, double _rps)
 			if(_rps == 0) // To avoid TIM1->ARR is undefined value.
 			{
 				TIM1->CCR2 = 0;
+				TIM1->ARR = 625-1;
 			}
 			else
 			{
@@ -419,6 +423,7 @@ void StepDriveRPS(char _ch, double _rps)
 			if(_rps == 0) // To avoid TIM2->ARR is undefined value.
 			{
 				TIM2->CCR3 = 0;
+				TIM2->ARR = 625-1;
 			}
 			else
 			{
@@ -441,8 +446,8 @@ void StepDriveRPS(char _ch, double _rps)
 			/* Angular Velocity of Joint3's Stepper Motor */
 			if(_rps == 0) // To avoid TIM3->ARR is undefined value.
 			{
-				TIM3->ARR = 625-1;
 				TIM3->CCR1 = 0;
+				TIM3->ARR = 625-1;
 			}
 			else
 			{
@@ -465,8 +470,8 @@ void StepDriveRPS(char _ch, double _rps)
 			/* Angular Velocity of Joint4's Stepper Motor */
 			if(_rps == 0) // To avoid TIM4->ARR is undefined value.
 			{
-				TIM4->ARR = 625-1;
 				TIM4->CCR3 = 0;
+				TIM4->ARR = 625-1;
 			}
 			else
 			{
@@ -490,6 +495,7 @@ void StepDriveRPS(char _ch, double _rps)
 			if(_rps == 0) // To avoid TIM2->ARR is undefined value.
 			{
 				TIM15->CCR2 = 0;
+				TIM15->ARR = 625-1;
 			}
 			else
 			{
@@ -542,7 +548,7 @@ void StepStop(char _ch)
 			}
 		}
 }
-//uuint16_t SPI_Encoder()
+//uint16_t SPI_Encoder()
 //{
 //
 //}
@@ -597,9 +603,9 @@ int main(void)
 //  HAL_TIM_Base_Start_IT(&htim5);
 //  HAL_TIM_Base_Start_IT(&htim12);
   TIM1->CCR2 = 0;
-  TIM2->CCR2 = 0;
-  TIM3->CCR2 = 0;
-  TIM4->CCR2 = 0;
+  TIM2->CCR3 = 0;
+  TIM3->CCR1 = 0;
+  TIM4->CCR3 = 0;
   TIM15->CCR2 = 0;
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
@@ -611,7 +617,7 @@ int main(void)
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
   StepDriveRad(1, 6.23);
-//  double i = 0.00;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -670,8 +676,6 @@ int main(void)
 		  State_Casade_Control_Timer = 0;
 	  }
 
-//	  i++;
-	  HAL_Delay(500);
   }
   return 0;
   /* USER CODE END 3 */
