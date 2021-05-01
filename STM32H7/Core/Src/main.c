@@ -255,8 +255,8 @@ void StepDriveRad(char _ch, double _ang_v)
 			/* Angular Velocity of Joint1's Stepper Motor */
 			if(_ang_v == 0) // To avoid TIM1->ARR is undefined value.
 			{
-				TIM1->ARR = 625-1;
 				TIM1->CCR2 = 0;
+				TIM1->ARR = 625-1;
 			}
 			else
 			{
@@ -284,6 +284,7 @@ void StepDriveRad(char _ch, double _ang_v)
 			if(_ang_v == 0) // To avoid TIM2->ARR is undefined value.
 			{
 				TIM2->CCR3 = 0;
+				TIM2->ARR = 625-1;
 			}
 			else
 			{
