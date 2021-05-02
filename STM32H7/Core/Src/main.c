@@ -105,7 +105,7 @@ static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 double q1, q2, q3, q4;
 double c0, c1, c2, c3, c4, c5;
-volatile int16_t POSCNT[4];
+//volatile int16_t POSCNT[4];
 bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
 bool State_Print_Gripper_State;
@@ -131,15 +131,16 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
  * */
-uint16_t RS485Encoder(uint8_t _address)
+volatile uint16_t RS485Encoder(uint8_t _address)
 {
-	uint8_t _buff[2];
+	volatile uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
 	volatile char checkbit_odd_result, checkbit_even_result;
 //	static uint16_t POSCNT[4];
-	HAL_UART_Transmit(&huart4, &_address, 1, 2);
-	if(HAL_UART_Receive(&huart4, _buff, 2, 2) == HAL_OK) // Check received data is completed.
-	{
+	HAL_UART_Transmit(&huart4, &_address, 1, 100);
+	HAL_UART_Receive(&huart4, (uint8_t *) &_buff, 2, 100);
+//	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
+//	{
 		/*
 		 * Checksum
 		 *
@@ -179,59 +180,17 @@ uint16_t RS485Encoder(uint8_t _address)
 
 		if(checkbit_odd_result == ((_buff[1] >> 7) & 0x01) && (checkbit_even_result) == ((_buff[1] >> 6) & 0x01)) //  If checksum is correct.
 		{
-			switch (_address){
-				case ENCPOS_JOINT1_Address:
-					POSCNT[0] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
-					break;
-				case ENCPOS_JOINT2_Address:
-					POSCNT[1] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
-					break;
-				case ENCPOS_JOINT3_Address:
-					POSCNT[2] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
-					break;
-				case ENCPOS_JOINT4_Address:
-					POSCNT[3] = (uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
-					break;
-			}
+			return (volatile uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
 		}
-	}
-	switch (_address){
-		case ENCPOS_JOINT1_Address:
-			return POSCNT[0];
-			break;
-		case ENCPOS_JOINT2_Address:
-			return POSCNT[1];
-			break;
-		case ENCPOS_JOINT3_Address:
-			return POSCNT[2];
-			break;
-		case ENCPOS_JOINT4_Address:
-			return POSCNT[3];
-			break;
-	}
-	return -1;
+		else
+		{
+			return -1;
+		}
 }
 void RS485ResetEncoder(uint8_t _address)
 {
-	if(_address == ENCPOS_JOINT1_Address || _address == ENCPOS_JOINT2_Address || _address == ENCPOS_JOINT3_Address || _address == ENCPOS_JOINT4_Address)
-	{
-		HAL_UART_Transmit(&huart4, (&_address + (uint8_t)0x02), 1, 1);
-		HAL_UART_Transmit(&huart4, (&_address + (uint8_t)0x0A), 1, 1);
-		switch (_address){
-			case ENCPOS_JOINT1_Address:
-				POSCNT[0] = 0;
-				break;
-			case ENCPOS_JOINT2_Address:
-				POSCNT[1] = 0;
-				break;
-			case ENCPOS_JOINT3_Address:
-				POSCNT[2] = 0;
-				break;
-			case ENCPOS_JOINT4_Address:
-				POSCNT[3] = 0;
-				break;
-		}
-	}
+	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x02), 1, 1);
+	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x0A), 1, 1);
 }
 /*
  * Stepper motor driving function (Radian input)
@@ -616,8 +575,8 @@ int main(void)
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
-  StepDriveRad(1, 6.23);
-
+//  StepDriveRad(1, 6.23);
+  uint16_t lastValue, x;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -627,6 +586,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  x = RS485Encoder((uint8_t)0xA4);
+	  if(lastValue != x)
+	  {
+		  lastValue = x;
+		  printf("%d\n", lastValue);
+	  }
 
 	  if(State_Checksum_Error)
 	  {
@@ -675,7 +640,6 @@ int main(void)
 //		  HAL_TIM_Base_Start_IT(&htim12);
 		  State_Casade_Control_Timer = 0;
 	  }
-
   }
   return 0;
   /* USER CODE END 3 */
@@ -1248,7 +1212,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 9600;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -1385,6 +1349,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : Blue_Button_Pin */
+  GPIO_InitStruct.Pin = Blue_Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Blue_Button_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : LD1_Pin DIR_2_Pin LD3_Pin DIR_3_Pin
                            DIR_4_Pin */
   GPIO_InitStruct.Pin = LD1_Pin|DIR_2_Pin|LD3_Pin|DIR_3_Pin
@@ -1394,8 +1364,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LM2_Pin LM1_Pin LM6_Pin */
-  GPIO_InitStruct.Pin = LM2_Pin|LM1_Pin|LM6_Pin;
+  /*Configure GPIO pins : LM2_Pin LM1_Pin */
+  GPIO_InitStruct.Pin = LM2_Pin|LM1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -1578,8 +1548,24 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+	if(GPIO_Pin == LM1_Pin || GPIO_Pin == LM2_Pin || GPIO_Pin == LM3_Pin || GPIO_Pin == LM4_Pin || GPIO_Pin == LM5_Pin || GPIO_Pin == Blue_Button_Pin)
+	{
 
+		  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
 
+		  HAL_TIM_Base_Stop_IT(&htim5);
+		  HAL_TIM_Base_Stop_IT(&htim12);
+
+		  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
+		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+		  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+		  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+		  HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_2);
+		  Error_Handler();
+
+	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
