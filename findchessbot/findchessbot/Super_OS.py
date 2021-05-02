@@ -164,7 +164,7 @@ class findchessbot():
         list_of_theta = np.arange(theta_now, pi*2, 0.02).tolist() + np.arange(0, theta_now, 0.02).tolist()
         # list_of_theta = [round(num, 3) for num in list_of_pose]
 
-        list_of_pose = [(round((r*cos(theta_loop))+0.245, 3),round(r*sin(theta_loop), 3)) for theta_loop in list_of_theta]
+        list_of_pose = [(round((r*cos(theta_loop))+0.425, 3),round(r*sin(theta_loop), 3)) for theta_loop in list_of_theta]
         return list_of_pose
     def Cubic_Tarj(self, Initial, Goal):
         Coff1 = 0
@@ -185,7 +185,7 @@ Robot = findchessbot()
 # print(Robot.Jacobian(S13=0, C13=1, S1=0, C1=1)[2:5])
 # Robot.FK(0.,0.,0.21,0.)
 # print(Robot.Je_inv)
-list_of_pose = (Robot.Circle_Traj("B2"))
+list_of_pose = (Robot.Circle_Traj("D4"))
 pose = []
 for i in list_of_pose:
     q1,q2,q3,q4 = Robot.IK(X=i[0], Y=i[1], Z=0, Yaw=0)

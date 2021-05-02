@@ -16,6 +16,12 @@ def generate_launch_description():
     with open(urdf, 'r') as infp:
         robot_desc = infp.read()
 
+    rviz_file_name = 'view.rviz'
+    rviz_config = os.path.join(
+        get_package_share_directory('findchessbot'),
+        rviz_file_name)
+    
+        
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
@@ -33,4 +39,10 @@ def generate_launch_description():
             executable='state_publisher',
             name='state_publisher',
             output='screen'),
+        # Node(
+        #     package='rviz2',
+        #     executable='rviz2',
+        #     name='rviz2',
+        #     arguments=['-d', rviz_config],
+        #     output='screen'),
     ])

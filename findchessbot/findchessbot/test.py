@@ -56,6 +56,6 @@ for i in np.arange(0, pi*2, 0.1):
     r = 247
     theta = (2.356 + i)%pi*2
 
-
+print(len(np.arange(0, pi*2, 0.02)))
 
 
