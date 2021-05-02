@@ -14,6 +14,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
          (os.path.join('share', package_name), glob('launch/*.launch.py')),
          (os.path.join('share', package_name), glob('urdf/*')),
+         (os.path.join('share', package_name), glob('meshes/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -27,6 +28,7 @@ setup(
             'pub = findchessbot.pub:main',
             'sub = findchessbot.sub:main',
             'input_to_jointstate = findchessbot.input_to_jointstate:main',
+            'state_publisher = findchessbot.state_publisher:main',
         ],
     },
 )

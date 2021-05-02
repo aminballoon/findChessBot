@@ -12,7 +12,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     # Get the launch directory
-    bringup_dir = get_package_share_directory('lesson_urdf')
+    bringup_dir = get_package_share_directory('findchessbot')
     launch_dir = os.path.join(bringup_dir, 'launch')
 
     # Launch configuration variables specific to simulation
@@ -41,7 +41,7 @@ def generate_launch_description():
 
     declare_urdf_cmd = DeclareLaunchArgument(
         'urdf_file',
-        default_value=os.path.join(bringup_dir, 'urdf', 'planar_3dof.urdf'),
+        default_value=os.path.join(bringup_dir, 'urdf', 'findchessbot.urdf'),
         description='Whether to start RVIZ')
  
 
@@ -54,13 +54,13 @@ def generate_launch_description():
         #parameters=[{'use_sim_time': use_sim_time}],
         arguments=[urdf_file])
     
-    # start_joint_state_publisher_cmd = Node(
-    #     condition=IfCondition(use_joint_state_pub),
-    #     package='joint_state_publisher_gui',
-    #     executable='joint_state_publisher_gui',
-    #     name='joint_state_publisher_gui',
-    #     output='screen',
-    #     arguments=[urdf_file])
+    start_joint_state_publisher_cmd = Node(
+        condition=IfCondition(use_joint_state_pub),
+        package='joint_state_publisher_gui',
+        executable='joint_state_publisher_gui',
+        name='joint_state_publisher_gui',
+        output='screen',
+        arguments=[urdf_file])
 
     start_joint_state_publisher_cmd = Node(
         condition=IfCondition(use_joint_state_pub),
