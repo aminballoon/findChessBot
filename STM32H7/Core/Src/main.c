@@ -103,8 +103,6 @@ static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-double q1, q2, q3, q4;
-double c0, c1, c2, c3, c4, c5;
 //volatile int16_t POSCNT[4];
 bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
@@ -131,17 +129,16 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
  * */
-volatile uint16_t RS485Encoder(uint8_t _address)
+/*volatile uint16_t RS485Encoder(uint8_t _addr[2])
 {
 	volatile uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
 	volatile char checkbit_odd_result, checkbit_even_result;
-//	static uint16_t POSCNT[4];
-	HAL_UART_Transmit(&huart4, &_address, 1, 100);
+//	static uint16_t POSCNT;
+//	HAL_UART_Transmit(&huart4, (uint8_t *) &_addr, 2, 100);
 	HAL_UART_Receive(&huart4, (uint8_t *) &_buff, 2, 100);
 //	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
 //	{
-		/*
 		 * Checksum
 		 *
 		 * The AMT21 encoder uses a checksum calculation for detecting transmission errors.
@@ -159,7 +156,7 @@ volatile uint16_t RS485Encoder(uint8_t _address)
 		 * Checkbit Formula
 		 * Odd: K1 = !(H5^H3^H1^L7^L5^L3^L1)
 		 * Even: K0 = !(H4^H2^H0^L6^L4^L2^L0)
-		 */
+
 
 		for (register int i = 0; i < 7; i++)
 		{
@@ -178,15 +175,16 @@ volatile uint16_t RS485Encoder(uint8_t _address)
 		checkbit_odd_result = !checkbit_odd_result;
 		checkbit_even_result = !checkbit_even_result;
 
+		return (uint16_t)(((uint16_t)_buff[0]) + ((((uint16_t)_buff[1]) & 0x3F) << 8));
 		if(checkbit_odd_result == ((_buff[1] >> 7) & 0x01) && (checkbit_even_result) == ((_buff[1] >> 6) & 0x01)) //  If checksum is correct.
 		{
-			return (volatile uint16_t)(_buff[0] + ((_buff[1] & 0x3F) << 8));
+			return POSCNT;
 		}
 		else
 		{
 			return -1;
 		}
-}
+}*/
 void RS485ResetEncoder(uint8_t _address)
 {
 	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x02), 1, 1);
@@ -219,10 +217,6 @@ void StepDriveRad(char _ch, double _ang_v)
 			}
 			else
 			{
-//				if(HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2) == HAL_OK)
-//				{
-//					HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-//				}
 				TIM1->ARR = round((6.283*_FCY)/(1600*((TIM1->PSC)+1)*abs(_ang_v))) - 1;
 				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
 			}
@@ -480,22 +474,27 @@ void StepStop(char _ch)
 			case STEPJ1:
 			{
 				TIM1->CCR2 = 0;
+				TIM1->ARR = 625-1;
 			}
 			case STEPJ2:
 			{
 				TIM2->CCR3 = 0;
+				TIM2->ARR = 625-1;
 			}
 			case STEPJ3:
 			{
 				TIM3->CCR1 = 0;
+				TIM3->ARR = 625-1;
 			}
 			case STEPJ4:
 			{
 				TIM4->CCR3 = 0;
+				TIM4->ARR = 625-1;
 			}
 			case STEPGripper:
 			{
 				TIM15->CCR2 = 0;
+				TIM15->ARR = 625-1;
 			}
 			default:
 			{
@@ -561,22 +560,25 @@ int main(void)
 
 //  HAL_TIM_Base_Start_IT(&htim5);
 //  HAL_TIM_Base_Start_IT(&htim12);
-  TIM1->CCR2 = 0;
-  TIM2->CCR3 = 0;
+//  TIM1->CCR2 = 0;
+//  TIM2->CCR3 = 0;
   TIM3->CCR1 = 0;
-  TIM4->CCR3 = 0;
-  TIM15->CCR2 = 0;
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
+//  TIM4->CCR3 = 0;
+//  TIM15->CCR2 = 0;
+//  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+//  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+//  HAL_TIM_Base_Start(&htim4);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+//  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+//  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
 
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
-  HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
+//  HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
 //  StepDriveRad(1, 6.23);
-  uint16_t lastValue, x;
+//  volatile uint16_t x;
+//  uint16_t lastValue;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -586,60 +588,73 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  x = RS485Encoder((uint8_t)0xA4);
-	  if(lastValue != x)
-	  {
-		  lastValue = x;
-		  printf("%d\n", lastValue);
-	  }
-
-	  if(State_Checksum_Error)
-	  {
-		  State_Checksum_Error = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Input_Joint_State)
-	  {
-		  State_Input_Joint_State = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Print_4_Joint_State)
-	  {
-		  State_Print_4_Joint_State = 0;
-//		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Activate_Gripper)
-	  {
-		  State_Activate_Gripper = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Deactivate_Gripper)
-	  {
-		  State_Deactivate_Gripper = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Set_Home)
-	  {
-		  State_Set_Home = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_PID_Control_Timer)
-	  {
-//		  HAL_TIM_Base_Start_IT(&htim5);
-		  State_PID_Control_Timer = 0;
-	  }
-	  if(State_Casade_Control_Timer)
-	  {
-//		  HAL_TIM_Base_Start_IT(&htim12);
-		  State_Casade_Control_Timer = 0;
-	  }
+//	  if(State_Checksum_Error)
+//	  {
+//		  State_Checksum_Error = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Input_Joint_State)
+//	  {
+//		  State_Input_Joint_State = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Print_4_Joint_State)
+//	  {
+//		  State_Print_4_Joint_State = 0;
+////		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Activate_Gripper)
+//	  {
+//		  State_Activate_Gripper = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Deactivate_Gripper)
+//	  {
+//		  State_Deactivate_Gripper = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Set_Home)
+//	  {
+//		  State_Set_Home = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_PID_Control_Timer)
+//	  {
+////		  HAL_TIM_Base_Start_IT(&htim5);
+//		  State_PID_Control_Timer = 0;
+//	  }
+//	  if(State_Casade_Control_Timer)
+//	  {
+////		  HAL_TIM_Base_Start_IT(&htim12);
+//		  State_Casade_Control_Timer = 0;
+//	  }
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	  StepStop(STEPJ3);
+	  HAL_Delay(3000);
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	  StepDriveRad(STEPJ3, 7.00);
+	  HAL_Delay(1000);
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	  StepStop(STEPJ3);
+	  HAL_Delay(3000);
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+	  StepDriveRad(STEPJ3, -7.00);
+	  HAL_Delay(1000);
   }
   return 0;
   /* USER CODE END 3 */
@@ -1452,25 +1467,21 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			{
 				case 6:		// q1 Mode
 				{
-					q1 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 7:		// q2 Mode
 				{
-					q2 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 8:		// q3 Mode
 				{
-					q3 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
 				case 9:		// q4 Mode
 				{
-					q4 = (uint16_t)(((UART3_RXBUFFER[1] << 8) & 0xFF00) + (UART3_RXBUFFER[2] & 0x00FF));
 					State_Input_Joint_State = 1;
 					break;
 				}
@@ -1559,9 +1570,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		  HAL_TIM_Base_Stop_IT(&htim12);
 
 		  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-		  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
-		  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
+		  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+		  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
 		  HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_2);
 		  Error_Handler();
 
@@ -1576,15 +1587,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 * Change on TIMx's ARR Register (Input is frequency).
 	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
 	 *
-	 * To turn ON/OFF
+	 * How to Start/Stop Timer Interrupt
 	 * Use function
+	 * HAL_TIM_Base_Start_IT(&htim5);
+	 * HAL_TIM_Base_Stop_IT(&htim5);
+	 *
 	 */
   /* Timer5 Interrupt PID Position Control*/
   if (htim == &htim5)
   {
 
   }
-  /* Timer12 Interrupt */
+  /* Timer12 Interrupt Trajectory*/
   if (htim == &htim12)
   {
 
