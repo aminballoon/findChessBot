@@ -30,6 +30,7 @@ setup(
             'sub = findchessbot.sub:main',
             'input_to_jointstate = findchessbot.input_to_jointstate:main',
             'state_publisher = findchessbot.state_publisher:main',
+            'chessboard_rpm = findchessbot.input_chessboard_rpm:main',
         ],
     },
 )

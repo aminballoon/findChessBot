@@ -39,6 +39,11 @@ def generate_launch_description():
             executable='state_publisher',
             name='state_publisher',
             output='screen'),
+        Node(
+            package='findchessbot',
+            executable='chessboard_rpm',
+            name='chessboard_rpm',
+            output='screen'),
         # Node(
         #     package='rviz2',
         #     executable='rviz2',
