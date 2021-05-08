@@ -51,11 +51,28 @@ Coorchess_to_point = {  'A1' : [0.247, 2.356],  'A2' : [0.215, 2.191],  'A3' : [
                         'H5' : [0.177, 4.854],  'H6' : [0.19, 5.117],   'H7' : [0.215, 5.333],  'H8' : [0.247, 5.498], }
 
 
-fig, axs = plt.subplots(1)
-for i in np.arange(0, pi*2, 0.1):
-    r = 247
-    theta = (2.356 + i)%pi*2
+# fig, axs = plt.subplots(1)
+# for i in np.arange(0, pi*2, 0.1):
+#     r = 247
+#     theta = (2.356 + i)%pi*2
 
-print(len(np.arange(0, pi*2, 0.02)))
+# print(len(np.arange(0, pi*2, 0.02)))
 
 
+x = np.arange(0.475, 0.625, 0.001)
+y = np.arange(0.050, 0.200, 0.001)
+print(x)
+xnew = [round(num, 3) for num in x]
+ynew = [round(num, 3) for num in y]
+
+# list([x,y] for i in )
+List = []
+for i,j in zip(xnew,ynew):
+    List.append([i,j])
+    # if i == 2:
+    #     break
+for i,j in zip(xnew[::-1],ynew[::-1]):
+    List.append([i,j])
+
+print(List)
+print(len(List))

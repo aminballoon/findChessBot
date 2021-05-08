@@ -278,7 +278,7 @@
       <material
         name="">
         <color
-          rgba="0.75294 0.75294 0.75294 1" />
+          rgba="0. 0. 0. 1" />
       </material>
     </visual>
     <collision>
@@ -291,6 +291,8 @@
       </geometry>
     </collision>
   </link>
+
+
   <joint
     name="joint_chess"
     type="revolute">
@@ -305,4 +307,62 @@
       xyz="0 0 1" />
       <limit lower="-6.28" upper="6.28" effort="0" velocity="10" />
   </joint>
+
+  
+  <link
+    name="chess_board_black">
+    <inertial>
+      <origin
+        xyz="1.1102E-16 -5.5511E-17 -0.02591"
+        rpy="0 0 0" />
+      <mass
+        value="2.2955" />
+      <inertia
+        ixx="0.017747"
+        ixy="2.9956E-19"
+        ixz="-3.1844E-19"
+        iyy="0.021703"
+        iyz="2.6072E-18"
+        izz="0.039234" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://findchessbot/chessboard_black.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0 0 0 0.5" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://findchessbot/chessboard_black.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+  name="joint_chess_black"
+  type="fixed">
+  <!-- <origin
+    xyz="0.42744 -0.00059371 0.099999"
+    rpy="0 0 0" /> -->
+  <parent
+    link="chess_board" />
+  <child
+    link="chess_board_black" />
+  <!-- <axis
+    xyz="0 0 1" />
+    <limit lower="-6.28" upper="6.28" effort="0" velocity="10" /> -->
+</joint>
+
 </robot>
