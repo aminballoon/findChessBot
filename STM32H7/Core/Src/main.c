@@ -1773,21 +1773,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	    rad = rad + (float)(1.0f / 20000.0f);
 //	    printf("%.3f\n", rad);
 
-//	    if ( > 10000.0) {
-//			Driver_motor_X((int) 10000);
-//		} else if (Output_velcont[0] < -10000.0) {
-//			Driver_motor_X((int) - 10000);
-//		} else {
-//			Driver_motor_X((int) Output_velcont[0]);
-//		}
-//
-//		if (Output_velcont[1] > 10000.0) {
-//			Driver_motor_Y((int) 10000);
-//		} else if (Output_velcont[1] < -10000.0) {
-//			Driver_motor_Y((int) - 10000);
-//		} else {
-//			Driver_motor_Y((int) Output_velcont[1]);
-//		}
 
 	    if (t != T)
 	    {
