@@ -22,15 +22,43 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stdlib.h"
-#include "stdbool.h"
-#include "stdint.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-//typedef RS485
+/* PID Structure */
+typedef struct findchessPID_t
+{
+	float Kp;
+	float Ki;
+	float Kd;
+	float I_Err;
+	float D_Err;
+	float I_MinLimit;
+	float I_MaxLimit;
+	float outputMinLimit;
+	float outputMaxLimit;
+	float DeadBand;
+	float Prev_Input;
+} findchessPID_t;
+
+typedef struct findchessJoint_t{
+	float joint_config;
+	findchessPID_t PIDPosition;
+	findchessPID_t PIDVelocity;
+} findchessJoint_t;
+
+typedef struct findchessTaskspace_t{
+	float X;
+	float Y;
+	float Z;
+	float endEffYaw;
+} findchessTaskspace_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -50,11 +78,8 @@
 #define ACK_ProcessIsCompleted_Address (uint8_t)0xAD
 #define ACK_CheckSumError_Address (uint8_t)0xEE
 
-#define ENCPOS_JOINT1_Address (uint8_t)0xA4
-#define ENCPOS_JOINT2_Address (uint8_t)0xB4
-#define ENCPOS_JOINT3_Address (uint8_t)0xC4
-#define ENCPOS_JOINT4_Address (uint8_t)0xD4
-
+float sample_time = 0.0005; // 2000 hz
+#define pi 3.1412
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -103,7 +128,24 @@ static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
-//volatile int16_t POSCNT[4];
+#ifdef __GNUC__
+/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
+ set to 'Yes') calls __io_putchar() */
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif /* __GNUC__ */
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+void Update_Coff(int x1,int y1,int x2,int y2,float Time);
+void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd);
+float PIDcalculate(findchessPID_t *_PID, float _setPoint, float _inputValue);
+void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
+void StepDriveRad(char _ch, double _ang_v);
+void StepDriveRPS(char _ch, double _rps);
+void StepStop(char _ch);
 bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
 bool State_Print_Gripper_State;
@@ -113,24 +155,132 @@ bool State_Activate_Gripper;
 bool State_Deactivate_Gripper;
 bool State_PID_Control_Timer;
 bool State_Casade_Control_Timer;
-uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-#ifdef __GNUC__
-/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
- set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
+uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
+
+float q[4] = {0.,0.,0.,0.};
+float rad;
+float C0x,C2x,C3x,C0y,C2y,C3y;
+float T;
+float t = 0.;
+
+
+void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd){
+	_PID->Kp = _Kp;
+	_PID->Ki = _Ki;
+	_PID->Kd = _Kd;
+	_PID->I_Err = 0;
+	_PID->D_Err = 0;
+	_PID->I_MinLimit = _Iminlimit;
+	_PID->I_MaxLimit = _Imaxlimit;
+	_PID->DeadBand = _Ddbd;
+}
+
+float PIDcalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
+	static float Previous_Err = 0;
+	float Err = _setPoint - _inputValue;
+	if (fabs(Err) < _PID->DeadBand){
+		return 0;
+	}
+	_PID->I_Err += Err;
+	_PID->D_Err -= Err - Previous_Err;
+	if (_PID->I_Err > _PID->I_MaxLimit){
+	    _PID->I_Err = _PID->I_MaxLimit;
+	}
+	else if (_PID->I_Err < _PID->I_MinLimit){
+	    _PID->I_Err = _PID->I_MinLimit;
+	}
+	float output = (_PID->Kp * Err + _PID->Ki * _PID->I_Err + _PID->Kd * _PID->D_Err);
+	if (output > _PID->outputMaxLimit){
+		output = _PID->outputMaxLimit;
+	}
+	else if (output < _PID->outputMinLimit){
+		output = _PID->outputMinLimit;
+	}
+	Previous_Err = Err;
+	return output;
+}
+//float *FPK(float _q[4])
+//{
+//	return
+//}
+
+void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
+{
+	const float l1 = 0.020, l2 = 0.370, l3 = 0.315,
+			h1 = 0.125, h3 = 0.065, h4 = 0.190;
+	float l12 = l1 + l2;
+
+	float C3 = (X*X + Y*Y - l12*l12 - l3*l3) / (2 * l12 * l3);
+	float S3 = sqrt(1 - (C3 * C3));
+    float q3 = atan2(S3, C3);
+
+    float S1 = -l3 * sin(q3) * X + (l12 + l3*cos(q3)) * Y;
+    float C1 = l3 * sin(q3) * Y + (l12 + l3*cos(q3)) * X;
+    float q1 = atan2(S1, C1);
+
+    /*if(q1 < -pi/2 || q1 > pi/2)
+    {
+        printf("Out of range for q1\n");
+		return;
+    }
+    if(Z + h4 - h3 - h1 < 0 || Z + h4 - h3 - h1 > 0.1)
+    {
+		printf("Out of range for q2\n");
+		return;
+	}
+    if(q3 < -2.705 || q3 > -0.035 || q3 < 0.035 || q3 > 2.705)
+    {
+        printf("Out of range for q3\n");
+		return;
+    }
+    if(endEff_Yaw - q1 - q3 < -2.880 || endEff_Yaw - q1 - q3 > 2.880)
+    {
+        printf("Out of range for q4\n");
+		return;
+    }*/
+    q[0] = q1;
+	q[1] = Z + h4 - h3 - h1;
+	q[2] = q3;
+	q[3] = endEff_Yaw - q1 - q3;
+}
+//void IVK()
+//{
+//
+//}
+//void IAK()
+//{
+//
+//}
+
+/*
+ * Coefficient of Trajectory Function
+ * Updated : 18 Mar 2021 16:44
+ * */
+void Update_Coff(int x1,int y1,int x2,int y2,float Time)
+{
+    T = Time ;
+    int delta_x = x2-x1;
+    int delta_y = y2-y1;
+//    float Trajectory_Theta = atan2(delta_y, delta_x);
+//    float Trajectory_Magnitude = sqrt((delta_y * delta_y) + (delta_x * delta_x));
+    float Time_2 = Time * Time ;
+    float Time_3 = Time_2 * Time;
+    C0x = delta_x;
+    C2x = (3*delta_x)/Time_2;
+    C3x = (2*delta_x)/Time_3;
+
+    C0y = delta_y;
+    C2y = (3*delta_y)/Time_2;
+    C3y = (2*delta_y)/Time_3;
+}
 /*
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
  * */
-/*volatile uint16_t RS485Encoder(uint8_t _addr[2])
+/*volatile uint16_t RS485Encoder(uint8_t _addr)
 {
+
 	volatile uint8_t _buff[2];
 	volatile uint8_t checkbit_odd[7], checkbit_even[7];
 	volatile char checkbit_odd_result, checkbit_even_result;
@@ -139,23 +289,6 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 	HAL_UART_Receive(&huart4, (uint8_t *) &_buff, 2, 100);
 //	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
 //	{
-		 * Checksum
-		 *
-		 * The AMT21 encoder uses a checksum calculation for detecting transmission errors.
-		 *
-		 * The upper two bits of every response from the encoder are check bits.
-		 *
-		 * Those values are shown in the examples below as K1 and K0.
-		 *
-		 * The check bits are odd parity; K1 for the odd bits in the response,
-		 * and K0 for the even bits in the response.
-		 *
-		 * These check bits are not part of the position,
-		 * but are used to verify its validity. The remaining lower 14 bits are the useful data.
-		 *
-		 * Checkbit Formula
-		 * Odd: K1 = !(H5^H3^H1^L7^L5^L3^L1)
-		 * Even: K0 = !(H4^H2^H0^L6^L4^L2^L0)
 
 
 		for (register int i = 0; i < 7; i++)
@@ -184,12 +317,12 @@ uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 		{
 			return -1;
 		}
-}*/
+}
 void RS485ResetEncoder(uint8_t _address)
 {
 	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x02), 1, 1);
 	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x0A), 1, 1);
-}
+}*/
 /*
  * Stepper motor driving function (Radian input)
  * Updated : 18 Mar 2021 16:44
@@ -320,11 +453,7 @@ void StepDriveRad(char _ch, double _ang_v)
 		}
 		default:
 		{
-//			TIM1->CCR2 = 0;
-//			TIM2->CCR3 = 0;
-//			TIM3->CCR1 = 0;
-//			TIM4->CCR3 = 0;
-//			TIM15->CCR2 = 0;
+
 		}
 	}
 
@@ -459,11 +588,7 @@ void StepDriveRPS(char _ch, double _rps)
 		}
 		default:
 		{
-//			TIM1->CCR2 = 0;
-//			TIM2->CCR3 = 0;
-//			TIM3->CCR1 = 0;
-//			TIM4->CCR3 = 0;
-//			TIM15->CCR2 = 0;
+
 		}
 	}
 }
@@ -498,14 +623,11 @@ void StepStop(char _ch)
 			}
 			default:
 			{
-//				TIM1->CCR2 = 0;
-//				TIM2->CCR3 = 0;
-//				TIM3->CCR1 = 0;
-//				TIM4->CCR3 = 0;
-//				TIM15->CCR2 = 0;
+
 			}
 		}
 }
+
 //uint16_t SPI_Encoder()
 //{
 //
@@ -553,32 +675,31 @@ int main(void)
   MX_TIM12_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
+//  uint8_t encoder_address[5] = {0xA4, 0xB4, 0xC4, 0xD4, 0x54};
+//  uint16_t abs_position = 0;
 
   HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
 //  HAL_TIM_Base_Start_IT(&htim5);
-//  HAL_TIM_Base_Start_IT(&htim12);
-//  TIM1->CCR2 = 0;
-//  TIM2->CCR3 = 0;
+  HAL_TIM_Base_Start_IT(&htim12);
+  TIM1->CCR2 = 0;
+  TIM2->CCR3 = 0;
   TIM3->CCR1 = 0;
-//  TIM4->CCR3 = 0;
-//  TIM15->CCR2 = 0;
-//  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-//  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-//  HAL_TIM_Base_Start(&htim4);
+  TIM4->CCR3 = 0;
+  TIM15->CCR2 = 0;
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-//  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
-//  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
 
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
-//  HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
-//  StepDriveRad(1, 6.23);
-//  volatile uint16_t x;
-//  uint16_t lastValue;
+  HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
+
+//  uint16_t x;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -588,6 +709,18 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+//		HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_SET);
+//		HAL_UART_Transmit(&huart4, &encoder_address[1], sizeof(encoder_address[1]), 100);
+//		HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_RESET);
+//		HAL_UART_Receive(&huart4, (uint8_t *) &abs_position, 2, 100);
+//		abs_position = abs_position & 0x3FFF;
+//		if(x != abs_position)
+//		{
+//			x = abs_position;
+//			printf("%u\n", abs_position);
+//		}
+
 //	  if(State_Checksum_Error)
 //	  {
 //		  State_Checksum_Error = 0;
@@ -635,26 +768,41 @@ int main(void)
 ////		  HAL_TIM_Base_Start_IT(&htim12);
 //		  State_Casade_Control_Timer = 0;
 //	  }
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-	  StepStop(STEPJ3);
-	  HAL_Delay(3000);
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-	  StepDriveRad(STEPJ3, 7.00);
-	  HAL_Delay(1000);
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-	  StepStop(STEPJ3);
-	  HAL_Delay(3000);
-	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-	  StepDriveRad(STEPJ3, -7.00);
-	  HAL_Delay(1000);
+
+
+
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	  StepStop(STEPJ3);
+//	  HAL_Delay(3000);
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	  StepDriveRad(STEPJ3, 7.00);
+//	  HAL_Delay(5000);
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	  StepStop(STEPJ3);
+//	  HAL_Delay(3000);
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+//	  StepDriveRad(STEPJ3, -7.00);
+//	  HAL_Delay(10000);
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	  StepStop(STEPJ3);
+//	  HAL_Delay(3000);
+//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	  StepDriveRad(STEPJ3, 7.00);
+//	  HAL_Delay(5000);
+	  printf("%.3f\n", rad);
+	  HAL_Delay(100);
   }
   return 0;
   /* USER CODE END 3 */
@@ -1092,7 +1240,8 @@ static void MX_TIM5_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM5_Init 2 */
-
+//  HAL_NVIC_SetPriority(TIM5_IRQn, 0, 1);
+//    HAL_NVIC_EnableIRQ(TIM5_IRQn);
   /* USER CODE END TIM5_Init 2 */
 
 }
@@ -1130,7 +1279,8 @@ static void MX_TIM12_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM12_Init 2 */
-
+//  HAL_NVIC_SetPriority(TIM8_BRK_TIM12_IRQn, 0, 1);
+//    HAL_NVIC_EnableIRQ(TIM8_BRK_TIM12_IRQn);
   /* USER CODE END TIM12_Init 2 */
 
 }
@@ -1227,7 +1377,7 @@ static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 9600;
+  huart4.Init.BaudRate = 115200;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -1364,6 +1514,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : Blue_Button_Pin */
   GPIO_InitStruct.Pin = Blue_Button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -1405,6 +1558,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI3_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : UART4_DE_Pin */
+  GPIO_InitStruct.Pin = UART4_DE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(UART4_DE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LM5_Pin */
   GPIO_InitStruct.Pin = LM5_Pin;
@@ -1559,9 +1719,8 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if(GPIO_Pin == LM1_Pin || GPIO_Pin == LM2_Pin || GPIO_Pin == LM3_Pin || GPIO_Pin == LM4_Pin || GPIO_Pin == LM5_Pin || GPIO_Pin == Blue_Button_Pin)
+	if(GPIO_Pin == LM1_Pin || GPIO_Pin == LM2_Pin || GPIO_Pin == LM3_Pin || GPIO_Pin == LM4_Pin || GPIO_Pin == LM5_Pin)
 	{
-
 		  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
 		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
@@ -1594,14 +1753,54 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 *
 	 */
   /* Timer5 Interrupt PID Position Control*/
-  if (htim == &htim5)
+  if (htim->Instance == TIM5)
   {
+	  rad = rad + (float)(1.0f / 2000.0f);
 
   }
   /* Timer12 Interrupt Trajectory*/
-  if (htim == &htim12)
+  if (htim->Instance == TIM12)
   {
+	    float t_2 = t*t;
+	    float t_3 = t_2 * t;
+	    float Goal_position_x = C0x + (C2x*t_2) - (C3x*t_3);
+	    float Goal_position_y = C0y + (C2y*t_2) - (C3y*t_3);
+	    float Goal_velocity_x = (2*C2x*t) - (3 * C3x*t_2);
+	    float Goal_velocity_y = (2*C2y*t) - (3 * C3y*t_2);
 
+	    // X
+//	    IPK_findChessBot(Goal_position_x, Goal_position_y, 0, 0);
+	    rad = rad + (float)(1.0f / 20000.0f);
+//	    printf("%.3f\n", rad);
+
+//	    if ( > 10000.0) {
+//			Driver_motor_X((int) 10000);
+//		} else if (Output_velcont[0] < -10000.0) {
+//			Driver_motor_X((int) - 10000);
+//		} else {
+//			Driver_motor_X((int) Output_velcont[0]);
+//		}
+//
+//		if (Output_velcont[1] > 10000.0) {
+//			Driver_motor_Y((int) 10000);
+//		} else if (Output_velcont[1] < -10000.0) {
+//			Driver_motor_Y((int) - 10000);
+//		} else {
+//			Driver_motor_Y((int) Output_velcont[1]);
+//		}
+
+	    if (t != T)
+	    {
+	        t = t + sample_time;
+	    }
+	    else
+	    {
+	    	t = T;
+	    	C0x = Goal_position_x;
+	    	C0y = Goal_position_y;
+//	    	HAL_TIM_Base_Stop_IT(&htim12);
+	        // Stop Control Loop
+	    }
   }
 }
 /* USER CODE END 4 */
@@ -1613,6 +1812,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)

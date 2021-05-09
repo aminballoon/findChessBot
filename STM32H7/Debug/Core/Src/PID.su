@@ -1,0 +1,15 @@
+PID.c:10:6:PID_Init	16	static
+PID.c:28:6:PID	48	static
+PID.c:47:6:PID2	56	static
+PID.c:53:9:PID_Compute	56	static
+PID.c:139:6:PID_SetMode	24	static
+PID.c:153:17:PID_GetMode	16	static
+PID.c:159:6:PID_SetOutputLimits	32	static
+PID.c:201:6:PID_SetTunings	40	static
+PID.c:205:6:PID_SetTunings2	48	static
+PID.c:244:15:PID_SetControllerDirection	16	static
+PID.c:259:15:PID_GetDirection	16	static
+PID.c:265:6:PID_SetSampleTime	24	static
+PID.c:285:8:PID_GetKp	16	static
+PID.c:289:8:PID_GetKi	16	static
+PID.c:293:8:PID_GetKd	16	static
