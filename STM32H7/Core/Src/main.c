@@ -167,7 +167,10 @@ float q_s[5], q_g[5], theta_q[5], ang_pos[5], ang_vel[5], ang_acc[5];
 float C0x = 0.705,C2x,C3x,C0y,C2y,C3y;
 float T;
 float t = 0.;
-
+/*
+ * PID Initialization Function
+ * Updated : 22 Mar 2021
+ * */
 void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd){
 	_PID->Kp = _Kp;
 	_PID->Ki = _Ki;
@@ -178,7 +181,10 @@ void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminl
 	_PID->I_MaxLimit = _Imaxlimit;
 	_PID->DeadBand = _Ddbd;
 }
-
+/*
+ * PID Calculate Function
+ * Updated : 22 Mar 2021
+ * */
 float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 	static float Previous_Err = 0;
 	float Err = _setPoint - _inputValue;
@@ -217,7 +223,7 @@ float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 //}
 /*
  * Inverse Pose Kinematic Function
- * Updated : 18 Mar 2021 16:44
+ * Updated : 22 Mar 2021
  * */
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
 {
@@ -269,7 +275,7 @@ void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
 
 /*
  * Coefficient of Trajectory Generation Function
- * Updated : 18 Mar 2021 16:44
+ * Updated : 20 Mar 2021
  * */
 void Update_Coff(int x1,int y1,int x2,int y2,float Time)
 {
@@ -527,10 +533,11 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-
-//  HAL_TIM_Base_Start_IT(&htim5);
-//  HAL_TIM_Base_Start_IT(&htim12);
+  PIDInit(&PID_Joint1, 1, 1, 1, -7, 7, 0);
+  PIDInit(&PID_Joint2, 1, 1, 1, -7, 7, 0);
+  PIDInit(&PID_Joint3, 1, 1, 1, -7, 7, 0);
   PIDInit(&PID_Joint4, 1, 1, 1, -7, 7, 0);
+
   TIM1->CCR2 = 0;
   TIM2->CCR3 = 0;
   TIM3->CCR1 = 0;
@@ -546,7 +553,6 @@ int main(void)
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
 
-//  uint16_t x;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -556,17 +562,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-//		HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_SET);
-//		HAL_UART_Transmit(&huart4, &encoder_address[1], sizeof(encoder_address[1]), 100);
-//		HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_RESET);
-//		HAL_UART_Receive(&huart4, (uint8_t *) &abs_position, 2, 100);
-//		abs_position = abs_position & 0x3FFF;
-//		if(x != abs_position)
-//		{
-//			x = abs_position;
-//			printf("%u\n", abs_position);
-//		}
 
 	  if(State_Checksum_Error)
 	  {
@@ -1530,10 +1525,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, BUFFSIZE);
 	}
 }
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-
-}
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == LM1_Pin || GPIO_Pin == LM2_Pin || GPIO_Pin == LM3_Pin || GPIO_Pin == LM4_Pin || GPIO_Pin == LM5_Pin)
@@ -1579,12 +1570,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* Timer5 Interrupt for PID Position Control.*/
   if (htim->Instance == TIM5)
   {
-
+	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
+	    q_s[0] = q_s[0] + theta_q[0];
+	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
+	    q_s[1] = q_s[1] + theta_q[1];
+	    StepDriveRad(3, PIDCalculate(&PID_Joint3, q[2], q_s[2]));
+	    q_s[2] = q_s[2] + theta_q[2];
+	    StepDriveRad(4, PIDCalculate(&PID_Joint4, q[3], q_s[3]));
+	    q_s[3] = q_s[3] + theta_q[3];
   }
   /* Timer12 Interrupt for Trajectory Generation.*/
   if (htim->Instance == TIM12)
   {
 	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+
 	    float t_2 = t*t;
 	    float t_3 = t_2 * t;
 	    float Goal_position_x = C0x + (C2x*t_2) - (C3x*t_3);
