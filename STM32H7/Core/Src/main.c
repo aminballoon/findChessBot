@@ -31,6 +31,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 /* PID Structure */
 typedef struct findchessPID_t
 {
@@ -59,6 +60,7 @@ typedef struct findchessTaskspace_t{
 	float Z;
 	float endEffYaw;
 } findchessTaskspace_t;
+findchessPID_t PID_Joint1, PID_Joint2, PID_Joint3, PID_Joint4, PID_JointGripper;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -78,7 +80,6 @@ typedef struct findchessTaskspace_t{
 #define ACK_ProcessIsCompleted_Address (uint8_t)0xAD
 #define ACK_CheckSumError_Address (uint8_t)0xEE
 
-float sample_time = 0.0005; // 2000 hz
 #define pi 3.1412
 /* USER CODE END PD */
 
@@ -141,10 +142,9 @@ static void MX_CRC_Init(void);
 /* USER CODE BEGIN 0 */
 void Update_Coff(int x1,int y1,int x2,int y2,float Time);
 void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd);
-float PIDcalculate(findchessPID_t *_PID, float _setPoint, float _inputValue);
+float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue);
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
 void StepDriveRad(char _ch, double _ang_v);
-void StepDriveRPS(char _ch, double _rps);
 void StepStop(char _ch);
 bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
@@ -158,12 +158,15 @@ bool State_Casade_Control_Timer;
 
 uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 
+float sample_time = 0.0005; // 2 khz
 float q[4] = {0.,0.,0.,0.};
-float rad;
-float C0x,C2x,C3x,C0y,C2y,C3y;
+float dq[4] = {0.,0.,0.,0.};
+float ddq[4] = {0.,0.,0.,0.};
+float task_space[4] = {0.,0.,0.,0.};
+float q_s[5], q_g[5], theta_q[5], ang_pos[5], ang_vel[5], ang_acc[5];
+float C0x = 0.705,C2x,C3x,C0y,C2y,C3y;
 float T;
 float t = 0.;
-
 
 void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd){
 	_PID->Kp = _Kp;
@@ -176,7 +179,7 @@ void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminl
 	_PID->DeadBand = _Ddbd;
 }
 
-float PIDcalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
+float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 	static float Previous_Err = 0;
 	float Err = _setPoint - _inputValue;
 	if (fabs(Err) < _PID->DeadBand){
@@ -204,7 +207,18 @@ float PIDcalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 //{
 //	return
 //}
-
+//float *FVK(float _q[4])
+//{
+//	return
+//}
+//float *FAK(float _q[4])
+//{
+//	return
+//}
+/*
+ * Inverse Pose Kinematic Function
+ * Updated : 18 Mar 2021 16:44
+ * */
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
 {
 	const float l1 = 0.020, l2 = 0.370, l3 = 0.315,
@@ -239,7 +253,7 @@ void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
         printf("Out of range for q4\n");
 		return;
     }*/
-    q[0] = q1;
+	q[0] = q1;
 	q[1] = Z + h4 - h3 - h1;
 	q[2] = q3;
 	q[3] = endEff_Yaw - q1 - q3;
@@ -254,7 +268,7 @@ void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
 //}
 
 /*
- * Coefficient of Trajectory Function
+ * Coefficient of Trajectory Generation Function
  * Updated : 18 Mar 2021 16:44
  * */
 void Update_Coff(int x1,int y1,int x2,int y2,float Time)
@@ -278,51 +292,7 @@ void Update_Coff(int x1,int y1,int x2,int y2,float Time)
  * Polling RS485-Encoder Communication Non-void Function
  * Updated : 18 Mar 2021 16:44
  * */
-/*volatile uint16_t RS485Encoder(uint8_t _addr)
-{
 
-	volatile uint8_t _buff[2];
-	volatile uint8_t checkbit_odd[7], checkbit_even[7];
-	volatile char checkbit_odd_result, checkbit_even_result;
-//	static uint16_t POSCNT;
-//	HAL_UART_Transmit(&huart4, (uint8_t *) &_addr, 2, 100);
-	HAL_UART_Receive(&huart4, (uint8_t *) &_buff, 2, 100);
-//	if(HAL_UART_Receive(&huart4, _buff, 2, 100) == HAL_OK) // Check received data is completed.
-//	{
-
-
-		for (register int i = 0; i < 7; i++)
-		{
-			if(i < 3){
-			  checkbit_odd[i] = (_buff[1] >> (7-(2*(i+1)))) & 0x01;
-			  checkbit_even[i] = (_buff[1] >> (6-(2*(i+1)))) & 0x01;
-			}
-			else{
-			  checkbit_odd[i] = (_buff[0] >> (7-(2*(i-3)))) & 0x01;
-			  checkbit_even[i] = (_buff[0] >> (6-(2*(i-3)))) & 0x01;
-			}
-			checkbit_odd_result ^= checkbit_odd[i];
-			checkbit_even_result ^= checkbit_even[i];
-		}
-
-		checkbit_odd_result = !checkbit_odd_result;
-		checkbit_even_result = !checkbit_even_result;
-
-		return (uint16_t)(((uint16_t)_buff[0]) + ((((uint16_t)_buff[1]) & 0x3F) << 8));
-		if(checkbit_odd_result == ((_buff[1] >> 7) & 0x01) && (checkbit_even_result) == ((_buff[1] >> 6) & 0x01)) //  If checksum is correct.
-		{
-			return POSCNT;
-		}
-		else
-		{
-			return -1;
-		}
-}
-void RS485ResetEncoder(uint8_t _address)
-{
-	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x02), 1, 1);
-	HAL_UART_Transmit(&huart4, ((uint8_t *) &_address + (uint8_t)0x0A), 1, 1);
-}*/
 /*
  * Stepper motor driving function (Radian input)
  * Updated : 18 Mar 2021 16:44
@@ -333,6 +303,7 @@ void StepDriveRad(char _ch, double _ang_v)
 	{
 		case STEPJ1:
 		{
+			ang_vel[0] = _ang_v;
 			/* Direction of Joint1's Stepper Motor */
 			if(_ang_v < 0)
 			{
@@ -357,6 +328,7 @@ void StepDriveRad(char _ch, double _ang_v)
 		}
 		case STEPJ2:
 		{
+			ang_vel[1] = _ang_v;
 			/* Direction of Joint2's Stepper Motor */
 			if(_ang_v < 0)
 			{
@@ -381,6 +353,7 @@ void StepDriveRad(char _ch, double _ang_v)
 		}
 		case STEPJ3:
 		{
+			ang_vel[2] = _ang_v;
 			/* Direction of Joint3's Stepper Motor */
 			if(_ang_v < 0)
 			{
@@ -405,6 +378,7 @@ void StepDriveRad(char _ch, double _ang_v)
 		}
 		case STEPJ4:
 		{
+			ang_vel[3] = _ang_v;
 			/* Direction of Joint4's Stepper Motor */
 			if(_ang_v < 0)
 			{
@@ -429,6 +403,7 @@ void StepDriveRad(char _ch, double _ang_v)
 		}
 		case STEPGripper:
 		{
+			ang_vel[4] = _ang_v;
 			/* Direction of Gripper's Stepper Motor */
 			if(_ang_v < 0)
 			{
@@ -458,166 +433,37 @@ void StepDriveRad(char _ch, double _ang_v)
 	}
 
 }
-/*
- * Stepper motor driving function (RPS input)
- * Updated : 18 Mar 2021 16:44
- * */
-void StepDriveRPS(char _ch, double _rps)
-{
-	switch(_ch)
-	{
-		case STEPJ1:
-		{
-			/* Direction of Joint1's Stepper Motor */
-			if(_rps < 0)
-			{
-				HAL_GPIO_WritePin(DIR_1_GPIO_Port, DIR_1_Pin, GPIO_PIN_SET);
-			}
-			else
-			{
-				HAL_GPIO_WritePin(DIR_1_GPIO_Port, DIR_1_Pin, GPIO_PIN_RESET);
-			}
-			/* Angular Velocity of Joint1's Stepper Motor */
-			if(_rps == 0) // To avoid TIM1->ARR is undefined value.
-			{
-				TIM1->CCR2 = 0;
-				TIM1->ARR = 625-1;
-			}
-			else
-			{
-				TIM1->ARR = round(_FCY/(1600*((TIM1->PSC)+1)*abs(_rps))) - 1;
-				TIM1->CCR2 = round(((TIM1->ARR)+1)/2);
-			}
-			break;
-		}
-		case STEPJ2:
-		{
-			/* Direction of Joint2's Stepper Motor */
-			if(_rps < 0)
-			{
-				HAL_GPIO_WritePin(DIR_2_GPIO_Port, DIR_2_Pin, GPIO_PIN_SET);
-			}
-			else
-			{
-				HAL_GPIO_WritePin(DIR_2_GPIO_Port, DIR_2_Pin, GPIO_PIN_RESET);
-			}
-			/* Angular Velocity of Joint2's Stepper Motor */
-			if(_rps == 0) // To avoid TIM2->ARR is undefined value.
-			{
-				TIM2->CCR3 = 0;
-				TIM2->ARR = 625-1;
-			}
-			else
-			{
-				TIM2->ARR = round(_FCY/(1600*((TIM2->PSC)+1)*abs(_rps))) - 1;
-				TIM2->CCR3 = round(((TIM2->ARR)+1)/2);
-			}
-			break;
-		}
-		case STEPJ3:
-		{
-			/* Direction of Joint3's Stepper Motor */
-			if(_rps < 0)
-			{
-				HAL_GPIO_WritePin(DIR_3_GPIO_Port, DIR_3_Pin, GPIO_PIN_SET);
-			}
-			else
-			{
-				HAL_GPIO_WritePin(DIR_3_GPIO_Port, DIR_3_Pin, GPIO_PIN_RESET);
-			}
-			/* Angular Velocity of Joint3's Stepper Motor */
-			if(_rps == 0) // To avoid TIM3->ARR is undefined value.
-			{
-				TIM3->CCR1 = 0;
-				TIM3->ARR = 625-1;
-			}
-			else
-			{
-				TIM3->ARR = round(_FCY/(1600*((TIM3->PSC)+1)*abs(_rps))) - 1;
-				TIM3->CCR1 = round(((TIM3->ARR)+1)/2);
-			}
-			break;
-		}
-		case STEPJ4:
-		{
-			/* Direction of Joint4's Stepper Motor */
-			if(_rps < 0)
-			{
-				HAL_GPIO_WritePin(DIR_4_GPIO_Port, DIR_4_Pin, GPIO_PIN_SET);
-			}
-			else
-			{
-				HAL_GPIO_WritePin(DIR_4_GPIO_Port, DIR_4_Pin, GPIO_PIN_RESET);
-			}
-			/* Angular Velocity of Joint4's Stepper Motor */
-			if(_rps == 0) // To avoid TIM4->ARR is undefined value.
-			{
-				TIM4->CCR3 = 0;
-				TIM4->ARR = 625-1;
-			}
-			else
-			{
-				TIM4->ARR = round(_FCY/(1600*((TIM4->PSC)+1)*abs(_rps))) - 1;
-				TIM4->CCR3 = round(((TIM4->ARR)+1)/2);
-			}
-			break;
-		}
-		case STEPGripper:
-		{
-			/* Direction of Gripper's Stepper Motor */
-			if(_rps < 0)
-			{
-				HAL_GPIO_WritePin(DIR_5_GPIO_Port, DIR_5_Pin, GPIO_PIN_SET);
-			}
-			else
-			{
-				HAL_GPIO_WritePin(DIR_5_GPIO_Port, DIR_5_Pin, GPIO_PIN_RESET);
-			}
-			/* Angular Velocity of Gripper's Stepper Motor */
-			if(_rps == 0) // To avoid TIM2->ARR is undefined value.
-			{
-				TIM15->CCR2 = 0;
-				TIM15->ARR = 625-1;
-			}
-			else
-			{
-				TIM15->ARR = round(_FCY/(1600*((TIM15->PSC)+1)*abs(_rps))) - 1;
-				TIM15->CCR2 = round(((TIM15->ARR)+1)/2);
-			}
-			break;
-		}
-		default:
-		{
-
-		}
-	}
-}
 void StepStop(char _ch)
 {
 	switch(_ch)
 		{
 			case STEPJ1:
 			{
+				ang_vel[0] = 0;
 				TIM1->CCR2 = 0;
 				TIM1->ARR = 625-1;
 			}
 			case STEPJ2:
 			{
+				ang_vel[1] = 0;
 				TIM2->CCR3 = 0;
 				TIM2->ARR = 625-1;
 			}
 			case STEPJ3:
 			{
+				ang_vel[2] = 0;
 				TIM3->CCR1 = 0;
 				TIM3->ARR = 625-1;
 			}
 			case STEPJ4:
 			{
+				ang_vel[3] = 0;
 				TIM4->CCR3 = 0;
 				TIM4->ARR = 625-1;
 			}
 			case STEPGripper:
 			{
+				ang_vel[4] = 0;
 				TIM15->CCR2 = 0;
 				TIM15->ARR = 625-1;
 			}
@@ -627,7 +473,6 @@ void StepStop(char _ch)
 			}
 		}
 }
-
 //uint16_t SPI_Encoder()
 //{
 //
@@ -682,8 +527,10 @@ int main(void)
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
+
 //  HAL_TIM_Base_Start_IT(&htim5);
-  HAL_TIM_Base_Start_IT(&htim12);
+//  HAL_TIM_Base_Start_IT(&htim12);
+  PIDInit(&PID_Joint4, 1, 1, 1, -7, 7, 0);
   TIM1->CCR2 = 0;
   TIM2->CCR3 = 0;
   TIM3->CCR1 = 0;
@@ -721,88 +568,58 @@ int main(void)
 //			printf("%u\n", abs_position);
 //		}
 
-//	  if(State_Checksum_Error)
-//	  {
-//		  State_Checksum_Error = 0;
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_Input_Joint_State)
-//	  {
-//		  State_Input_Joint_State = 0;
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_Print_4_Joint_State)
-//	  {
-//		  State_Print_4_Joint_State = 0;
-////		  printf("\n%3d %3d %3d %3d\n\r", q1, q2, q3, q4);
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_Activate_Gripper)
-//	  {
-//		  State_Activate_Gripper = 0;
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_Deactivate_Gripper)
-//	  {
-//		  State_Deactivate_Gripper = 0;
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_Set_Home)
-//	  {
-//		  State_Set_Home = 0;
-//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-//	  }
-//	  if(State_PID_Control_Timer)
-//	  {
-////		  HAL_TIM_Base_Start_IT(&htim5);
-//		  State_PID_Control_Timer = 0;
-//	  }
-//	  if(State_Casade_Control_Timer)
-//	  {
-////		  HAL_TIM_Base_Start_IT(&htim12);
-//		  State_Casade_Control_Timer = 0;
-//	  }
-
-
-
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-//	  StepStop(STEPJ3);
-//	  HAL_Delay(3000);
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-//	  StepDriveRad(STEPJ3, 7.00);
-//	  HAL_Delay(5000);
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-//	  StepStop(STEPJ3);
-//	  HAL_Delay(3000);
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-//	  StepDriveRad(STEPJ3, -7.00);
-//	  HAL_Delay(10000);
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-//	  StepStop(STEPJ3);
-//	  HAL_Delay(3000);
-//	  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-//	  StepDriveRad(STEPJ3, 7.00);
-//	  HAL_Delay(5000);
-	  printf("%.3f\n", rad);
-	  HAL_Delay(100);
+	  if(State_Checksum_Error)
+	  {
+		  State_Checksum_Error = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Input_Joint_State)
+	  {
+		  State_Input_Joint_State = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Print_4_Joint_State)
+	  {
+		  State_Print_4_Joint_State = 0;
+		  printf("q1 = %.3f, q2 = %.3f, q3 = %.3f, q4 = %.3f\n", q[0],q[1],q[2],q[3]);
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Activate_Gripper)
+	  {
+		  State_Activate_Gripper = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Deactivate_Gripper)
+	  {
+		  State_Deactivate_Gripper = 0;
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_Set_Home)
+	  {
+		  State_Set_Home = 0;
+		  for(register int i = 0; i < 4; i++){
+		      q[i] = 0;
+		    }
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+	  }
+	  if(State_PID_Control_Timer)
+	  {
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+		  State_PID_Control_Timer = 0;
+	  }
+	  if(State_Casade_Control_Timer)
+	  {
+		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+		  State_Casade_Control_Timer = 0;
+	  }
   }
   return 0;
   /* USER CODE END 3 */
@@ -1736,6 +1553,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		  Error_Handler();
 
 	}
+	if(GPIO_Pin == Blue_Button_Pin)
+	  {
+		UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ReceivedData_Address;
+		HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+		T += 3;
+		HAL_TIM_Base_Start_IT(&htim12);
+	  }
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -1752,38 +1576,46 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	 * HAL_TIM_Base_Stop_IT(&htim5);
 	 *
 	 */
-  /* Timer5 Interrupt PID Position Control*/
+  /* Timer5 Interrupt for PID Position Control.*/
   if (htim->Instance == TIM5)
   {
-	  rad = rad + (float)(1.0f / 2000.0f);
 
   }
-  /* Timer12 Interrupt Trajectory*/
+  /* Timer12 Interrupt for Trajectory Generation.*/
   if (htim->Instance == TIM12)
   {
+	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 	    float t_2 = t*t;
 	    float t_3 = t_2 * t;
 	    float Goal_position_x = C0x + (C2x*t_2) - (C3x*t_3);
 	    float Goal_position_y = C0y + (C2y*t_2) - (C3y*t_3);
-	    float Goal_velocity_x = (2*C2x*t) - (3 * C3x*t_2);
-	    float Goal_velocity_y = (2*C2y*t) - (3 * C3y*t_2);
+//	    float Goal_velocity_x = (2*C2x*t) - (3 * C3x*t_2);
+//	    float Goal_velocity_y = (2*C2y*t) - (3 * C3y*t_2);
 
-	    // X
-//	    IPK_findChessBot(Goal_position_x, Goal_position_y, 0, 0);
-	    rad = rad + (float)(1.0f / 20000.0f);
-//	    printf("%.3f\n", rad);
+	    // Inverse Pose Kinematics
+	    IPK_findChessBot(Goal_position_x, Goal_position_y, 0, 0);
 
+	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
+	    q_s[0] = q_s[0] + theta_q[0];
+	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
+	    q_s[1] = q_s[1] + theta_q[1];
+	    StepDriveRad(3, PIDCalculate(&PID_Joint3, q[2], q_s[2]));
+	    q_s[2] = q_s[2] + theta_q[2];
+	    StepDriveRad(4, PIDCalculate(&PID_Joint4, q[3], q_s[3]));
+	    q_s[3] = q_s[3] + theta_q[3];
 
-	    if (t != T)
+	    if (t < T)
 	    {
 	        t = t + sample_time;
 	    }
 	    else
 	    {
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 	    	t = T;
 	    	C0x = Goal_position_x;
 	    	C0y = Goal_position_y;
-//	    	HAL_TIM_Base_Stop_IT(&htim12);
+	    	HAL_TIM_Base_Stop_IT(&htim12);
+	    	State_Casade_Control_Timer = 1;
 	        // Stop Control Loop
 	    }
   }
