@@ -81,6 +81,9 @@ findchessPID_t PID_Joint1, PID_Joint2, PID_Joint3, PID_Joint4, PID_JointGripper;
 #define ACK_CheckSumError_Address (uint8_t)0xEE
 
 #define pi 3.1412
+
+#define RES12           (uint8_t)0x0C
+#define RES14           (uint8_t)0x0E
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -103,9 +106,12 @@ TIM_HandleTypeDef htim12;
 TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart4;
+UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_uart4_rx;
 DMA_HandleTypeDef hdma_uart4_tx;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart2_tx;
 DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
@@ -128,6 +134,7 @@ static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 #ifdef __GNUC__
 /* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
@@ -136,6 +143,20 @@ static void MX_CRC_Init(void);
 #else
 #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
+/** Usable for printf function **/
+/**
+ * @brief Retargets the C library printf function to the USART.
+ * @param None
+ * @retval None
+ */
+PUTCHAR_PROTOTYPE
+{
+ /* Place your implementation of fputc here */
+ /* e.g. write a character to the USART2 and Loop until the end of transmission */
+ HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+
+return ch;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -158,6 +179,7 @@ bool State_Casade_Control_Timer;
 
 uint8_t UART3_RXBUFFER[4], UART3_TXBUFFER_ACK[1];
 
+float POSCNT[4] = {0.,0.,0.,0.};
 float sample_time = 0.0005; // 2 khz
 float q[4] = {0.,0.,0.,0.};
 float dq[4] = {0.,0.,0.,0.};
@@ -167,6 +189,145 @@ float q_s[5], q_g[5], theta_q[5], ang_pos[5], ang_vel[5], ang_acc[5];
 float C0x = 0.705,C2x,C3x,C0y,C2y,C3y;
 float T;
 float t = 0.;
+
+void delayMicroseconds(uint32_t us)
+{
+    __IO uint32_t currentTicks = SysTick->VAL;
+  /* Number of ticks per millisecond */
+  const uint32_t tickPerMs = SysTick->LOAD + 1;
+  /* Number of ticks to count */
+  const uint32_t nbTicks = ((us - ((us > 0) ? 1 : 0)) * tickPerMs) / 1000;
+  /* Number of elapsed ticks */
+  uint32_t elapsedTicks = 0;
+  __IO uint32_t oldTicks = currentTicks;
+  do {
+    currentTicks = SysTick->VAL;
+    elapsedTicks += (oldTicks < currentTicks) ? tickPerMs + oldTicks - currentTicks :
+                    oldTicks - currentTicks;
+    oldTicks = currentTicks;
+  } while (nbTicks > elapsedTicks);
+}
+/*
+ * CRC16 Checksum for RS485 Modbus RTU Communication
+ * Updated : 20 May 2021
+ * */
+uint16_t CRC16(uint8_t *buf, int len) {
+  uint16_t crc = 0xFFFF;
+  for (uint16_t pos = 0; pos < len; pos++) {
+    crc ^= (uint16_t)buf[pos];        // XOR byte into least sig. byte of crc
+    for (int i = 8; i != 0; i--) {    // Loop over each bit
+      if ((crc & 0x0001) != 0) {      // If the LSB is set
+        crc >>= 1;                    // Shift right and XOR 0xA001
+        crc ^= 0xA001;
+      } else {                        // Else LSB is not set
+        crc >>= 1;                    // Just shift right
+      }
+    }
+  }
+
+  return crc;
+}
+
+/*
+ *
+ * This function gets the absolute position from the AMT21 encoder using the RS485. The AMT21 position includes 2 checkbits to use
+ * for position verification. Both 12-bit and 14-bit encoders transfer position via two bytes, giving 16-bits regardless of resolution.
+ * For 12-bit encoders the position is left-shifted two bits, leaving the right two bits as zeros. This gives the impression that the encoder
+ * is actually sending 14-bits, when it is actually sending 12-bit values, where every number is multiplied by 4.
+ * This function takes the pin number of the desired device as an input
+ * This funciton expects res12 or res14 to properly format position responses.
+ * Error values are returned as 0xFFFF
+ *
+ * AMT21 Encoder with RS485 Modbus RTU Communication Function
+ * Updated : 20 May 2021
+ * */
+uint16_t AMT21_getPositionModbusRTU(uint8_t _device_addr, uint8_t resolution) {
+  volatile uint8_t _dat[3] = {0,0,0};
+  uint16_t currentPosition = 0;       //16-bit response from encoder;
+  bool binaryArray[16];
+  uint8_t buff[8] = {
+    (uint8_t)_device_addr, // Devices Address
+    (uint8_t)0x04, // Function code
+    (uint8_t)0x00, // Start Address HIGH
+    (uint8_t)0x01, // Start Address LOW
+    (uint8_t)0x00, // Quantity HIGH
+    (uint8_t)0x01, // Quantity LOW
+    (uint8_t)0x00, // CRC LOW
+    (uint8_t)0x00  // CRC HIGH
+  };
+  uint16_t crc = CRC16(&buff[0], 6);
+  buff[6] = (uint8_t)(crc & 0xFF);
+  buff[7] = (uint8_t)((crc >> 8) & 0xFF);
+  HAL_UART_Transmit(&huart4, buff, 8, 1000);
+  delayMicroseconds(30);
+  HAL_UART_Receive(&huart4, (uint8_t *) &_dat, 3, 100);
+  if(_dat[0] != 2){
+      currentPosition = 0xFFFF;
+      return currentPosition;
+    }
+  currentPosition = (currentPosition | _dat[1]) << 8;
+  currentPosition = currentPosition | _dat[2];
+  for(int i = 0; i < 16; i++){
+      binaryArray[i] = (0x01) & (currentPosition >> (i));
+  }
+  if ((binaryArray[15] == !(binaryArray[13] ^ binaryArray[11] ^ binaryArray[9] ^ binaryArray[7] ^ binaryArray[5] ^ binaryArray[3] ^ binaryArray[1]))
+          && (binaryArray[14] == !(binaryArray[12] ^ binaryArray[10] ^ binaryArray[8] ^ binaryArray[6] ^ binaryArray[4] ^ binaryArray[2] ^ binaryArray[0])))
+    {
+      //we got back a good position, so just mask away the checkbits
+      currentPosition = currentPosition & 0x3FFF;
+    }
+  else
+  {
+    currentPosition = 0xFFFF; //bad position
+  }
+  if ((resolution == RES12) && (currentPosition != 0xFFFF)){
+      currentPosition = currentPosition >> 2;
+  }
+  return currentPosition;
+}
+
+/*
+ *
+ * This function gets the absolute position from the AMT21 encoder using the RS485. The AMT21 position includes 2 checkbits to use
+ * for position verification. Both 12-bit and 14-bit encoders transfer position via two bytes, giving 16-bits regardless of resolution.
+ * For 12-bit encoders the position is left-shifted two bits, leaving the right two bits as zeros. This gives the impression that the encoder
+ * is actually sending 14-bits, when it is actually sending 12-bit values, where every number is multiplied by 4.
+ * This function takes the pin number of the desired device as an input
+ * This funciton expects res12 or res14 to properly format position responses.
+ * Error values are returned as 0xFFFF
+ *
+ * AMT21 Encoder with RS485 Communication Function
+ * Updated : 20 May 2021
+ * */
+uint16_t AMT21_getPositionRS485(uint8_t _device_addr, uint8_t resolution){
+//  uint16_t _dat;
+  volatile uint8_t rawData[2];
+  uint16_t currentPosition = 0;       //16-bit response from encoder;
+  bool binaryArray[16];
+  uint8_t buff[1] = {(uint8_t)_device_addr};
+  HAL_UART_Transmit(&huart4, buff, 1, 100);
+  delayMicroseconds(30);
+  HAL_UART_Receive(&huart4, (uint8_t *) &rawData, 2, 100);
+  currentPosition = (rawData[0] << 8) | rawData[1];
+  for(int i = 0; i < 16; i++){
+      binaryArray[i] = (0x01) & (currentPosition >> (i));
+  }
+  if ((binaryArray[15] == !(binaryArray[13] ^ binaryArray[11] ^ binaryArray[9] ^ binaryArray[7] ^ binaryArray[5] ^ binaryArray[3] ^ binaryArray[1]))
+          && (binaryArray[14] == !(binaryArray[12] ^ binaryArray[10] ^ binaryArray[8] ^ binaryArray[6] ^ binaryArray[4] ^ binaryArray[2] ^ binaryArray[0])))
+    {
+      //we got back a good position, so just mask away the checkbits
+      currentPosition = currentPosition & 0x3FFF;
+    }
+  else
+  {
+    currentPosition = 0xFFFF; //bad position
+  }
+  if ((resolution == RES12) && (currentPosition != 0xFFFF)){
+      currentPosition = currentPosition >> 2;
+  }
+  return currentPosition;
+}
+
 /*
  * PID Initialization Function
  * Updated : 22 Mar 2021
@@ -209,7 +370,7 @@ float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 	Previous_Err = Err;
 	return output;
 }
-//float *FPK(float _q[4])
+//float FPK(float _q[4])
 //{
 //	return
 //}
@@ -221,6 +382,7 @@ float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue){
 //{
 //	return
 //}
+//void Jacobian
 /*
  * Inverse Pose Kinematic Function
  * Updated : 22 Mar 2021
@@ -264,14 +426,14 @@ void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw)
 	q[2] = q3;
 	q[3] = endEff_Yaw - q1 - q3;
 }
-//void IVK()
-//{
-//
-//}
-//void IAK()
-//{
-//
-//}
+void IVK()
+{
+
+}
+void IAK()
+{
+
+}
 
 /*
  * Coefficient of Trajectory Generation Function
@@ -525,6 +687,7 @@ int main(void)
   MX_TIM15_Init();
   MX_TIM12_Init();
   MX_CRC_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 //  uint8_t encoder_address[5] = {0xA4, 0xB4, 0xC4, 0xD4, 0x54};
 //  uint16_t abs_position = 0;
@@ -553,6 +716,12 @@ int main(void)
   __HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   HAL_UART_Receive_IT(&huart3, UART3_RXBUFFER, 4);
 
+  //create a 16 bit variable to hold the encoders position
+  uint16_t encoderPosition;
+  //let's also create a variable where we can count how many times we've tried to obtain the position in case there are errors
+  uint8_t attempts;
+//    uint8_t _addr[1] = {0x54};
+//    uint16_t _temp = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -563,59 +732,106 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  if(State_Checksum_Error)
-	  {
-		  State_Checksum_Error = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Input_Joint_State)
-	  {
-		  State_Input_Joint_State = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Print_4_Joint_State)
-	  {
-		  State_Print_4_Joint_State = 0;
-		  printf("q1 = %.3f, q2 = %.3f, q3 = %.3f, q4 = %.3f\n", q[0],q[1],q[2],q[3]);
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Activate_Gripper)
-	  {
-		  State_Activate_Gripper = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Deactivate_Gripper)
-	  {
-		  State_Deactivate_Gripper = 0;
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_Set_Home)
-	  {
-		  State_Set_Home = 0;
-		  for(register int i = 0; i < 4; i++){
-		      q[i] = 0;
-		    }
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-	  }
-	  if(State_PID_Control_Timer)
-	  {
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-		  State_PID_Control_Timer = 0;
-	  }
-	  if(State_Casade_Control_Timer)
-	  {
-		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
-		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-		  State_Casade_Control_Timer = 0;
-	  }
+	attempts = 0;
+
+          //this function gets the encoder position and returns it as a uint16_t
+          //send the function either res12 or res14 for your encoders resolution
+          encoderPosition = AMT21_getPositionModbusRTU((uint8_t)0x54, RES14);
+
+          //if the position returned was 0xFFFF we know that there was an error calculating the checksum
+          //make 3 attempts for position. we will pre-increment attempts because we'll use the number later and want an accurate count
+          while (encoderPosition == 0xFFFF && ++attempts < 3)
+          {
+              encoderPosition = AMT21_getPositionModbusRTU((uint8_t)0x54, RES14); //try again
+          }
+
+          if (encoderPosition == 0xFFFF) //position is bad, let the user know how many times we tried
+          {
+            printf("Encoder 0 error. Attempts: %d\n", attempts); //print out the number in decimal format. attempts - 1 is used since we post incremented the loop
+          }
+          else //position was good, print to serial stream
+          {
+
+              printf("Encoder 0: %d\n", encoderPosition); //print out the number in decimal format. attempts - 1 is used since we post incremented the loop
+          }
+          HAL_Delay(500);
+//	  if(State_Checksum_Error)
+//	  {
+//		  State_Checksum_Error = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_CheckSumError_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Input_Joint_State)
+//	  {
+//		  State_Input_Joint_State = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Print_4_Joint_State)
+//	  {
+//		  State_Print_4_Joint_State = 0;
+//		  printf("q1 = %.3f, q2 = %.3f, q3 = %.3f, q4 = %.3f\n", q[0],q[1],q[2],q[3]);
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Activate_Gripper)
+//	  {
+//		  State_Activate_Gripper = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Deactivate_Gripper)
+//	  {
+//		  State_Deactivate_Gripper = 0;
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_Set_Home)
+//	  {
+//		  State_Set_Home = 0;
+//		  for(register int i = 0; i < 4; i++){
+//		      q[i] = 0;
+//		    }
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//	  }
+//	  if(State_PID_Control_Timer)
+//	  {
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//		  State_PID_Control_Timer = 0;
+//	  }
+//	  if(State_Casade_Control_Timer)
+//	  {
+//		  UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ProcessIsCompleted_Address;
+//		  HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
+//		  State_Casade_Control_Timer = 0;
+//	  }
+//      HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//      HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//
+//	StepStop(3);
+//	HAL_Delay(5000);
+//
+//      HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//      HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//
+//	StepDriveRad(3, 3.00);
+//	HAL_Delay(400);
+//	      HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//	      HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+//	StepStop(3);
+//	HAL_Delay(5000);
+//	      HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+//	      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//	      HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+//	StepDriveRad(3, -3.00);
+//	HAL_Delay(400);
   }
+
   return 0;
   /* USER CODE END 3 */
 }
@@ -1222,6 +1438,54 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -1286,6 +1550,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
@@ -1400,21 +1670,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/** Usable for printf function **/
-/**
- * @brief Retargets the C library printf function to the USART.
- * @param None
- * @retval None
- */
-PUTCHAR_PROTOTYPE
-{
- /* Place your implementation of fputc here */
- /* e.g. write a character to the USART2 and Loop until the end of transmission */
- HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
-
-return ch;
-}
-
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart == &huart3)
@@ -1548,8 +1803,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	  {
 		UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ReceivedData_Address;
 		HAL_UART_Transmit(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1, 100);
-		T += 3;
-		HAL_TIM_Base_Start_IT(&htim12);
+		//		T += 3;
+//		HAL_TIM_Base_Start_IT(&htim12);
 	  }
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -1570,6 +1825,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* Timer5 Interrupt for PID Position Control.*/
   if (htim->Instance == TIM5)
   {
+	    // PID Control Loop
 	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
 	    q_s[0] = q_s[0] + theta_q[0];
 	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
@@ -1584,16 +1840,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
 	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 
+	    // Cubic Trajectory
 	    float t_2 = t*t;
 	    float t_3 = t_2 * t;
-	    float Goal_position_x = C0x + (C2x*t_2) - (C3x*t_3);
-	    float Goal_position_y = C0y + (C2y*t_2) - (C3y*t_3);
-//	    float Goal_velocity_x = (2*C2x*t) - (3 * C3x*t_2);
-//	    float Goal_velocity_y = (2*C2y*t) - (3 * C3y*t_2);
+	    float Goal_position_x = C0x + (C2x*t_2) + (C3x*t_3);
+	    float Goal_position_y = C0y + (C2y*t_2) + (C3y*t_3);
+//	    float Goal_velocity_x = (2*C2x*t) + (3 * C3x*t_2);
+//	    float Goal_velocity_y = (2*C2y*t) + (3 * C3y*t_2);
+
+	    // Circle Trajectory
+
 
 	    // Inverse Pose Kinematics
 	    IPK_findChessBot(Goal_position_x, Goal_position_y, 0, 0);
 
+	    // Inverse Velocity Kinematics
+	    IVK();
+
+	    // Inverse Acceleration Kinematics
+	    IAK();
+
+	    // Casade Control Loop
 	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
 	    q_s[0] = q_s[0] + theta_q[0];
 	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
@@ -1603,6 +1870,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	    StepDriveRad(4, PIDCalculate(&PID_Joint4, q[3], q_s[3]));
 	    q_s[3] = q_s[3] + theta_q[3];
 
+	    // Sample time 0.0005 seconds
 	    if (t < T)
 	    {
 	        t = t + sample_time;
