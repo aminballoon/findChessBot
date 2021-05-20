@@ -23,23 +23,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   9 .ARM.attributes 0000002e  00000000  00000000  000301e8  2**0
                   CONTENTS, READONLY
- 10 .debug_info   000240b5  00000000  00000000  00030216  2**0
+ 10 .debug_info   000241c3  00000000  00000000  00030216  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 11 .debug_abbrev 000039b4  00000000  00000000  000542cb  2**0
+ 11 .debug_abbrev 000039ee  00000000  00000000  000543d9  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_aranges 00001468  00000000  00000000  00057c80  2**3
+ 12 .debug_aranges 00001480  00000000  00000000  00057dc8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_ranges 00001368  00000000  00000000  000590e8  2**3
+ 13 .debug_ranges 00001380  00000000  00000000  00059248  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_macro  00038da7  00000000  00000000  0005a450  2**0
+ 14 .debug_macro  00038da7  00000000  00000000  0005a5c8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_line   00019e90  00000000  00000000  000931f7  2**0
+ 15 .debug_line   00019f08  00000000  00000000  0009336f  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_str    00167dd2  00000000  00000000  000ad087  2**0
+ 16 .debug_str    00167e0c  00000000  00000000  000ad277  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .comment      00000053  00000000  00000000  00214e59  2**0
+ 17 .comment      00000053  00000000  00000000  00215083  2**0
                   CONTENTS, READONLY
- 18 .debug_frame  000067f4  00000000  00000000  00214eac  2**2
+ 18 .debug_frame  00006868  00000000  00000000  002150d8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -446,10 +446,10 @@ return ch;
  80006a8:	20000460 	.word	0x20000460
 
 080006ac <delayMicroseconds>:
-float C0x = 0.705,C2x,C3x,C0y,C2y,C3y;
-float T;
-float t = 0.;
-
+      long x = map(dutycycle, 0, 100, 0, 100);
+      TIM15->CCR2 = x;
+  }
+}
 void delayMicroseconds(uint32_t us)
 {
  80006ac:	b480      	push	{r7}

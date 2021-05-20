@@ -161,12 +161,19 @@ return ch;
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+long map(long x, long in_min, long in_max, long out_min, long out_max);
+double mapf(double val, double in_min, double in_max, double out_min, double out_max);
 void Update_Coff(int x1,int y1,int x2,int y2,float Time);
 void PIDInit(findchessPID_t *_PID, float _Kp, float _Ki, float _Kd, float _Iminlimit, float _Imaxlimit, float _Ddbd);
 float PIDCalculate(findchessPID_t *_PID, float _setPoint, float _inputValue);
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
 void StepDriveRad(char _ch, double _ang_v);
+void servoGripper(long dutycycle);
 void StepStop(char _ch);
+void delayMicroseconds(uint32_t us);
+uint16_t CRC16(uint8_t *buf, int len);
+uint16_t AMT21_getPositionModbusRTU(uint8_t _device_addr, uint8_t resolution);
+uint16_t AMT21_getPositionRS485(uint8_t _device_addr, uint8_t resolution);
 bool State_Input_Joint_State;
 bool State_Print_4_Joint_State;
 bool State_Print_Gripper_State;
@@ -190,6 +197,23 @@ float C0x = 0.705,C2x,C3x,C0y,C2y,C3y;
 float T;
 float t = 0.;
 
+long map(long x, long in_min, long in_max, long out_min, long out_max) {
+ return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
+    return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+void servoGripper(long dutycycle)
+{
+  if(dutycycle == -1)
+  {
+      TIM15->CCR2 = 0;
+  }
+  else{
+      long x = map(dutycycle, 0, 100, 0, 100);
+      TIM15->CCR2 = x;
+  }
+}
 void delayMicroseconds(uint32_t us)
 {
     __IO uint32_t currentTicks = SysTick->VAL;
