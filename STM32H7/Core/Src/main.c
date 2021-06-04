@@ -205,13 +205,13 @@ double mapf(double val, double in_min, double in_max, double out_min, double out
 }
 void servoGripper(long dutycycle)
 {
-  if(dutycycle == -1)
+  if(dutycycle >= 0 && dutycycle <= 180)
   {
-      TIM15->CCR2 = 0;
+      long x = map(dutycycle, 0, 180, 0, 100);
+      TIM15->CCR2 = x;
   }
   else{
-      long x = map(dutycycle, 0, 100, 0, 100);
-      TIM15->CCR2 = x;
+      TIM15->CCR2 = 0;
   }
 }
 void delayMicroseconds(uint32_t us)
