@@ -60,11 +60,11 @@ extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim12;
 extern DMA_HandleTypeDef hdma_uart4_rx;
 extern DMA_HandleTypeDef hdma_uart4_tx;
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
+extern DMA_HandleTypeDef hdma_uart7_tx;
 extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart3;
 /* USER CODE BEGIN EV */
 
@@ -209,6 +209,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 stream0 global interrupt.
+  */
+void DMA1_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart7_tx);
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream1 global interrupt.
   */
 void DMA1_Stream1_IRQHandler(void)
@@ -237,6 +251,20 @@ void DMA1_Stream2_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream3 global interrupt.
+  */
+void DMA1_Stream3_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart4_rx);
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream4 global interrupt.
   */
 void DMA1_Stream4_IRQHandler(void)
@@ -244,24 +272,10 @@ void DMA1_Stream4_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
 
   /* USER CODE END DMA1_Stream4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  HAL_DMA_IRQHandler(&hdma_uart4_tx);
   /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */
 
   /* USER CODE END DMA1_Stream4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 stream5 global interrupt.
-  */
-void DMA1_Stream5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 1 */
 }
 
 /**
@@ -272,8 +286,8 @@ void EXTI9_5_IRQHandler(void)
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
   /* USER CODE END EXTI9_5_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+  HAL_GPIO_EXTI_IRQHandler(STEP_5_Pin);
+  HAL_GPIO_EXTI_IRQHandler(LM3_Pin);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
   /* USER CODE END EXTI9_5_IRQn 1 */
@@ -301,10 +315,10 @@ void EXTI15_10_IRQHandler(void)
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
 
   /* USER CODE END EXTI15_10_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
+  HAL_GPIO_EXTI_IRQHandler(LM2_Pin);
+  HAL_GPIO_EXTI_IRQHandler(LM1_Pin);
+  HAL_GPIO_EXTI_IRQHandler(Blue_Button_Pin_Pin);
+  HAL_GPIO_EXTI_IRQHandler(DIR_1_Pin);
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */
 
   /* USER CODE END EXTI15_10_IRQn 1 */
@@ -353,34 +367,20 @@ void UART4_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream0 global interrupt.
+  * @brief This function handles UART7 global interrupt.
   */
-void DMA2_Stream0_IRQHandler(void)
+void UART7_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA2_Stream0_IRQn 0 */
+  /* USER CODE BEGIN UART7_IRQn 0 */
 
-  /* USER CODE END DMA2_Stream0_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_uart4_rx);
-  /* USER CODE BEGIN DMA2_Stream0_IRQn 1 */
+  /* USER CODE END UART7_IRQn 0 */
+  HAL_UART_IRQHandler(&huart7);
+  /* USER CODE BEGIN UART7_IRQn 1 */
 
-  /* USER CODE END DMA2_Stream0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 stream1 global interrupt.
-  */
-void DMA2_Stream1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_uart4_tx);
-  /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream1_IRQn 1 */
+  /* USER CODE END UART7_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
