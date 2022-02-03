@@ -1,1 +1,1 @@
-Core/Src/CircleTrajectory.o: ../Core/Src/CircleTrajectory.c
+Core/Src/CircleTrajectory.o: ../Core/Src/CircleTrajectory.cpp

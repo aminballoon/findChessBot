@@ -27,7 +27,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
-
+//#if __cplusplus
+//using namespace std;
+//#include <iostream>
+//#endif
 #include "AMT21.h"
 #include "Stepper.h"
 #include "Actuator.h"
@@ -72,7 +75,7 @@ DMA_HandleTypeDef hdma_usart3_rx;
 DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
-
+uint32_t TIM_MS = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,62 +95,47 @@ static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 static void MX_UART7_Init(void);
 /* USER CODE BEGIN PFP */
-#ifdef __GNUC__
-/* With GCC/RAISONANCE, small printf (option LD Linker->Libraries->Small printf
- set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
-/** Usable for printf function **/
-/**
- * @brief Retargets the C library printf function to the USART.
- * @param None
- * @retval None
- */
-PUTCHAR_PROTOTYPE {
-	/* Place your implementation of fputc here */
-	/* e.g. write a character to the USART2 and Loop until the end of transmission */
-	HAL_UART_Transmit(&huart3, (uint8_t*) &ch, 1, 1);
-
-	return ch;
+#if defined(__GNUC__)
+int _write(int fd, char * ptr, int len)
+{
+  HAL_UART_Transmit(&huart3, (uint8_t *) ptr, len, HAL_MAX_DELAY);
+  return len;
 }
+#elif defined (__ICCARM__)
+#include "LowLevelIOInterface.h"
+size_t __write(int handle, const unsigned char * buffer, size_t size)
+{
+  HAL_UART_Transmit(&huart3, (uint8_t *) buffer, size, HAL_MAX_DELAY);
+  return size;
+}
+#elif defined (__CC_ARM)
+int fputc(int ch, FILE *f)
+{
+    HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
+#endif
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-long map(long x, long in_min, long in_max, long out_min, long out_max);
-double mapf(double val, double in_min, double in_max, double out_min,
-		double out_max);
 void Update_Coff(int x1, int y1, int x2, int y2, float Time);
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
-void StepDriveRad(char _ch, double _ang_v);
-void servoGripper(long dutycycle);
-void StepStop(char _ch);
 uint16_t CRC16(uint8_t *buf, int len);
-uint16_t AMT21_getPositionModbusRTU(uint8_t _device_addr, uint8_t resolution);
-uint16_t AMT21_getPositionRS485(uint8_t _device_addr, uint8_t resolution);
-
-long map(long x, long in_min, long in_max, long out_min, long out_max) {
-	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-double mapf(double val, double in_min, double in_max, double out_min,
-		double out_max) {
-	return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-void servoGripper(long dutycycle) {
-	if (dutycycle >= 0 && dutycycle <= 180) {
-		long x = map(dutycycle, 0, 180, 0, 100);
-		TIM15->CCR2 = x;
-	} else {
-		TIM15->CCR2 = 0;
-	}
-}
 #ifdef __cplusplus
+//using namespace std;
+AMT21 encoderJ1(&huart4, 0xD4);
+AMT21 encoderJ3(&huart4, 0xC4);
 Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
-Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
+//Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
+
+//Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
+//Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
 Stepper stepperJ3(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
-Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
+//Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
+HAL_StatusTypeDef HALENCJ1OK,HALENCJ3OK;
+uint16_t posJ1, posJ3;
 #endif
 /* USER CODE END 0 */
 
@@ -196,51 +184,49 @@ int main(void)
 
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
 
 	#ifdef __cplusplus
-//	stepperJ1.StepperSetFrequency(0);
-	stepperJ1.StepperSetMicrostep(8);
+	stepperJ1.StepperSetFrequency(400.0f);
+	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(1);
-//	stepperJ1.StepperOpenLoopSpeed(0.0f);
 	stepperJ1.StepperEnable();
 
-//	stepperJ2.StepperSetFrequency(20.0f);
-	stepperJ2.StepperSetMicrostep(8);
-	stepperJ2.StepperSetRatio(1);
-//	stepperJ2.StepperOpenLoopSpeed(-3.14f);
-	stepperJ2.StepperEnable();
+//	stepperJ2.StepperSetMicrostep(1);
+//	stepperJ2.StepperSetRatio(1);
 
-//	stepperJ3.StepperSetFrequency(2000.0f);
-	stepperJ3.StepperSetMicrostep(8);
+	stepperJ3.StepperSetFrequency(800.0f);
+	stepperJ3.StepperSetMicrostep(16);
 	stepperJ3.StepperSetRatio(1);
-//	stepperJ3.StepperOpenLoopSpeed(0.07853981635f);
 	stepperJ3.StepperEnable();
 
-//	stepperJ4.StepperSetFrequency(20000.0f);
-	stepperJ4.StepperSetMicrostep(8);
-	stepperJ4.StepperSetRatio(1);
-//	stepperJ4.StepperOpenLoopSpeed(-80.00f);
-	stepperJ4.StepperEnable();
+//	stepperJ4.StepperSetMicrostep(1);
+//	stepperJ4.StepperSetRatio(1);
 	#endif
 
-	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
-	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
+	HAL_UART_Transmit_DMA(&huart3, (const uint8_t *)"A\n", 2);
+//	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
+//	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-//	  AMT21_read_value(&encoderJ3);
-//	  	  HAL_StatusTypeDef rep = AMT21_check_value(&encoderJ3);
-//	  	  if (rep == HAL_ERROR){
-////	  		  err_count++;
-//	  	  }
-//	  	  else {
-//	  		  printf("encoder value = %d \n", encoderJ3.position);
-//	  		  pos = encoderJ3.position;
-//	  	  }
-
+		if(HAL_GetTick() - TIM_MS > 200U){
+			TIM_MS = HAL_GetTick();
+			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+		}
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if(HALENCJ1OK == HAL_OK){
+			posJ1 = encoderJ1.getPosition();
+		}
+		encoderJ3.AMT21_Read();
+		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		if(HALENCJ3OK == HAL_OK){
+			posJ3 = encoderJ3.getPosition();
+		}
 	}
     /* USER CODE END WHILE */
 
@@ -930,15 +916,15 @@ static void MX_USART3_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_8_8) != HAL_OK)
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart3, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_8_8) != HAL_OK)
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart3, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_EnableFifoMode(&huart3) != HAL_OK)
+  if (HAL_UARTEx_DisableFifoMode(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1072,10 +1058,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
@@ -1104,13 +1090,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 //		  Error_Handler();
 //
 //	}
-//	if(GPIO_Pin == Blue_Button_Pin_Pin)
-//	  {
-//		UART3_TXBUFFER_ACK[0] = (uint8_t)ACK_ReceivedData_Address;
-//		HAL_UART_Transmit_IT(&huart3, (uint8_t *)UART3_TXBUFFER_ACK, 1);
-	//		T += 3;
-//		HAL_TIM_Base_Start_IT(&htim12);
-//	  }
+	if(GPIO_Pin == Blue_Button_Pin_Pin)
+	  {
+//		HAL_GPIO_WritePin(LD1_GPIO_Port, GPIO_Pin, PinState)
+	  }
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	/*
@@ -1192,9 +1175,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //	  HAL_UART_Transmit_DMA(&huart7, (uint8_t *) &pos, 2);
 //  }
 	if (htim == &htim12) {
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-//		HAL_UART_Transmit_DMA(&huart7, (uint8_t*) UART3_RXBUFFER,
-//				sizeof(UART3_RXBUFFER));
+//		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+////		HAL_UART_Transmit_DMA(&huart7, (uint8_t*) UART3_RXBUFFER,
+////				sizeof(UART3_RXBUFFER));
 	}
 }
 /* USER CODE END 4 */

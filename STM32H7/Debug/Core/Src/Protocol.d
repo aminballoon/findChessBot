@@ -1,1 +1,1 @@
-Core/Src/Protocol.o: ../Core/Src/Protocol.c
+Core/Src/Protocol.o: ../Core/Src/Protocol.cpp

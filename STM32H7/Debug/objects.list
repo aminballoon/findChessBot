@@ -3,6 +3,7 @@
 "./Core/Src/CircleTrajectory.o"
 "./Core/Src/Controller.o"
 "./Core/Src/Protocol.o"
+"./Core/Src/ServoMotor.o"
 "./Core/Src/Stepper.o"
 "./Core/Src/main.o"
 "./Core/Src/stm32h7xx_hal_msp.o"

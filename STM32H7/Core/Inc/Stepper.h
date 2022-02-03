@@ -1,7 +1,7 @@
 /*
  * Stepper.h
  *
- *  Created on: 29 ม.ค. 2565
+ *  Created on: Jan 29, 2022
  *      Author: SakuranohanaTH
  */
 
@@ -16,7 +16,7 @@ extern "C" {
 #include "stm32h7xx_hal.h" // include for STM32H7xx HAL
 
 /*
- * Remember
+ * Note
  *
  * TIM1 - Channel 2 Stepper Joint 1
  * TIM2 - Channel 3 Stepper Joint 2
@@ -28,7 +28,7 @@ extern "C" {
 
 class Stepper {	// THIS CLASS, ENABLE PIN IS OFF AS DEFAULT!!!
     public:
-        Stepper(TIM_HandleTypeDef *_htim, uint32_t _TIMER_CHANNEL, GPIO_TypeDef *_DIRPort, uint32_t _DIRPin);
+        Stepper(TIM_HandleTypeDef *_stepper_htim, uint32_t _STEPPER_TIM_CHANNEL, GPIO_TypeDef *_DIRPort, uint32_t _DIRPin);
         ~Stepper();
         void        StepperEnable(void);
         void        StepperDisable(void);
@@ -37,9 +37,10 @@ class Stepper {	// THIS CLASS, ENABLE PIN IS OFF AS DEFAULT!!!
         void        StepperSetRatio(float _ratio);
         void        StepperSetMicrostep(uint8_t _microstep);
         void        StepperOpenLoopSpeed(float speed); //open-loop speed rad/s
+        float		getFrequency();
     private:
-        TIM_HandleTypeDef *htim;
-        uint32_t	TIM_CHANNEL;
+        TIM_HandleTypeDef *stepper_htim;
+        uint32_t	STEPPER_TIM_CHANNEL;
         GPIO_TypeDef *DIRPort;
         uint32_t	DIRPin;
         float       frequency; 		//	Hz

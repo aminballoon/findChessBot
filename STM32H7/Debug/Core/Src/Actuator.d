@@ -1,1 +1,1 @@
-Core/Src/Actuator.o: ../Core/Src/Actuator.c
+Core/Src/Actuator.o: ../Core/Src/Actuator.cpp

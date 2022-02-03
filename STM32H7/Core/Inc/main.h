@@ -112,7 +112,9 @@ void Error_Handler(void);
 #define LD2_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
 #define _FCY 240000000U 	// Fixed APB1 and APB2 Clock Timer for Stepper Motor and Servo Motor
-#define _PSC 200U			// Fixed pre-scaler for Stepper Motor Only
+#define _PSC_STEPPER_MOTOR 200U			// Fixed pre-scaler for Stepper Motor Only
+#define _PSC_SERVO_MOTOR 240U
+#define _ARR_SERVO_MOTOR 20000U
 
 #define CONTROLLER_SAMPLING_T   0.01f
 #define JOINTSTATE_SAMPLING_T   0.2f
