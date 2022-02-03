@@ -26,7 +26,7 @@ void AMT21::AMT21_Read(){
 }
 
 HAL_StatusTypeDef AMT21::AMT21_Check_Value(){
-	uint16_t position_temp = this->uart_buf & 0x3FFF;
+	uint16_t raw_value_temp = this->uart_buf & 0x3FFF;
 	uint8_t k0_check = this->uart_buf & 0x0001;
 	uint8_t k1_check = (this->uart_buf >> 1) & 0x0001;
 	for (uint8_t i = 0; i < 6; i++) {
@@ -37,15 +37,24 @@ HAL_StatusTypeDef AMT21::AMT21_Check_Value(){
 	k0_check = !k0_check;
 	k1_check = !k1_check;
 	if ((this->k0 == k0_check) && (this->k1 == k1_check)) {
-		this->position = position_temp;
+		this->raw_value = raw_value_temp;
 		return HAL_OK;
 	} else {
-		this->position = 0;
+		this->raw_value = 0;
 		return HAL_ERROR;
 	}
 }
 
-uint16_t AMT21::getPosition()
+uint16_t AMT21::getRawValue()
 {
-	return this->position;
+	return this->raw_value;
+}
+
+int16_t AMT21::getAngPos180()
+{
+//	uint8_t iii =  (this->raw_value & 0x1FFF);
+	return ((((this->raw_value & 0x2000) >> 13) * (-16383)) + (this->raw_value & 0x3FFF) );
+//	return this->raw_value;
+//	this->value =
+//	return iii;
 }

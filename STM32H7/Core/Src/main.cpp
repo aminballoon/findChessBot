@@ -62,6 +62,8 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim12;
 TIM_HandleTypeDef htim15;
 
@@ -94,12 +96,13 @@ static void MX_TIM15_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 static void MX_UART7_Init(void);
+static void MX_TIM6_Init(void);
+static void MX_TIM7_Init(void);
 /* USER CODE BEGIN PFP */
 #if defined(__GNUC__)
-int _write(int fd, char * ptr, int len)
-{
-  HAL_UART_Transmit(&huart3, (uint8_t *) ptr, len, HAL_MAX_DELAY);
-  return len;
+int _write(int fd, char *ptr, int len) {
+	HAL_UART_Transmit(&huart3, (uint8_t*) ptr, len, HAL_MAX_DELAY);
+	return len;
 }
 #elif defined (__ICCARM__)
 #include "LowLevelIOInterface.h"
@@ -134,8 +137,8 @@ Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
 Stepper stepperJ3(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
-HAL_StatusTypeDef HALENCJ1OK,HALENCJ3OK;
-uint16_t posJ1, posJ3;
+HAL_StatusTypeDef HALENCJ1OK, HALENCJ3OK;
+volatile int16_t posJ1, posJ3;
 #endif
 /* USER CODE END 0 */
 
@@ -180,13 +183,15 @@ int main(void)
   MX_TIM12_Init();
   MX_CRC_Init();
   MX_UART7_Init();
+  MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
 
-	#ifdef __cplusplus
+#ifdef __cplusplus
 	stepperJ1.StepperSetFrequency(400.0f);
 	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(1);
@@ -195,16 +200,19 @@ int main(void)
 //	stepperJ2.StepperSetMicrostep(1);
 //	stepperJ2.StepperSetRatio(1);
 
-	stepperJ3.StepperSetFrequency(800.0f);
+	stepperJ3.StepperSetFrequency(400.0f);
 	stepperJ3.StepperSetMicrostep(16);
 	stepperJ3.StepperSetRatio(1);
 	stepperJ3.StepperEnable();
 
 //	stepperJ4.StepperSetMicrostep(1);
 //	stepperJ4.StepperSetRatio(1);
-	#endif
+#endif
 
-	HAL_UART_Transmit_DMA(&huart3, (const uint8_t *)"A\n", 2);
+	HAL_TIM_Base_Start_IT(&htim5);
+	HAL_TIM_Base_Start_IT(&htim6);
+	HAL_TIM_Base_Start_IT(&htim7);
+//	HAL_UART_Transmit_DMA(&huart3, (const uint8_t *)"A\n", 2);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   /* USER CODE END 2 */
@@ -212,21 +220,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		if(HAL_GetTick() - TIM_MS > 200U){
-			TIM_MS = HAL_GetTick();
-			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-			HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-		}
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if(HALENCJ1OK == HAL_OK){
-			posJ1 = encoderJ1.getPosition();
-		}
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if(HALENCJ3OK == HAL_OK){
-			posJ3 = encoderJ3.getPosition();
-		}
 	}
     /* USER CODE END WHILE */
 
@@ -676,6 +669,82 @@ static void MX_TIM5_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 200-1;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 1200-1;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 200-1;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 2000-1;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
+}
+
+/**
   * @brief TIM12 Initialization Function
   * @param None
   * @retval None
@@ -1090,10 +1159,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 //		  Error_Handler();
 //
 //	}
-	if(GPIO_Pin == Blue_Button_Pin_Pin)
-	  {
+//	if (GPIO_Pin == Blue_Button_Pin_Pin) {
 //		HAL_GPIO_WritePin(LD1_GPIO_Port, GPIO_Pin, PinState)
-	  }
+//	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	/*
@@ -1110,74 +1178,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	 *
 	 */
 	/* Timer5 Interrupt for PID Position Control.*/
-//  if (htim->Instance == TIM5)
-//  {
-//	    // PID Control Loop
-//	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
-//	    q_s[0] = q_s[0] + theta_q[0];
-//	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
-//	    q_s[1] = q_s[1] + theta_q[1];
-//	    StepDriveRad(3, PIDCalculate(&PID_Joint3, q[2], q_s[2]));
-//	    q_s[2] = q_s[2] + theta_q[2];
-//	    StepDriveRad(4, PIDCalculate(&PID_Joint4, q[3], q_s[3]));
-//	    q_s[3] = q_s[3] + theta_q[3];
-//  }
-//  /* Timer12 Interrupt for Trajectory Generation.*/
-//  if (htim == &htim12)
-//  {
-//	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//
-//	    // Cubic Trajectory
-//	    float t_2 = t*t;
-//	    float t_3 = t_2 * t;
-//	    float Goal_position_x = C0x + (C2x*t_2) + (C3x*t_3);
-//	    float Goal_position_y = C0y + (C2y*t_2) + (C3y*t_3);
-////	    float Goal_velocity_x = (2*C2x*t) + (3 * C3x*t_2);
-////	    float Goal_velocity_y = (2*C2y*t) + (3 * C3y*t_2);
-//
-//	    // Circle Trajectory
-//
-//
-//	    // Inverse Pose Kinematics
-//	    IPK_findChessBot(Goal_position_x, Goal_position_y, 0, 0);
-//
-//	    // Inverse Velocity Kinematics
-//	    IVK();
-//
-//	    // Inverse Acceleration Kinematics
-//	    IAK();
-//
-//	    // Casade Control Loop
-//	    StepDriveRad(1, PIDCalculate(&PID_Joint1, q[0], q_s[0]));
-//	    q_s[0] = q_s[0] + theta_q[0];
-//	    StepDriveRad(2, PIDCalculate(&PID_Joint2, q[1], q_s[1]));
-//	    q_s[1] = q_s[1] + theta_q[1];
-//	    StepDriveRad(3, PIDCalculate(&PID_Joint3, q[2], q_s[2]));
-//	    q_s[2] = q_s[2] + theta_q[2];
-//	    StepDriveRad(4, PIDCalculate(&PID_Joint4, q[3], q_s[3]));
-//	    q_s[3] = q_s[3] + theta_q[3];
-//
-//	    // Sample time 0.0005 seconds
-//	    if (t < T)
-//	    {
-//	        t = t + sample_time;
-//	    }
-//	    else
-//	    {
-//		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//	    	t = T;
-//	    	C0x = Goal_position_x;
-//	    	C0y = Goal_position_y;
-//	    	HAL_TIM_Base_Stop_IT(&htim12);
-//	    	State_Casade_Control_Timer = 1;
-//	        // Stop Control Loop
-//	    }
-//	  HAL_UART_Transmit_DMA(&huart7, (uint8_t *) &pos, 2);
-//  }
-	if (htim == &htim12) {
-//		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-////		HAL_UART_Transmit_DMA(&huart7, (uint8_t*) UART3_RXBUFFER,
-////				sizeof(UART3_RXBUFFER));
+	if (htim == &htim6) {
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if (HALENCJ1OK == HAL_OK) {
+			posJ1 = encoderJ1.getAngPos180();
+		}
+		encoderJ3.AMT21_Read();
+		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		if (HALENCJ3OK == HAL_OK) {
+			posJ3 = encoderJ3.getAngPos180();
+		}
 	}
 }
 /* USER CODE END 4 */

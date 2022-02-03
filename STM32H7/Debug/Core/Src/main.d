@@ -35,7 +35,7 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
- ../Core/Inc/AMT21.h ../Core/Inc/Stepper.h ../Core/Inc/main.h \
+ ../Core/Inc/AMT21.h ../Core/Inc/main.h ../Core/Inc/Stepper.h \
  ../Core/Inc/Actuator.h
 
 ../Core/Inc/main.h:
@@ -114,8 +114,8 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 
 ../Core/Inc/AMT21.h:
 
-../Core/Inc/Stepper.h:
-
 ../Core/Inc/main.h:
+
+../Core/Inc/Stepper.h:
 
 ../Core/Inc/Actuator.h:
