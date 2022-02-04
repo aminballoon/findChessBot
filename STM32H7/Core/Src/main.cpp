@@ -138,7 +138,24 @@ Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 Stepper stepperJ3(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ3OK;
-volatile int16_t posJ1, posJ3;
+volatile float b1,b2,b3,b4;
+volatile int16_t posJ1, posJ3 ;
+volatile int32_t setpointJ1, setpointJ3;
+volatile float errorJ1, errorJ3;
+volatile float uJ1, uJ3, chess_board_ang;
+#define L1 0.013245
+#define L2 0.370
+#define L3 0.315
+#define L12 0.383245
+#define H1 0.125
+#define H3 0.065
+#define H4 0.190
+
+struct joint_state {
+    float q1,q2,q3,q4;
+};
+typedef struct joint_state joint_config;
+
 #endif
 /* USER CODE END 0 */
 
@@ -192,7 +209,7 @@ int main(void)
 	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
 
 #ifdef __cplusplus
-	stepperJ1.StepperSetFrequency(400.0f);
+	stepperJ1.StepperSetFrequency(0.);
 	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(1);
 	stepperJ1.StepperEnable();
@@ -200,7 +217,7 @@ int main(void)
 //	stepperJ2.StepperSetMicrostep(1);
 //	stepperJ2.StepperSetRatio(1);
 
-	stepperJ3.StepperSetFrequency(400.0f);
+	stepperJ3.StepperSetFrequency(0.);
 	stepperJ3.StepperSetMicrostep(16);
 	stepperJ3.StepperSetRatio(1);
 	stepperJ3.StepperEnable();
@@ -1136,6 +1153,31 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear_z, float gripper_angular_yaw)
+{
+	float C3 = (gripper_linear_x*gripper_linear_x)+(gripper_linear_y*gripper_linear_y)-(L12*L12)-(L3*L3) / (2*L12*L3);
+	float S3 = sqrt(1-(C3*C3));
+	float q3 =  atan2(S3,C3);
+
+	float L3S3 = L3*S3;
+	float L123C3 = L12 + (L3*C3);
+
+	float S1 = (-L3S3*gripper_linear_x) + (L123C3*gripper_linear_y);
+	float C1 = (L3S3*gripper_linear_y) + (L123C3*gripper_linear_x);
+	float q1 = atan2(S1,C1);
+	float q4 = gripper_angular_yaw - q1 - q3;
+	float q2 = gripper_linear_z + H4 - H3 - H1;
+
+	joint_config buff;
+	buff.q1 = q1;
+	buff.q2 = 0;
+	buff.q3 = q3;
+	buff.q4 = 0;
+
+    return buff;
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 //	if (huart == &huart3) {
 //		HAL_UART_Transmit_DMA(&huart3, UART3_RXBUFFER, 9);
@@ -1178,6 +1220,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	 *
 	 */
 	/* Timer5 Interrupt for PID Position Control.*/
+
 	if (htim == &htim6) {
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
@@ -1190,6 +1233,54 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			posJ3 = encoderJ3.getAngPos180();
 		}
 	}
+//	stepperJ1.StepperSetFrequency(200.0f);
+//	stepperJ3.StepperSetFrequency(200.0f)		;
+
+	const float KP_J1 = -2;
+	const float Kp_J3 = -6;
+
+	joint_config findchessbot_joint_state;
+//	findchessbot_joint_state = find_IK(0.4, 0, 0, 0);
+	findchessbot_joint_state = find_IK(
+			0.247*cos(chess_board_ang+0.785)+0.42744,
+			0.247*sin(chess_board_ang+0.785)+0.00059371,
+					0,
+					0);
+	chess_board_ang = (chess_board_ang + 0.000348) ;
+//	printf("%f\t%f\n",findchessbot_joint_state.q1,findchessbot_joint_state.q3);
+	setpointJ1 = findchessbot_joint_state.q1 * 2607;
+	setpointJ3 = findchessbot_joint_state.q3 * 2607;
+	b1 = findchessbot_joint_state.q1;
+	b2 = findchessbot_joint_state.q2;
+	b3 = findchessbot_joint_state.q3;
+	b4 = findchessbot_joint_state.q4;
+	errorJ1 = posJ1 - setpointJ1;
+	errorJ3 = posJ3 - setpointJ3 ;
+
+
+	uJ1 = (KP_J1 * errorJ1);
+	uJ3 = (Kp_J3 * errorJ3);
+//	stepperJ3.StepperSetFrequency(-1200.0f);
+
+	#ifdef __cplusplus
+	if (fabs(errorJ1)> 50.0)
+	{
+		stepperJ1.StepperSetFrequency(uJ1);
+	}
+	else
+	{
+		stepperJ1.StepperSetFrequency(0);
+	}
+	if (fabs(errorJ3) > 50.0)
+	{
+		stepperJ3.StepperSetFrequency(uJ3);
+	}
+	else
+	{
+	stepperJ3.StepperSetFrequency(0);
+	}
+	#endif
+
 }
 /* USER CODE END 4 */
 

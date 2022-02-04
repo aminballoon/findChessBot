@@ -53,7 +53,7 @@ uint16_t AMT21::getRawValue()
 int16_t AMT21::getAngPos180()
 {
 //	uint8_t iii =  (this->raw_value & 0x1FFF);
-	return ((((this->raw_value & 0x2000) >> 13) * (-16383)) + (this->raw_value & 0x3FFF) );
+	return ((((this->raw_value & 0x2000) >> 13) * (-16383)) + (this->raw_value & 0x3FFF) ) * -1;
 //	return this->raw_value;
 //	this->value =
 //	return iii;
