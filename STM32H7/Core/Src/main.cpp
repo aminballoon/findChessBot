@@ -65,6 +65,7 @@ TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim12;
+TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart4;
@@ -93,11 +94,12 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM15_Init(void);
-static void MX_TIM12_Init(void);
 static void MX_CRC_Init(void);
 static void MX_UART7_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM7_Init(void);
+static void MX_TIM12_Init(void);
+static void MX_TIM13_Init(void);
 /* USER CODE BEGIN PFP */
 #if defined(__GNUC__)
 int _write(int fd, char *ptr, int len) {
@@ -175,22 +177,16 @@ typedef struct joint_state joint_config;
 
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	/*
-	 * Default of Sampling Frequency : 2kHz.
-	 *
-	 * How to change frequency as follows:
-	 * Change on TIMx's ARR Register (Input is frequency).
-	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
-	 *
-	 * How to Start/Stop Timer Interrupt
-	 * Use function
-	 * HAL_TIM_Base_Start_IT(&htim7);
-	 * HAL_TIM_Base_Stop_IT(&htim7);
-	 *
-	 */
-	/* Timer7 Interrupt for PID Position Control.*/
+	if (htim == &htim5){	// 100 Hz
 
-	if (htim == &htim7) {
+	}
+	if (htim == &htim7){	// 1000 Hz
+
+	}
+	if (htim == &htim12){	// 2000 Hz
+
+	}
+	if (htim == &htim6) { 	// 200 Hz
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
@@ -268,10 +264,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ3.StepperSetFrequency(0);
 //		}
 		#endif
-
 	}
-
-
 }
 
 /* USER CODE END 0 */
@@ -314,16 +307,17 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   MX_TIM15_Init();
-  MX_TIM12_Init();
   MX_CRC_Init();
   MX_UART7_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_TIM12_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
 #ifdef __cplusplus
 	stepperJ1.StepperSetFrequency(0.);
@@ -345,7 +339,7 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim5);
 	HAL_TIM_Base_Start_IT(&htim6);
 	HAL_TIM_Base_Start_IT(&htim7);
-//	HAL_UART_Transmit_DMA(&huart3, (const uint8_t *)"A\n", 2);
+	HAL_TIM_Base_Start_IT(&htim12);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   /* USER CODE END 2 */
@@ -827,7 +821,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 200-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 1200-1;
+  htim6.Init.Period = 6000-1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -865,7 +859,7 @@ static void MX_TIM7_Init(void)
   htim7.Instance = TIM7;
   htim7.Init.Prescaler = 200-1;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 24000-1;
+  htim7.Init.Period = 1200-1;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
@@ -903,9 +897,9 @@ static void MX_TIM12_Init(void)
   htim12.Instance = TIM12;
   htim12.Init.Prescaler = 200-1;
   htim12.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim12.Init.Period = 12000-1;
+  htim12.Init.Period = 600-1;
   htim12.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim12.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim12.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim12) != HAL_OK)
   {
     Error_Handler();
@@ -916,9 +910,39 @@ static void MX_TIM12_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM12_Init 2 */
-//  HAL_NVIC_SetPriority(TIM8_BRK_TIM12_IRQn, 0, 1);
-//    HAL_NVIC_EnableIRQ(TIM8_BRK_TIM12_IRQn);
+
   /* USER CODE END TIM12_Init 2 */
+
+}
+
+/**
+  * @brief TIM13 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM13_Init(void)
+{
+
+  /* USER CODE BEGIN TIM13_Init 0 */
+
+  /* USER CODE END TIM13_Init 0 */
+
+  /* USER CODE BEGIN TIM13_Init 1 */
+
+  /* USER CODE END TIM13_Init 1 */
+  htim13.Instance = TIM13;
+  htim13.Init.Prescaler = 200-1;
+  htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim13.Init.Period = 600-1;
+  htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM13_Init 2 */
+
+  /* USER CODE END TIM13_Init 2 */
 
 }
 
@@ -1295,37 +1319,16 @@ joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripp
 	buff.q1 = q1;
 	buff.q2 = q2;
 	buff.q3 = q3;
-	buff.q4 = q3;
+	buff.q4 = q4;
 
     return buff;
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-//	if (huart == &huart3) {
-//		HAL_UART_Transmit_DMA(&huart3, UART3_RXBUFFER, 9);
-//	}
+
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-//	if(GPIO_Pin == LM1_Pin || GPIO_Pin == LM2_Pin || GPIO_Pin == LM3_Pin || GPIO_Pin == LM4_Pin || GPIO_Pin == LM5_Pin)
-//	{
-//		  HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-//		  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//		  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-//
-//		  HAL_TIM_Base_Stop_IT(&htim5);
-//		  HAL_TIM_Base_Stop_IT(&htim12);
-//
-//		  HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
-//		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_3);
-//		  HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
-//		  HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
-//		  HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_2);
-//		  Error_Handler();
-//
-//	}
-//	if (GPIO_Pin == Blue_Button_Pin_Pin) {
-//		HAL_GPIO_WritePin(LD1_GPIO_Port, GPIO_Pin, PinState)
-//	}
+
 }
 
 /* USER CODE END 4 */
