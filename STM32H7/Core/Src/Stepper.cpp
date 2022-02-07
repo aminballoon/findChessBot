@@ -36,7 +36,7 @@ void Stepper::StepperSetFrequency(float _frequency) {
 	else
 		f = _frequency;
 
-	if (this->frequency > 0.001f && this->frequency != 0.0f) {
+	if (this->frequency > 0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_SET);
 		this->stepper_htim->Instance->ARR = round(
 				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * f)) - 1U);
@@ -79,7 +79,7 @@ void Stepper::StepperSetFrequency(float _frequency) {
 			this->stepper_htim->Instance->CCR6 = 0;
 		}
 
-	} else if (this->frequency < 0.001f && this->frequency != 0.0f) {
+	} else if (this->frequency < 0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_RESET);
 		this->stepper_htim->Instance->ARR = round(
 				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * fabs(f))) - 1U);
@@ -166,13 +166,13 @@ void Stepper::StepperSetMicrostep(uint8_t _microstep) {
 	this->microStep = fabs(_microstep);
 }
 void Stepper::StepperOpenLoopSpeed(float _speed) {
-	if (_speed > -0.07853981634f && _speed < 0.07853981634f) { // upper than abs(-20Hz) and lower than 20Hz
-		this->StepperSetFrequency(0.0f);
-	} else {
+//	if (_speed > -0.07853981634f && _speed < 0.07853981634f) { // upper than abs(-20Hz) and lower than 20Hz
+//		this->StepperSetFrequency(0.0f);
+//	} else {
 		this->StepperSetFrequency(
 				(float) (_speed * this->microStep * this->ratio * this->SPR * 1
 						/ (2.0f * PI)));
-	}
+//	}
 }
 float Stepper::getFrequency()
 {

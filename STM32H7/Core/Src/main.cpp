@@ -129,7 +129,7 @@ uint16_t CRC16(uint8_t *buf, int len);
 #ifdef __cplusplus
 //using namespace std;
 AMT21 encoderJ1(&huart4, 0xD4);
-AMT21 encoderJ3(&huart4, 0xC4);
+//AMT21 encoderJ3(&huart4, 0xC4);
 Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
 
@@ -143,6 +143,8 @@ volatile int16_t posJ1, posJ3 ;
 volatile int32_t setpointJ1, setpointJ3;
 volatile float errorJ1, errorJ3;
 volatile float uJ1, uJ3, chess_board_ang;
+volatile float debug_pos_x, debug_pos_y;
+volatile u_int32_t county;
 #define L1 0.013245
 #define L2 0.370
 #define L3 0.315
@@ -151,12 +153,127 @@ volatile float uJ1, uJ3, chess_board_ang;
 #define H3 0.065
 #define H4 0.190
 
+volatile float t = 0.0;
+volatile const float Time = 3.0;
+
+volatile const float C0_q1 = 6.0;
+volatile const float C2_q1 = 3.0*C0_q1 / Time*Time;
+volatile const float C3_q1 = 2.0*C0_q1 / Time*Time*Time;
+
+volatile const float C0_q3 = 6.0;
+volatile const float C2_q3 = 3.0*C0_q3 / Time*Time;
+volatile const float C3_q3 = 2.0*C0_q3 / Time*Time*Time;
+
+volatile const float sample_time = 0.02;
+volatile bool direction = true;
+volatile float Goal_velocity_q1,Goal_velocity_q3 ;
 struct joint_state {
     float q1,q2,q3,q4;
 };
 typedef struct joint_state joint_config;
-
 #endif
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	/*
+	 * Default of Sampling Frequency : 2kHz.
+	 *
+	 * How to change frequency as follows:
+	 * Change on TIMx's ARR Register (Input is frequency).
+	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
+	 *
+	 * How to Start/Stop Timer Interrupt
+	 * Use function
+	 * HAL_TIM_Base_Start_IT(&htim7);
+	 * HAL_TIM_Base_Stop_IT(&htim7);
+	 *
+	 */
+	/* Timer7 Interrupt for PID Position Control.*/
+
+	if (htim == &htim7) {
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if (HALENCJ1OK == HAL_OK) {
+			posJ1 = encoderJ1.getAngPos180();
+		}
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			posJ3 = encoderJ3.getAngPos180();
+//		}
+
+//	    float t_2 = t*t;
+////	    float Goal_position_x = C0x + (C2x*t_2) - (C3x*t_3);
+////	    float Goal_position_y = C0y + (C2y*t_2) - (C3y*t_3);
+//	    Goal_velocity_q1 = (2.0*C2_q1*t) - (3.0 * C3_q1*t_2);
+//	    Goal_velocity_q3 = (2.0*C2_q3*t) - (3.0 * C3_q3*t_2);
+//
+		t = t + sample_time;
+		if (t>=8.0)
+		{
+			t = 0.0;
+		}
+
+		Goal_velocity_q1 = sin(0.785 * t) * 3000;
+		Goal_velocity_q3 = sin(0.785 * t) * 3000;
+
+		const float KP_J1 = 1.4;
+		const float Kp_J3 = 1;
+//
+//		joint_config findchessbot_joint_state;
+//	//	findchessbot_joint_state = find_IK(0.4, 0, 0, 0);
+//		findchessbot_joint_state = find_IK(
+//				0.247*cos(chess_board_ang+0.785)+0.42744,
+//				0.247*sin(chess_board_ang+0.785)+0.00059371,
+//						0,
+//						0);
+//		chess_board_ang = (chess_board_ang + 0.0001305) ;
+//	//	printf("%f\t%f\n",findchessbot_joint_state.q1,findchessbot_joint_state.q3);
+//		setpointJ1 = findchessbot_joint_state.q1 * 2607;
+//		setpointJ3 = findchessbot_joint_state.q3 * 2607;
+//		b1 = findchessbot_joint_state.q1;
+//		b2 = findchessbot_joint_state.q2;
+//		b3 = findchessbot_joint_state.q3;
+//		b4 = findchessbot_joint_state.q4;
+		setpointJ1 = Goal_velocity_q1;
+//		setpointJ3 = Goal_velocity_q3;
+		errorJ1 = posJ1 - setpointJ1;
+//		errorJ3 = posJ3 - setpointJ3 ;
+//
+		uJ1 = (KP_J1 * errorJ1);
+//		uJ3 = (Kp_J3 * errorJ3);
+//	//	stepperJ3.StepperSetFrequency(-1200.0f);
+//
+		#ifdef __cplusplus
+//		stepperJ1.StepperSetFrequency(300.0f);
+//		if (uJ1 > 0.0)
+//		{
+		stepperJ1.StepperSetFrequency(uJ1 + 100.0);
+//		}
+
+//		if (fabs(errorJ1) < 0.0)
+//		{
+//		stepperJ1.StepperSetFrequency(uJ1 - 100.0);
+//		}
+//		else
+//		{
+//			stepperJ1.StepperSetFrequency(0);
+//		}
+//		if (fabs(errorJ3) > 100.0)
+//		{
+//			stepperJ3.StepperSetFrequency(uJ3);
+//		}
+//		else
+//		{
+//		stepperJ3.StepperSetFrequency(0);
+//		}
+		#endif
+
+	}
+
+
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -213,10 +330,9 @@ int main(void)
 	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(1);
 	stepperJ1.StepperEnable();
-
 //	stepperJ2.StepperSetMicrostep(1);
 //	stepperJ2.StepperSetRatio(1);
-
+//	stepperJ1.StepperSetFrequency(15842.0f);
 	stepperJ3.StepperSetFrequency(0.);
 	stepperJ3.StepperSetMicrostep(16);
 	stepperJ3.StepperSetRatio(1);
@@ -237,6 +353,12 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+//		stepperJ1.StepperSetFrequency(200.0f);
+//		stepperJ3.StepperSetFrequency(-1600.0f);
+//		HAL_Delay(1500);
+//		stepperJ1.StepperSetFrequency(-200.0f);
+//		stepperJ3.StepperSetFrequency(1600.0f);
+//		HAL_Delay(1500);
 	}
     /* USER CODE END WHILE */
 
@@ -408,7 +530,7 @@ static void MX_TIM1_Init(void)
   htim1.Init.Period = 60000-1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -486,7 +608,7 @@ static void MX_TIM2_Init(void)
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 60000-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
@@ -545,7 +667,7 @@ static void MX_TIM3_Init(void)
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 60000-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -662,7 +784,7 @@ static void MX_TIM5_Init(void)
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 12000-1;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
   {
     Error_Handler();
@@ -706,7 +828,7 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 200-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 1200-1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
@@ -743,8 +865,8 @@ static void MX_TIM7_Init(void)
   htim7.Instance = TIM7;
   htim7.Init.Prescaler = 200-1;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 2000-1;
-  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim7.Init.Period = 24000-1;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
     Error_Handler();
@@ -826,7 +948,7 @@ static void MX_TIM15_Init(void)
   htim15.Init.Period = 20000-1;
   htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim15.Init.RepetitionCounter = 0;
-  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim15) != HAL_OK)
   {
     Error_Handler();
@@ -1171,9 +1293,9 @@ joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripp
 
 	joint_config buff;
 	buff.q1 = q1;
-	buff.q2 = 0;
+	buff.q2 = q2;
 	buff.q3 = q3;
-	buff.q4 = 0;
+	buff.q4 = q3;
 
     return buff;
 }
@@ -1205,83 +1327,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 //		HAL_GPIO_WritePin(LD1_GPIO_Port, GPIO_Pin, PinState)
 //	}
 }
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	/*
-	 * Default of Sampling Frequency : 2kHz.
-	 *
-	 * How to change frequency as follows:
-	 * Change on TIMx's ARR Register (Input is frequency).
-	 * TIMx->ARR = round(_FCY/((TIMx->PSC)+1)*freq) - 1;
-	 *
-	 * How to Start/Stop Timer Interrupt
-	 * Use function
-	 * HAL_TIM_Base_Start_IT(&htim5);
-	 * HAL_TIM_Base_Stop_IT(&htim5);
-	 *
-	 */
-	/* Timer5 Interrupt for PID Position Control.*/
 
-	if (htim == &htim6) {
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if (HALENCJ1OK == HAL_OK) {
-			posJ1 = encoderJ1.getAngPos180();
-		}
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			posJ3 = encoderJ3.getAngPos180();
-		}
-	}
-//	stepperJ1.StepperSetFrequency(200.0f);
-//	stepperJ3.StepperSetFrequency(200.0f)		;
-
-	const float KP_J1 = -2;
-	const float Kp_J3 = -6;
-
-	joint_config findchessbot_joint_state;
-//	findchessbot_joint_state = find_IK(0.4, 0, 0, 0);
-	findchessbot_joint_state = find_IK(
-			0.247*cos(chess_board_ang+0.785)+0.42744,
-			0.247*sin(chess_board_ang+0.785)+0.00059371,
-					0,
-					0);
-	chess_board_ang = (chess_board_ang + 0.000348) ;
-//	printf("%f\t%f\n",findchessbot_joint_state.q1,findchessbot_joint_state.q3);
-	setpointJ1 = findchessbot_joint_state.q1 * 2607;
-	setpointJ3 = findchessbot_joint_state.q3 * 2607;
-	b1 = findchessbot_joint_state.q1;
-	b2 = findchessbot_joint_state.q2;
-	b3 = findchessbot_joint_state.q3;
-	b4 = findchessbot_joint_state.q4;
-	errorJ1 = posJ1 - setpointJ1;
-	errorJ3 = posJ3 - setpointJ3 ;
-
-
-	uJ1 = (KP_J1 * errorJ1);
-	uJ3 = (Kp_J3 * errorJ3);
-//	stepperJ3.StepperSetFrequency(-1200.0f);
-
-	#ifdef __cplusplus
-	if (fabs(errorJ1)> 50.0)
-	{
-		stepperJ1.StepperSetFrequency(uJ1);
-	}
-	else
-	{
-		stepperJ1.StepperSetFrequency(0);
-	}
-	if (fabs(errorJ3) > 50.0)
-	{
-		stepperJ3.StepperSetFrequency(uJ3);
-	}
-	else
-	{
-	stepperJ3.StepperSetFrequency(0);
-	}
-	#endif
-
-}
 /* USER CODE END 4 */
 
 /**
