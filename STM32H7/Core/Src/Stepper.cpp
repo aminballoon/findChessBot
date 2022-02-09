@@ -11,7 +11,7 @@ Stepper::Stepper(TIM_HandleTypeDef *_stepper_htim, uint32_t _STEPPER_TIM_CHANNEL
 	this->stepper_htim = _stepper_htim;
 	this->STEPPER_TIM_CHANNEL = _STEPPER_TIM_CHANNEL;
 	this->stepper_htim->Instance->PSC = _PSC_STEPPER_MOTOR - 1U;
-	this->minFrequency = 10.0f;
+	this->minFrequency = 1.0f;
 	this->maxFrequency = 20000.0f;
 	this->StepperSetFrequency(0.0f);
 	this->DIRPort = _DIRPort;
