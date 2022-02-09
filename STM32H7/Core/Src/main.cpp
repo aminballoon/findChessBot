@@ -66,6 +66,7 @@ TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim12;
 TIM_HandleTypeDef htim13;
+TIM_HandleTypeDef htim14;
 TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart4;
@@ -100,6 +101,7 @@ static void MX_TIM6_Init(void);
 static void MX_TIM7_Init(void);
 static void MX_TIM12_Init(void);
 static void MX_TIM13_Init(void);
+static void MX_TIM14_Init(void);
 /* USER CODE BEGIN PFP */
 #if defined(__GNUC__)
 int _write(int fd, char *ptr, int len) {
@@ -172,17 +174,40 @@ volatile float bug1,bug2,bug3,bug4,bug5 ;
 
 volatile const float sample_time_100 = 0.01;
 volatile const float sample_time_200 = 0.005;
+volatile const float sample_time_500 = 0.002;
 volatile const float sample_time_1000 = 0.001;
 volatile const float sample_time_2000 = 0.0005;
-volatile const float chessboard_angular_velocity = 	2.0 * 0.10472; // rpm to rad/s
+volatile const float chessboard_angular_velocity = 	3.0 * 0.10472; // rpm to rad/s
 
 volatile bool direction = true;
 volatile float Goal_velocity_q1,Goal_velocity_q3 ;
+
+volatile const float pi =3.14159265;
+volatile float X11 = 0;
+volatile float X21 = 0;
+volatile float p11 = 0;
+volatile float p12 = 0;
+volatile float p21 = 0;
+volatile float p22 = 0;
+volatile float x1 = 0;
+volatile float x2 = 0;
+volatile float Q = 0.01 ;
+
+
 struct joint_state {
     float q1,q2,q3,q4;
 };
 typedef struct joint_state joint_config;
 #endif
+
+//void KalmanFilter(float theta_k,float X1,float X2,float P11,float P12,float P21,float P22)
+//{
+// X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+// X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+// p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+// p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+// p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//}
 
 joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear_z, float gripper_angular_yaw)
 {
@@ -218,6 +243,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	// tim7 1000 Hz
 	// tim12 2000 Hz
 	// tim6 200 Hz
+	// tim14 500Hz
+	if (htim == &htim6){	//
+
+	}
 	if (htim == &htim5){	//
 
 	}
@@ -226,7 +255,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim7){	//
 
 	}
-	if (htim == &htim6) { 	//
+	if (htim == &htim14) { 	//
+
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
@@ -251,11 +281,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		Goal_velocity_q1 = sin(0.314 * 2 * t) * 2000;
 //		Goal_velocity_q3 = sin(0.314 * 2 * t) * 4000;
 
-		const float KP_J1 = 2;
-		const float Kp_J3 = 4;
-//
-//		const float KP_J1 = 1.0;
-//		const float Kp_J3 = 2.0;
+		const float KP_J1 = 1;
+		const float Kp_J3 = 2;
+
+
+//		const float KP_J1 = 0.3;
+//		const float Kp_J3 = 0.6;
 
 		joint_config findchessbot_joint_state;
 	//	findchessbot_joint_state = find_IK(0.4, 0, 0, 0);
@@ -272,6 +303,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	//	printf("%f\t%f\n",findchessbot_joint_state.q1,findchessbot_joint_state.q3);
 		setpointJ1 = findchessbot_joint_state.q1 * 2607;
 		setpointJ3 = findchessbot_joint_state.q3 * 2607;
+//		setpointJ1 = sin(chess_board_ang) * 3000;
+//		setpointJ3 = sin(chess_board_ang) * 3000;
 		b1 = findchessbot_joint_state.q1;
 		b2 = findchessbot_joint_state.q2;
 		b3 = findchessbot_joint_state.q3;
@@ -284,6 +317,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		uJ1 = (KP_J1 * errorJ1);
 		uJ3 = (Kp_J3 * errorJ3);
 
+//		uJ1 = (KP_J1 * setpointJ1);
+//		uJ3 = (Kp_J3 * setpointJ3);
+
 //	//	stepperJ3.StepperSetFrequency(-1200.0f);
 //
 		#ifdef __cplusplus
@@ -291,6 +327,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		stepperJ1.StepperSetFrequency(uJ1);
 		stepperJ3.StepperSetFrequency(uJ3);
+
 
 
 
@@ -329,8 +366,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ3.StepperSetFrequency(0);
 //		}
 
-		t = t + sample_time_200;
-		if (t>=30.0)
+		t = t + sample_time_500;
+		if (t>=20.0)
 		{
 			t = 0.0;
 		}
@@ -385,6 +422,7 @@ int main(void)
   MX_TIM7_Init();
   MX_TIM12_Init();
   MX_TIM13_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
@@ -392,7 +430,7 @@ int main(void)
 	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
 #ifdef __cplusplus
-	stepperJ1.StepperSetFrequency(0);
+	stepperJ1.StepperSetFrequency(0.0f);
 	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(1);
 	stepperJ1.StepperEnable();
@@ -412,6 +450,7 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim6);
 	HAL_TIM_Base_Start_IT(&htim7);
 	HAL_TIM_Base_Start_IT(&htim12);
+	HAL_TIM_Base_Start_IT(&htim14);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
 //	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
   /* USER CODE END 2 */
@@ -1015,6 +1054,37 @@ static void MX_TIM13_Init(void)
   /* USER CODE BEGIN TIM13_Init 2 */
 
   /* USER CODE END TIM13_Init 2 */
+
+}
+
+/**
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM14_Init(void)
+{
+
+  /* USER CODE BEGIN TIM14_Init 0 */
+
+  /* USER CODE END TIM14_Init 0 */
+
+  /* USER CODE BEGIN TIM14_Init 1 */
+
+  /* USER CODE END TIM14_Init 1 */
+  htim14.Instance = TIM14;
+  htim14.Init.Prescaler = 200-1;
+  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim14.Init.Period = 2400-1;
+  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM14_Init 2 */
+
+  /* USER CODE END TIM14_Init 2 */
 
 }
 
