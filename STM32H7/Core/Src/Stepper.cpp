@@ -11,7 +11,7 @@ Stepper::Stepper(TIM_HandleTypeDef *_stepper_htim, uint32_t _STEPPER_TIM_CHANNEL
 	this->stepper_htim = _stepper_htim;
 	this->STEPPER_TIM_CHANNEL = _STEPPER_TIM_CHANNEL;
 	this->stepper_htim->Instance->PSC = _PSC_STEPPER_MOTOR - 1U;
-	this->minFrequency = 20.0f;
+	this->minFrequency = 60.0f;
 	this->maxFrequency = 20000.0f;
 	this->StepperSetFrequency(0.0f);
 	this->DIRPort = _DIRPort;
@@ -26,20 +26,20 @@ void Stepper::StepperDisable(void) { // ENABLE PIN IS OFF AS DEFAULT!!!
 	HAL_TIM_PWM_Stop(this->stepper_htim, this->STEPPER_TIM_CHANNEL);
 }
 void Stepper::StepperSetFrequency(float _frequency) {
-	this->frequency = _frequency;
+	this->frequency = _frequency ;
 
 	float f;
 	if (fabs(this->frequency) <= this->minFrequency)
 		f = this->minFrequency;
 	else if (fabs(this->frequency) >= this->maxFrequency)
-		f = this->maxFrequency;
+		f = this->maxFrequency - 500.0f;
 	else
 		f = _frequency;
 
-	if (this->frequency > 0.001f && fabs(this->frequency) >= this->minFrequency) {
+	if (this->frequency >= 0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_SET);
 		this->stepper_htim->Instance->ARR = round(
-				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * f)) - 1U);
+				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * (f + 500.0f))) - 1U);
 		if (this->STEPPER_TIM_CHANNEL == TIM_CHANNEL_1) {
 			this->stepper_htim->Instance->CCR1 = round(
 					(this->stepper_htim->Instance->ARR + 1U) / 2U);
@@ -79,10 +79,10 @@ void Stepper::StepperSetFrequency(float _frequency) {
 			this->stepper_htim->Instance->CCR6 = 0;
 		}
 
-	} else if (this->frequency < -0.001f && fabs(this->frequency) >= this->minFrequency) {
+	} else if (this->frequency < 0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_RESET);
 		this->stepper_htim->Instance->ARR = round(
-				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * fabs(f))) - 1U);
+				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * fabs(f + 500.0f))) - 1U);
 		if (this->STEPPER_TIM_CHANNEL == TIM_CHANNEL_1) {
 			this->stepper_htim->Instance->CCR1 = round(
 					(this->stepper_htim->Instance->ARR + 1U) / 2U);

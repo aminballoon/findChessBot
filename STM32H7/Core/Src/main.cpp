@@ -177,7 +177,7 @@ volatile const float sample_time_200 = 0.005;
 volatile const float sample_time_500 = 0.002;
 volatile const float sample_time_1000 = 0.001;
 volatile const float sample_time_2000 = 0.0005;
-volatile const float chessboard_angular_velocity = 	3.0 * 0.10472; // rpm to rad/s
+volatile const float chessboard_angular_velocity = 	2.0 * 0.10472; // rpm to rad/s
 
 volatile bool direction = true;
 volatile float Goal_velocity_q1,Goal_velocity_q3 ;
@@ -193,6 +193,10 @@ volatile float x1 = 0;
 volatile float x2 = 0;
 volatile float Q = 0.01 ;
 
+volatile float Error_Old_q1 = 0.0;
+volatile float Error_Old_q3 = 0.0;
+volatile float Sum_Error_q1 = 0.0;
+volatile float Sum_Error_q3 = 0.0;
 
 struct joint_state {
     float q1,q2,q3,q4;
@@ -281,12 +285,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		Goal_velocity_q1 = sin(0.314 * 2 * t) * 2000;
 //		Goal_velocity_q3 = sin(0.314 * 2 * t) * 4000;
 
+//		const float KP_J1 = 1;
+//		const float Kp_J3 = 2;
+
+
 		const float KP_J1 = 1;
-		const float Kp_J3 = 2;
-
-
-//		const float KP_J1 = 0.3;
-//		const float Kp_J3 = 0.6;
+		const float KP_J3 = 1;
+		const float KI_J1 = 0.0; //0.0001
+		const float KI_J3 = 0.0; //0.0001
+		const float KD_J1 = 0;//4
+		const float KD_J3 = 0.5;//1
 
 		joint_config findchessbot_joint_state;
 	//	findchessbot_joint_state = find_IK(0.4, 0, 0, 0);
@@ -301,10 +309,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		chess_board_ang = (chess_board_ang + 0.000261) ;
 //		chess_board_ang = (chess_board_ang + 0.00522) ;
 	//	printf("%f\t%f\n",findchessbot_joint_state.q1,findchessbot_joint_state.q3);
-		setpointJ1 = findchessbot_joint_state.q1 * 2607;
-		setpointJ3 = findchessbot_joint_state.q3 * 2607;
-//		setpointJ1 = sin(chess_board_ang) * 3000;
-//		setpointJ3 = sin(chess_board_ang) * 3000;
+//		setpointJ1 = findchessbot_joint_state.q1 * 2607;
+//		setpointJ3 = findchessbot_joint_state.q3 * 2607;
+		setpointJ1 = sin(chess_board_ang) * 3500;
+		setpointJ3 = sin(chess_board_ang) * 3500;
 		b1 = findchessbot_joint_state.q1;
 		b2 = findchessbot_joint_state.q2;
 		b3 = findchessbot_joint_state.q3;
@@ -312,13 +320,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		setpointJ1 = Goal_velocity_q1;
 //		setpointJ3 = Goal_velocity_q3;
 		errorJ1 = posJ1 - setpointJ1;
-		errorJ3 = posJ3 - setpointJ3 ;
-//
-		uJ1 = (KP_J1 * errorJ1);
-		uJ3 = (Kp_J3 * errorJ3);
+		errorJ3 = posJ3 - setpointJ3;
+		Sum_Error_q1 = Sum_Error_q1 + errorJ1;
+		Sum_Error_q3 = Sum_Error_q3 + errorJ3;
 
-//		uJ1 = (KP_J1 * setpointJ1);
-//		uJ3 = (Kp_J3 * setpointJ3);
+
+//		uJ1 = (KP_J1 * errorJ1) + (KI_J1 * Sum_Error_q1) + (KD_J1 * (errorJ1 - Error_Old_q1));
+//		uJ3 = (KP_J3 * errorJ3) + (KI_J3 * Sum_Error_q3) + (KD_J3 * (errorJ3 - Error_Old_q3));
+
+		uJ1 = (KP_J1 * errorJ1);
+		uJ3 = (KP_J3 * errorJ3);
+
+		Error_Old_q1 = errorJ1;
+		Error_Old_q3 = errorJ3;
+
+
 
 //	//	stepperJ3.StepperSetFrequency(-1200.0f);
 //
@@ -367,7 +383,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		}
 
 		t = t + sample_time_500;
-		if (t>=20.0)
+		if (t>=30)
 		{
 			t = 0.0;
 		}
