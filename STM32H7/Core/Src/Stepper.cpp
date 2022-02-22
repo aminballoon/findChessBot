@@ -32,14 +32,14 @@ void Stepper::StepperSetFrequency(float _frequency) {
 	if (fabs(this->frequency) <= this->minFrequency)
 		f = this->minFrequency;
 	else if (fabs(this->frequency) >= this->maxFrequency)
-		f = this->maxFrequency - 500.0f;
+		f = this->maxFrequency;
 	else
 		f = _frequency;
 
 	if (this->frequency >= 0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_SET);
 		this->stepper_htim->Instance->ARR = round(
-				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * (f + 500.0f))) - 1U);
+				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * (f))) - 1U);
 		if (this->STEPPER_TIM_CHANNEL == TIM_CHANNEL_1) {
 			this->stepper_htim->Instance->CCR1 = round(
 					(this->stepper_htim->Instance->ARR + 1U) / 2U);
@@ -79,10 +79,10 @@ void Stepper::StepperSetFrequency(float _frequency) {
 			this->stepper_htim->Instance->CCR6 = 0;
 		}
 
-	} else if (this->frequency < 0.001f) {
+	} else if (this->frequency <= -0.001f) {
 		HAL_GPIO_WritePin(this->DIRPort, this->DIRPin, GPIO_PIN_RESET);
 		this->stepper_htim->Instance->ARR = round(
-				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * fabs(f + 500.0f))) - 1U);
+				(_FCY / ((this->stepper_htim->Instance->PSC + 1U) * fabs(f))) - 1U);
 		if (this->STEPPER_TIM_CHANNEL == TIM_CHANNEL_1) {
 			this->stepper_htim->Instance->CCR1 = round(
 					(this->stepper_htim->Instance->ARR + 1U) / 2U);
