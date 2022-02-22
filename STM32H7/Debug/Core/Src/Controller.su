@@ -1,0 +1,14 @@
+Controller.cpp:9:6:void PIDInit(Controller*)	16	static
+Controller.cpp:19:6:void PIDDeinit(Controller*)	16	static
+Controller.cpp:22:6:void setPID(Controller*, float, float, float)	24	static
+Controller.cpp:27:6:void setKp(Controller*, float)	16	static
+Controller.cpp:30:6:void setKi(Controller*, float)	16	static
+Controller.cpp:33:6:void setKd(Controller*, float)	16	static
+Controller.cpp:36:7:float getKp(Controller*)	16	static
+Controller.cpp:39:7:float getKi(Controller*)	16	static
+Controller.cpp:42:7:float getKd(Controller*)	16	static
+Controller.cpp:45:6:void turnSatOn(Controller*, float, float)	24	static
+Controller.cpp:50:6:void turnSatOff(Controller*)	16	static
+Controller.cpp:55:7:float saturate(Controller*, float)	24	static
+Controller.cpp:66:7:float computePID(Controller*, float, float)	40	static
+Controller.cpp:82:7:float computePIDFF(Controller*, float, float, float)	40	static

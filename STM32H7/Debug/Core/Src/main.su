@@ -1,36 +1,33 @@
-main.c:152:1:__io_putchar	16	static
-main.c:200:6:map	24	static
-main.c:203:8:mapf	48	static
-main.c:206:6:servoGripper	32	static
-main.c:217:6:delayMicroseconds	40	static
-main.c:238:10:CRC16	24	static
-main.c:268:10:AMT21_getPositionModbusRTU	56	static
-main.c:326:10:AMT21_getPositionRS485	48	static
-main.c:359:6:PIDInit	40	static
-main.c:373:7:PIDCalculate	32	static
-main.c:414:6:IPK_findChessBot	104	static
-main.c:453:6:IVK	4	static
-main.c:457:6:IAK	4	static
-main.c:466:6:Update_Coff	48	static
-main.c:492:6:StepDriveRad	24	static
-main.c:628:6:StepStop	16	static
-main.c:678:5:main	16	static
-main.c:867:6:SystemClock_Config	120	static
-main.c:924:13:MX_CRC_Init	8	static
-main.c:955:13:MX_SPI3_Init	8	static
-main.c:1003:13:MX_TIM1_Init	112	static
-main.c:1083:13:MX_TIM2_Init	64	static
-main.c:1142:13:MX_TIM3_Init	64	static
-main.c:1201:13:MX_TIM4_Init	64	static
-main.c:1260:13:MX_TIM5_Init	40	static
-main.c:1306:13:MX_TIM12_Init	24	static
-main.c:1345:13:MX_TIM15_Init	112	static
-main.c:1421:13:MX_UART4_Init	8	static
-main.c:1469:13:MX_USART2_UART_Init	8	static
-main.c:1517:13:MX_USART3_UART_Init	8	static
-main.c:1563:13:MX_DMA_Init	16	static
-main.c:1597:13:MX_GPIO_Init	56	static
-main.c:1697:6:HAL_UART_RxCpltCallback	40	static
-main.c:1807:6:HAL_GPIO_EXTI_Callback	16	static
-main.c:1834:6:HAL_TIM_PeriodElapsedCallback	32	static
-main.c:1920:6:Error_Handler	8	static,ignoring_inline_asm
+cmath:144:3:constexpr float std::atan2(float, float)	16	static
+cmath:184:3:constexpr float std::cos(float)	16	static
+cmath:425:3:constexpr float std::sin(float)	16	static
+cmath:463:3:constexpr float std::sqrt(float)	16	static
+main.cpp:107:5:int _write(int, char*, int)	24	static
+main.cpp:216:14:joint_config find_IK(float, float, float, float)	96	static
+main.cpp:245:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	56	static
+main.cpp:401:5:int main()	8	static
+main.cpp:497:6:void SystemClock_Config()	120	static
+main.cpp:554:13:void MX_CRC_Init()	8	static
+main.cpp:585:13:void MX_SPI3_Init()	8	static
+main.cpp:633:13:void MX_TIM1_Init()	112	static
+main.cpp:713:13:void MX_TIM2_Init()	64	static
+main.cpp:772:13:void MX_TIM3_Init()	64	static
+main.cpp:831:13:void MX_TIM4_Init()	64	static
+main.cpp:890:13:void MX_TIM5_Init()	40	static
+main.cpp:936:13:void MX_TIM6_Init()	24	static
+main.cpp:974:13:void MX_TIM7_Init()	24	static
+main.cpp:1012:13:void MX_TIM12_Init()	24	static
+main.cpp:1050:13:void MX_TIM13_Init()	8	static
+main.cpp:1081:13:void MX_TIM14_Init()	8	static
+main.cpp:1112:13:void MX_TIM15_Init()	112	static
+main.cpp:1188:13:void MX_UART4_Init()	8	static
+main.cpp:1237:13:void MX_UART7_Init()	8	static
+main.cpp:1285:13:void MX_USART3_UART_Init()	8	static
+main.cpp:1331:13:void MX_DMA_Init()	16	static
+main.cpp:1361:13:void MX_GPIO_Init()	56	static
+main.cpp:1464:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
+main.cpp:1467:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
+main.cpp:1477:6:void Error_Handler()	8	static,ignoring_inline_asm
+main.cpp:1488:1:void __static_initialization_and_destruction_0(int, int)	24	static
+main.cpp:1488:1:cpp)	8	static
+main.cpp:1488:1:cpp)	8	static

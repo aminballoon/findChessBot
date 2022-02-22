@@ -62,9 +62,9 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define STEP_5_Pin GPIO_PIN_6
 #define STEP_5_GPIO_Port GPIOE
-#define Blue_Button_Pin GPIO_PIN_13
-#define Blue_Button_GPIO_Port GPIOC
-#define Blue_Button_EXTI_IRQn EXTI15_10_IRQn
+#define Blue_Button_Pin_Pin GPIO_PIN_13
+#define Blue_Button_Pin_GPIO_Port GPIOC
+#define Blue_Button_Pin_EXTI_IRQn EXTI15_10_IRQn
 #define STEP_3_Pin GPIO_PIN_6
 #define STEP_3_GPIO_Port GPIOA
 #define LD1_Pin GPIO_PIN_0
@@ -111,7 +111,15 @@ void Error_Handler(void);
 #define LD2_Pin GPIO_PIN_1
 #define LD2_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
+#define _FCY 240000000U 	// Fixed APB1 and APB2 Clock Timer for Stepper Motor and Servo Motor
+#define _PSC_STEPPER_MOTOR 200U			// Fixed pre-scaler for Stepper Motor Only
+#define _PSC_SERVO_MOTOR 240U
+#define _ARR_SERVO_MOTOR 20000U
 
+#define CONTROLLER_SAMPLING_T   0.01f
+#define JOINTSTATE_SAMPLING_T   0.2f
+#define ENCODERSTATE_SAMPLING_T 0.02f
+#define PI                      3.14159265359
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
@@ -119,5 +127,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

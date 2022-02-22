@@ -1,12 +1,12 @@
 from math import sin, cos, pi, atan2 ,sqrt
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import QoSProfile
-from geometry_msgs.msg import Quaternion, PoseStamped
-from sensor_msgs.msg import JointState
-from tf2_ros import TransformBroadcaster, TransformStamped
-from nav_msgs.msg import Path
-from std_msgs.msg import Float32,Float32MultiArray
+# import rclpy
+# from rclpy.node import Node
+# from rclpy.qos import QoSProfile
+# from geometry_msgs.msg import Quaternion, PoseStamped
+# from sensor_msgs.msg import JointState
+# from tf2_ros import TransformBroadcaster, TransformStamped
+# from nav_msgs.msg import Path
+# from std_msgs.msg import Float32,Float32MultiArray
 import numpy as np
 
 
@@ -72,7 +72,10 @@ class findchessbot():
         q1 = atan2(S1,C1)
         q4 = Yaw - q1 - q3
         q2 = Z+self.h4-self.h3-self.h1
-
+        print(C3)
+        print(S3)
+        print(C1)
+        print(S1)
         self.FK(q1=q1, q2=q2, q3=q3, q4=q4, init=1)
 
         return q1,q2,q3,q4
@@ -198,74 +201,74 @@ class findchessbot():
 
 
 
-class StatePublisher(Node):
+# class StatePublisher(Node):
 
-    def __init__(self):
-        rclpy.init()
-        super().__init__('state_publisher')
+#     def __init__(self):
+#         rclpy.init()
+#         super().__init__('state_publisher')
 
-        self.theta_q1 = []
-        self.theta_q3 = []
-        self.i = 0
-        self.Robot = findchessbot()
-        qos_profile = QoSProfile(depth=10)
-        self.joint_pub = self.create_publisher(JointState, 'joint_states', qos_profile)
-        self.broadcaster = TransformBroadcaster(self, qos=qos_profile)
-        self.nodeName = self.get_name()
-        self.get_logger().info("{0} started".format(self.nodeName))
+#         self.theta_q1 = []
+#         self.theta_q3 = []
+#         self.i = 0
+#         self.Robot = findchessbot()
+#         qos_profile = QoSProfile(depth=10)
+#         self.joint_pub = self.create_publisher(JointState, 'joint_states', qos_profile)
+#         self.broadcaster = TransformBroadcaster(self, qos=qos_profile)
+#         self.nodeName = self.get_name()
+#         self.get_logger().info("{0} started".format(self.nodeName))
 
-        self.subscription = self.create_subscription(Float32,'/findchessbot/chessboard_rpm',self.listener_callback,10)
-        # self.subscription = self.create_subscription(Float32MultiArray, topic, callback, qos_profile)
-        self.subscription  # prevent unused variable warning
+#         self.subscription = self.create_subscription(Float32,'/findchessbot/chessboard_rpm',self.listener_callback,10)
+#         # self.subscription = self.create_subscription(Float32MultiArray, topic, callback, qos_profile)
+#         self.subscription  # prevent unused variable warning
         
-        degree = pi / 180.0
+#         degree = pi / 180.0
 
-        self.joint_state = JointState()
+#         self.joint_state = JointState()
         
-        self.chessboard_orientation = 0.
+#         self.chessboard_orientation = 0.
 
-        self.rate = 0.01
-        self.timer = self.create_timer(self.rate, self.timer_callback)
+#         self.rate = 0.01
+#         self.timer = self.create_timer(self.rate, self.timer_callback)
         
-        self.circle_angle = pi*2.
+#         self.circle_angle = pi*2.
         
-        self.q1 = 0.
-        self.q2 = 0.
-        self.q3 = 0.
-        self.q4 = 0.
+#         self.q1 = 0.
+#         self.q2 = 0.
+#         self.q3 = 0.
+#         self.q4 = 0.
 
-    def timer_callback(self):
-        # update joint_state
-        # q2 = -0.135
-        now = self.get_clock().now()
-        self.joint_state.header.stamp = now.to_msg()
-        self.joint_state.name = ['joint_1', 'joint_2', 'joint_3', 'joint_4','joint_chess']
-        self.joint_state.position = [self.q1, -0.135, self.q3, self.q4, self.chessboard_orientation]
+#     def timer_callback(self):
+#         # update joint_state
+#         # q2 = -0.135
+#         now = self.get_clock().now()
+#         self.joint_state.header.stamp = now.to_msg()
+#         self.joint_state.name = ['joint_1', 'joint_2', 'joint_3', 'joint_4','joint_chess']
+#         self.joint_state.position = [self.q1, -0.135, self.q3, self.q4, self.chessboard_orientation]
         
-        # send the joint state and transform
-        self.joint_pub.publish(self.joint_state)
+#         # send the joint state and transform
+#         self.joint_pub.publish(self.joint_state)
                 
 
-    # def listener_callback_joint_state(self, msg):
-    #     self.chessboard_orientation = msg.data
+#     # def listener_callback_joint_state(self, msg):
+#     #     self.chessboard_orientation = msg.data
 
-    def listener_callback(self, msg):
-        self.chessboard_orientation = msg.data
-        q1,q2,q3,q4 = self.Robot.IK(X = (0.247*cos(self.chessboard_orientation+2.356))+0.42744, 
-                                    Y = (0.247*sin(self.chessboard_orientation+2.356))-0.00059371, 
-                                    Z = 0, 
-                                    Yaw = 0 )
-        self.q1,self.q2,self.q3,self.q4 = q1,q2,q3,q4
-        if self.i <= 1500:
-            self.theta_q1.append(q1)
-            self.theta_q3.append(q3)
-            self.get_logger().info(str(self.i))
-        if self.i == 1500:
-            print("q1")
-            print(self.theta_q1)
-            print("q3")
-            print(self.theta_q3)
-        self.i += 1
+#     def listener_callback(self, msg):
+#         self.chessboard_orientation = msg.data
+#         q1,q2,q3,q4 = self.Robot.IK(X = (0.247*cos(self.chessboard_orientation+2.356))+0.42744, 
+#                                     Y = (0.247*sin(self.chessboard_orientation+2.356))-0.00059371, 
+#                                     Z = 0, 
+#                                     Yaw = 0 )
+#         self.q1,self.q2,self.q3,self.q4 = q1,q2,q3,q4
+#         if self.i <= 1500:
+#             self.theta_q1.append(q1)
+#             self.theta_q3.append(q3)
+#             self.get_logger().info(str(self.i))
+#         if self.i == 1500:
+#             print("q1")
+#             print(self.theta_q1)
+#             print("q3")
+#             print(self.theta_q3)
+#         self.i += 1
         
 def euler_to_quaternion(roll, pitch, yaw):
     qx = sin(roll/2) * cos(pitch/2) * cos(yaw/2) - cos(roll/2) * sin(pitch/2) * sin(yaw/2)
@@ -275,8 +278,9 @@ def euler_to_quaternion(roll, pitch, yaw):
     return Quaternion(x=qx, y=qy, z=qz, w=qw)
 
 def main():
-    state_publisher = StatePublisher()
-    rclpy.spin(state_publisher)
-
+    # state_publisher = StatePublisher()
+    # rclpy.spin(state_publisher)
+    O = findchessbot()
+    print(O.IK(0.4,0,0,0))
 if __name__ == '__main__':
     main()

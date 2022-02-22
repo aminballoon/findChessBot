@@ -1,0 +1,6 @@
+AMT21.cpp:9:1:AMT21::AMT21(UART_HandleTypeDef*, uint8_t)	24	static
+AMT21.cpp:14:1:AMT21::~AMT21()	16	static
+AMT21.cpp:18:6:void AMT21::AMT21_Read()	16	static
+AMT21.cpp:28:19:HAL_StatusTypeDef AMT21::AMT21_Check_Value()	24	static
+AMT21.cpp:48:10:uint16_t AMT21::getRawValue()	16	static
+AMT21.cpp:53:9:int16_t AMT21::getAngPos180()	16	static

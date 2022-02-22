@@ -12,7 +12,6 @@ RM := rm -rf
 -include Drivers/STM32H7xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
--include subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -52,8 +51,8 @@ $(wildcard ../makefile.targets) \
 
 BUILD_ARTIFACT_NAME := STM32H743ZI2_Module8-9
 BUILD_ARTIFACT_EXTENSION := elf
-BUILD_ARTIFACT_PREFIX := 
-BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME).$(BUILD_ARTIFACT_EXTENSION)
+BUILD_ARTIFACT_PREFIX :=
+BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
@@ -76,8 +75,8 @@ all: main-build
 main-build: STM32H743ZI2_Module8-9.elf secondary-outputs
 
 # Tool invocations
-STM32H743ZI2_Module8-9.elf: $(OBJS) $(USER_OBJS) D:\My\ Github\ IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "STM32H743ZI2_Module8-9.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\My Github IO\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld" -Wl,-Map="STM32H743ZI2_Module8-9.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+STM32H743ZI2_Module8-9.elf: $(OBJS) $(USER_OBJS) C:\Users\aminb\Documents\GitHub\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "STM32H743ZI2_Module8-9.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\aminb\Documents\GitHub\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld" -Wl,-Map="STM32H743ZI2_Module8-9.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -98,7 +97,7 @@ STM32H743ZI2_Module8-9.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL
 
 # Other Targets
 clean:
-	-$(RM) *
+	-$(RM) STM32H743ZI2_Module8-9.bin STM32H743ZI2_Module8-9.elf STM32H743ZI2_Module8-9.list default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
@@ -110,7 +109,6 @@ fail-specified-linker-script-missing:
 warn-no-linker-script-specified:
 	@echo 'Warning: No linker script specified. Check the linker settings in the build configuration.'
 
-.PHONY: all clean dependents fail-specified-linker-script-missing warn-no-linker-script-specified
-.SECONDARY:
+.PHONY: all clean dependents main-build fail-specified-linker-script-missing warn-no-linker-script-specified
 
 -include ../makefile.targets
