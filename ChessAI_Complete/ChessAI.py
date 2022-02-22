@@ -285,23 +285,41 @@ class AI:
         if n==0:
             print('book is empty, using AI ...')
             bm = self.IterativeDeepening()
+            bm_san = self.s.san(bm)
+            print(bm_san)
+            promotePiece = None
+            if 'x' in bm_san:
+                flag = 1 # Capture piece
+            elif '=' in bm_san:
+                flag = 2 # Promote pawn
+                promotePiece = bm_san.split('=')[1]
+            else:
+                flag = 0 # Normal move
             self.s.push(bm)
-            return bm.uci()
+            return bm.uci(), flag, promotePiece
         else:
             for entry in self.reader.find_all(self.s):
                 print('Found book moves:')
                 print(entry.move)
                 nextmove = self.s.san(entry.move)
+                promotePiece = None
+                if 'x' in nextmove:
+                    flag = 1 # Capture piece
+                elif '=' in nextmove:
+                    flag = 2 # Promote pawn
+                    promotePiece = nextmove.split('=')[1]
+                else:
+                    flag = 0 # Normal move
                 self.s.push_san(nextmove)
-                return entry.move.uci()
+                return entry.move.uci(), flag, promotePiece
                 break
 
 '''
 [Example Program]
+flag {0: Normal move, 1: Capture piece, 2: Promote pawn}
 
 
-
-ai = AI(max_depth = 6, timeMax = 45, FEN = None)
+ai = AI(max_depth = 6, timeMax = 45, FEN = '8/3k1P2/8/8/8/8/1p2K3/8 w - - 0 1')
 
 while True:
     m = input("move : ")
@@ -312,9 +330,11 @@ while True:
         continue
     print("------------------------")
     print(ai.s)
-    uci_ai = ai.think()
+    uci_ai, flag, promotePiece = ai.think()
     print("------------------------")
     print("AI Move : {}".format(uci_ai))
+    print("AI Flag : {}".format(flag))
+    print("AI PromotePiece : {}".format(promotePiece))
     print(ai.s)
 
     # Save SVG
@@ -322,6 +342,7 @@ while True:
     f.write(ai.getSVG())
     f.close()
 '''
+
 
     
     
