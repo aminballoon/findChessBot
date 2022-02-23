@@ -91,6 +91,80 @@ int fputc(int ch, FILE *f)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+volatile int16_t q1_theta = 0, q2_theta = 0, q3_theta = 0, q4_theta = 0;
+volatile int16_t x_theta = 0, y_theta = 0, z_theta = 0, yaw_theta = 0;
+volatile int16_t to_X_pose = 0, to_Y_pose = 0, to_Z_pose = 0, to_Yaw_pose = 0;
+
+volatile uint16_t CRCValue = 0;
+volatile uint16_t ExpectedCRCValue = 0;
+
+#define Rx_BUFFER_SIZE   20
+uint8_t Old_Rx_Buffer[Rx_BUFFER_SIZE] = {0};
+uint8_t New_Rx_Buffer[Rx_BUFFER_SIZE] = {0};
+volatile uint16_t cmdDataSize = 0;
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+	if (huart == &huart3) {
+		memcpy(Old_Rx_Buffer, &New_Rx_Buffer, Rx_BUFFER_SIZE);	// Keep buffer.
+		memset(New_Rx_Buffer, 0, Rx_BUFFER_SIZE);	// Clear received data.
+		if(Size - 2 > 0 && Size <= Rx_BUFFER_SIZE){	// Check if there's some data.
+			cmdDataSize = Size - 2;	// Calculate data length.
+			CRCValue = HAL_CRC_Calculate(&hcrc, (uint32_t *)Old_Rx_Buffer, cmdDataSize); // Calculate data only by STM32 Hardware CRC.
+			ExpectedCRCValue = Old_Rx_Buffer[cmdDataSize] << 8 | Old_Rx_Buffer[cmdDataSize+1]; // Read Expected CRC from Protocol.
+			if(CRCValue == ExpectedCRCValue){ // Check if CRC value is equal to Expected CRC value.
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+				if(Old_Rx_Buffer[0] == 0x41 && cmdDataSize == 3){	// Joint Jog q1
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					q1_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x42 && cmdDataSize == 3){	// Joint Jog q2
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					q2_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x43 && cmdDataSize == 3){	// Joint Jog q3
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					q3_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x44 && cmdDataSize == 3){	// Joint Jog q4
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					q4_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x51 && cmdDataSize == 3){	// Linear Jog X
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					x_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x52 && cmdDataSize == 3){	// Linear Jog Y
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					y_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x53 && cmdDataSize == 3){	// Linear Jog Z
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					z_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x54 && cmdDataSize == 3){	// Linear Jog Yaw
+					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					yaw_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+			}
+			else{
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+				HAL_UART_Transmit_DMA(&huart3, (uint8_t *)"CRC16 error\n", 12);
+			}
+		}
+		else{
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+			HAL_UART_Transmit_DMA(&huart3, (uint8_t *)"Protocol match error\n", 21);
+		}
+		/* start the DMA again */
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
+		__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
+	}
+}
+
 void Update_Coff(int kalman_pos, int y1, int kalman_velo, int y2, float Time);
 void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
 uint16_t CRC16(uint8_t *buf, int len);
@@ -533,8 +607,8 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim14);
 
 	// Encoder
-	__HAL_UART_ENABLE_IT(&huart3, UART_IT_RXNE);
-	__HAL_UART_ENABLE_IT(&huart3, UART_IT_TC);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
+	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
 //	stepperJ1.StepperOpenLoopSpeed(1.00f);
 
 	// Backup
