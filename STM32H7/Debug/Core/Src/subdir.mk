@@ -5,11 +5,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Core/Src/crc.c \
+../Core/Src/dma.c \
+../Core/Src/gpio.c \
+../Core/Src/spi.c \
 ../Core/Src/stm32h7xx_hal_msp.c \
 ../Core/Src/stm32h7xx_it.c \
 ../Core/Src/syscalls.c \
 ../Core/Src/sysmem.c \
-../Core/Src/system_stm32h7xx.c 
+../Core/Src/system_stm32h7xx.c \
+../Core/Src/tim.c \
+../Core/Src/usart.c 
 
 CPP_SRCS += \
 ../Core/Src/AMT21.cpp \
@@ -22,11 +28,17 @@ CPP_SRCS += \
 ../Core/Src/main.cpp 
 
 C_DEPS += \
+./Core/Src/crc.d \
+./Core/Src/dma.d \
+./Core/Src/gpio.d \
+./Core/Src/spi.d \
 ./Core/Src/stm32h7xx_hal_msp.d \
 ./Core/Src/stm32h7xx_it.d \
 ./Core/Src/syscalls.d \
 ./Core/Src/sysmem.d \
-./Core/Src/system_stm32h7xx.d 
+./Core/Src/system_stm32h7xx.d \
+./Core/Src/tim.d \
+./Core/Src/usart.d 
 
 OBJS += \
 ./Core/Src/AMT21.o \
@@ -36,12 +48,18 @@ OBJS += \
 ./Core/Src/Protocol.o \
 ./Core/Src/ServoMotor.o \
 ./Core/Src/Stepper.o \
+./Core/Src/crc.o \
+./Core/Src/dma.o \
+./Core/Src/gpio.o \
 ./Core/Src/main.o \
+./Core/Src/spi.o \
 ./Core/Src/stm32h7xx_hal_msp.o \
 ./Core/Src/stm32h7xx_it.o \
 ./Core/Src/syscalls.o \
 ./Core/Src/sysmem.o \
-./Core/Src/system_stm32h7xx.o 
+./Core/Src/system_stm32h7xx.o \
+./Core/Src/tim.o \
+./Core/Src/usart.o 
 
 CPP_DEPS += \
 ./Core/Src/AMT21.d \
@@ -63,7 +81,7 @@ Core/Src/%.o: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/AMT21.d ./Core/Src/AMT21.o ./Core/Src/Actuator.d ./Core/Src/Actuator.o ./Core/Src/CircleTrajectory.d ./Core/Src/CircleTrajectory.o ./Core/Src/Controller.d ./Core/Src/Controller.o ./Core/Src/Protocol.d ./Core/Src/Protocol.o ./Core/Src/ServoMotor.d ./Core/Src/ServoMotor.o ./Core/Src/Stepper.d ./Core/Src/Stepper.o ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o
+	-$(RM) ./Core/Src/AMT21.d ./Core/Src/AMT21.o ./Core/Src/Actuator.d ./Core/Src/Actuator.o ./Core/Src/CircleTrajectory.d ./Core/Src/CircleTrajectory.o ./Core/Src/Controller.d ./Core/Src/Controller.o ./Core/Src/Protocol.d ./Core/Src/Protocol.o ./Core/Src/ServoMotor.d ./Core/Src/ServoMotor.o ./Core/Src/Stepper.d ./Core/Src/Stepper.o ./Core/Src/crc.d ./Core/Src/crc.o ./Core/Src/dma.d ./Core/Src/dma.o ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/spi.d ./Core/Src/spi.o ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/usart.d ./Core/Src/usart.o
 
 .PHONY: clean-Core-2f-Src
 
