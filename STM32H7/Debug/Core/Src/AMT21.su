@@ -1,6 +1,11 @@
 AMT21.cpp:9:1:AMT21::AMT21(UART_HandleTypeDef*, uint8_t)	24	static
 AMT21.cpp:14:1:AMT21::~AMT21()	16	static
 AMT21.cpp:18:6:void AMT21::AMT21_Read()	16	static
-AMT21.cpp:28:19:HAL_StatusTypeDef AMT21::AMT21_Check_Value()	24	static
-AMT21.cpp:48:10:uint16_t AMT21::getRawValue()	16	static
-AMT21.cpp:53:9:int16_t AMT21::getAngPos180()	16	static
+AMT21.cpp:28:6:void AMT21::AMT21_Set_Zero()	24	static
+AMT21.cpp:36:6:void AMT21::AMT21_Reset()	24	static
+AMT21.cpp:44:19:HAL_StatusTypeDef AMT21::AMT21_Check_Value()	24	static
+AMT21.cpp:64:9:int16_t AMT21::getRawValue()	16	static
+AMT21.cpp:67:9:int16_t AMT21::getPrevRawValue()	16	static
+AMT21.cpp:71:9:int16_t AMT21::getAngPos180()	16	static
+AMT21.cpp:75:6:void AMT21::unwarp(int32_t, int32_t)	32	static
+AMT21.cpp:87:9:int32_t AMT21::getUnwarpValue()	16	static

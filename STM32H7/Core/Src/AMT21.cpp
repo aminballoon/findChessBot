@@ -6,16 +6,16 @@
  */
 #include "AMT21.h"
 
-AMT21::AMT21(UART_HandleTypeDef *_amt21_huart, uint8_t _address){
+AMT21::AMT21(UART_HandleTypeDef *_amt21_huart, uint8_t _address) {
 	this->amt21_huart = _amt21_huart;
 	this->address = _address;
 }
 
-AMT21::~AMT21(){
+AMT21::~AMT21() {
 
 }
 
-void AMT21::AMT21_Read(){
+void AMT21::AMT21_Read() {
 //	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 1);
 	HAL_UART_Transmit(this->amt21_huart, (uint8_t*) &(this->address),
 			sizeof(this->address), 100);
@@ -25,7 +25,23 @@ void AMT21::AMT21_Read(){
 	this->k1 = (this->uart_buf & 0x8000) == 0x8000;
 }
 
-HAL_StatusTypeDef AMT21::AMT21_Check_Value(){
+void AMT21::AMT21_Set_Zero() {
+//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 1);
+	uint8_t set_zero_command[2] = { (this->address + 0x02), 0x5E };
+	HAL_UART_Transmit(this->amt21_huart, (uint8_t*) set_zero_command,
+			sizeof(this->address), 100);
+//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 0);
+}
+
+void AMT21::AMT21_Reset() {
+	//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 1);
+	uint8_t set_zero_command[2] = { (this->address + 0x02), 0x75 };
+	HAL_UART_Transmit(this->amt21_huart, (uint8_t*) set_zero_command,
+			sizeof(this->address), 100);
+	//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 0);
+}
+
+HAL_StatusTypeDef AMT21::AMT21_Check_Value() {
 	uint16_t raw_value_temp = this->uart_buf & 0x3FFF;
 	uint8_t k0_check = this->uart_buf & 0x0001;
 	uint8_t k1_check = (this->uart_buf >> 1) & 0x0001;
@@ -45,16 +61,30 @@ HAL_StatusTypeDef AMT21::AMT21_Check_Value(){
 	}
 }
 
-uint16_t AMT21::getRawValue()
-{
+int16_t AMT21::getRawValue() {
 	return this->raw_value;
 }
+int16_t AMT21::getPrevRawValue(){
+	return this->prev_raw_value;
+}
 
-int16_t AMT21::getAngPos180()
+int16_t AMT21::getAngPos180() {
+	return ((((this->raw_value & 0x2000) >> 13) * (-16383))
+			+ (this->raw_value & 0x3FFF)) * -1;
+}
+void AMT21::unwarp(int32_t pulse, int32_t prev_pulse){
+	int32_t dPulse = 0;
+	if (pulse - prev_pulse > 8191) {
+		dPulse = -(16383 - (pulse-prev_pulse));
+	} else if ( pulse -  prev_pulse < -8191) {
+		dPulse = 16383 - (prev_pulse - pulse);
+	} else {
+		dPulse =  pulse -  prev_pulse;
+	}
+	this->unwarp_value = this->unwarp_value + dPulse;
+//	return dPulse;
+}
+int32_t AMT21::getUnwarpValue()
 {
-//	uint8_t iii =  (this->raw_value & 0x1FFF);
-	return ((((this->raw_value & 0x2000) >> 13) * (-16383)) + (this->raw_value & 0x3FFF) ) * -1;
-//	return this->raw_value;
-//	this->value =
-//	return iii;
+	return this->unwarp_value;
 }

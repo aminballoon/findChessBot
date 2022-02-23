@@ -92,8 +92,8 @@ int fputc(int ch, FILE *f)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-volatile int16_t q1_theta = 0, q2_theta = 0, q3_theta = 0, q4_theta = 0;
-volatile int16_t x_theta = 0, y_theta = 0, z_theta = 0, yaw_theta = 0;
+volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
+volatile int8_t dx = 0, dy = 0, dz = 0, dyaw = 0;
 volatile int16_t to_X_pose = 0, to_Y_pose = 0, to_Z_pose = 0, to_Yaw_pose = 0;
 
 volatile uint16_t CRCValue = 0;
@@ -116,36 +116,50 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 				if(Old_Rx_Buffer[0] == 0x41 && cmdDataSize == 3){	// Joint Jog q1
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					q1_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq1 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x42 && cmdDataSize == 3){	// Joint Jog q2
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					q2_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq2 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x43 && cmdDataSize == 3){	// Joint Jog q3
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					q3_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq3 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x44 && cmdDataSize == 3){	// Joint Jog q4
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					q4_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq4 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x51 && cmdDataSize == 3){	// Linear Jog X
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					x_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dx = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x52 && cmdDataSize == 3){	// Linear Jog Y
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					y_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dy = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x53 && cmdDataSize == 3){	// Linear Jog Z
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					z_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dz = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
 				}
 				else if(Old_Rx_Buffer[0] == 0x54 && cmdDataSize == 3){	// Linear Jog Yaw
-					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					yaw_theta = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dyaw = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				}
+				else if(Old_Rx_Buffer[0] == 0x61 && cmdDataSize == 5){ // Joint Jog 4q
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq1 = Old_Rx_Buffer[1];
+					dq2 = Old_Rx_Buffer[2];
+					dq3 = Old_Rx_Buffer[3];
+					dq4 = Old_Rx_Buffer[4];
+				}
+				else if(Old_Rx_Buffer[0] == 0x71 && cmdDataSize == 5){ // Linear Jog X,Y,Z,Yaw
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dx = Old_Rx_Buffer[1];
+					dy = Old_Rx_Buffer[2];
+					dz = Old_Rx_Buffer[3];
+					dyaw = Old_Rx_Buffer[4];
 				}
 			}
 			else{
@@ -173,7 +187,8 @@ uint16_t CRC16(uint8_t *buf, int len);
 //using namespace std;
 
 AMT21 encoderJ1(&huart4, 0xD4);
-//AMT21 encoderJ3(&huart4, 0xC4);
+//AMT21 encoderJ2(&huart4, 0xB4);
+AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
@@ -182,7 +197,7 @@ Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
 Stepper stepperJ3(&htim15, TIM_CHANNEL_2, DIR_5_GPIO_Port, DIR_5_Pin);
 //Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
-HAL_StatusTypeDef HALENCJ1OK, HALENCJ3OK;
+HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 
 volatile int16_t posJ1, posJ3 ;
 volatile int32_t setpointJ1, setpointJ3;
@@ -192,7 +207,7 @@ volatile float uJ1, uJ3;
 volatile float chess_board_ang = 0.0;
 volatile float debug_pos_x, debug_pos_y;
 volatile u_int32_t county;
-volatile float C1,S1,C3,S3,q1,q3;
+//volatile float C1,S1,C3,S3,q1,q3;
 static float L1 = 0.013245;
 static float L2 = 0.370;
 static float L3 = 0.315;
@@ -204,11 +219,11 @@ static float H4 = 0.190;
 volatile float t = 0.0;
 volatile const float Time = 3;
 
-volatile const float C0_q1 = 0.9;
+volatile const float C0_q1 = 0.4;
 volatile const float C2_q1 = (3.0*C0_q1) / (Time*Time);
 volatile const float C3_q1 = (2.0*C0_q1) / (Time*Time*Time);
 
-volatile const float C0_q3 = 0.8;
+volatile const float C0_q3 = 0.6;
 volatile const float C2_q3 = (3.0*C0_q3) / (Time*Time);
 volatile const float C3_q3 = (2.0*C0_q3) / (Time*Time*Time);
 
@@ -249,6 +264,13 @@ volatile float Error_Old_q3 = 0.0;
 volatile float Sum_Error_q1 = 0.0;
 volatile float Sum_Error_q3 = 0.0;
 
+volatile float w_q1;
+volatile float w_q2;
+volatile float w_q3;
+volatile float w_q4;
+volatile float u_q1 = 0.0;
+volatile float u_q3 = 0.0;
+
 struct joint_state {
     float q1,q2,q3,q4;
 };
@@ -274,6 +296,9 @@ struct robot_joint{
 	volatile float Q = 0.095 ;
 	volatile float R = 0.00006;
 };
+float box_q1[50];
+float box_q3[50];
+
 typedef struct robot_joint fcb_joint;
 
 struct robot_kinematic{
@@ -284,7 +309,7 @@ typedef struct robot_kinematic fcb_kinematic;
 fcb_joint fcb_joint1, fcb_joint2, fcb_joint3, fcb_joint4;
 
 
-void Update_ivk(float Vx, float Vy, float Vz, float Wz)
+void Update_ivk(float q1,float q2,float q3,float q4,float Vx, float Vy, float Vz, float Wz)
 {
 	float S13 = sin(q1+q3);
 	float C13 = cos(q1+q3);
@@ -294,10 +319,10 @@ void Update_ivk(float Vx, float Vy, float Vz, float Wz)
 	float L12 = L1 + L2;
 	float L3S3 = L3 * S3;
 
-	volatile float w_q1 = (Vx*C13 + Vy*S13)/(S3*L12);
-	volatile float w_q2 = Vz;
-	volatile float w_q3 = -(Vx*(L3*C13 + L1*C1 + L2*C1))/(L3*S3*L12) - (Vy*(L3*S13 + L1*S1 + L2*S1))/(L3*S3*L12);
-	volatile float w_q4 = (Vx*C1 + Vy*S1 + L3*Wz*S3)/(L3*S3);
+	w_q1 = (Vx*C13 + Vy*S13)/(S3*L12);
+	w_q2 = Vz;
+	w_q3 = -(Vx*(L3*C13 + L1*C1 + L2*C1))/(L3S3*L12) - (Vy*(L3*S13 + L1*S1 + L2*S1))/(L3S3*L12);
+	w_q4 = (Vx*C1 + Vy*S1 + L3*Wz*S3)/(L3S3);
 
 };
 
@@ -357,16 +382,16 @@ joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripp
 	bug2 = gripper_linear_y*gripper_linear_y;
 	bug3 = L12*L12;
 	bug4 = L3*L3 ;
-	C3 = ((gripper_linear_x*gripper_linear_x)+(gripper_linear_y*gripper_linear_y)-(L12*L12)-(L3*L3)) / (2*L12*L3);
-	S3 = sqrt(1-(C3*C3));
-	q3 = atan2(S3,C3);
+	float C3 = ((gripper_linear_x*gripper_linear_x)+(gripper_linear_y*gripper_linear_y)-(L12*L12)-(L3*L3)) / (2*L12*L3);
+	float S3 = sqrt(1-(C3*C3));
+	float q3 = atan2(S3,C3);
 
 	float L3S3 = L3*S3;
 	float L123C3 = L12 + (L3*C3);
 
-	S1 = (-L3S3*gripper_linear_x) + (L123C3*gripper_linear_y);
-	C1 = (L3S3*gripper_linear_y) + (L123C3*gripper_linear_x);
-	q1 = atan2(S1,C1);
+	float S1 = (-L3S3*gripper_linear_x) + (L123C3*gripper_linear_y);
+	float C1 = (L3S3*gripper_linear_y) + (L123C3*gripper_linear_x);
+	float q1 = atan2(S1,C1);
 	float q4 = gripper_angular_yaw - q1 - q3;
 	float q2 = gripper_linear_z + H4 - H3 - H1;
 
@@ -378,6 +403,8 @@ joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripp
 
     return buff;
 }
+
+
 
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -392,19 +419,59 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim14){	//
 
 	}
-	if (htim == &htim5){	//
-	}
 	if (htim == &htim12){	//
-
 	}
-	if (htim == &htim7) { 	//
-
+	if (htim == &htim5){	//
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
 			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
 		}
 
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+
+
+		encoderJ3.AMT21_Read();
+		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		if (HALENCJ3OK == HAL_OK) {
+			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+		}
+
+		stepperJ1.StepperSetFrequency(dq1*3.0);
+		stepperJ3.StepperSetFrequency(dq3*4.0);
+
+//		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
+//		int i;
+//		for (i = 1 ; i<50 ; i++)
+//		{
+//			box_q1[i-1] = box_q1[i];
+//			box_q3[i-1] = box_q3[i];
+//		}
+//		 box_q1[49] = w_q1;
+//		 box_q3[49] = w_q3;
+//
+//		u_q1 = 0.0;
+//		u_q3 = 0.0;
+//
+//		for(i = 0; i < 50; i++)
+//		{
+//			u_q1 += box_q1[i];
+//			u_q3 += box_q3[i];
+//		}
+//		stepperJ1.StepperOpenLoopSpeed(u_q1/50.0);
+//		stepperJ3.StepperOpenLoopSpeed(u_q3/50.0);
+
+
+	}
+	if (htim == &htim7) { 	//
+
+//		encoderJ1.AMT21_Read();
+//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//		if (HALENCJ1OK == HAL_OK) {
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+//		}
+//
 //		encoderJ3.AMT21_Read();
 //		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 //		if (HALENCJ3OK == HAL_OK) {
@@ -604,10 +671,10 @@ int main(void)
 #endif
 
 	HAL_TIM_Base_Start_IT(&htim5);
-	HAL_TIM_Base_Start_IT(&htim6);
-	HAL_TIM_Base_Start_IT(&htim7);
-	HAL_TIM_Base_Start_IT(&htim12);
-	HAL_TIM_Base_Start_IT(&htim14);
+//	HAL_TIM_Base_Start_IT(&htim6);
+//	HAL_TIM_Base_Start_IT(&htim7);
+//	HAL_TIM_Base_Start_IT(&htim12);
+//	HAL_TIM_Base_Start_IT(&htim14);
 
 	// Encoder
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);

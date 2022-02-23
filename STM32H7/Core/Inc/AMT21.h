@@ -28,9 +28,15 @@ class AMT21{
         void AMT21_Read();
         HAL_StatusTypeDef AMT21_Check_Value();
 
-        uint16_t getRawValue();
+        int16_t getRawValue();
+        int16_t getPrevRawValue();
+        void unwarp(int32_t pulse, int32_t prev_pulse);
+        int32_t getUnwarpValue();
+
         int16_t getAngPos180();
-        int16_t getAngPos360();
+
+        void AMT21_Set_Zero();	// Set Zero Position (single turn encoders only)
+        void AMT21_Reset();		// Reset Encoder
     private:
     	UART_HandleTypeDef *amt21_huart;
     	GPIO_TypeDef *DE_port;
@@ -38,9 +44,11 @@ class AMT21{
     	uint8_t address;
 
     	uint16_t uart_buf;
-//    	float ang_pos;
+
     	int16_t raw_value;
-    	uint16_t value;
+    	int16_t prev_raw_value;
+    	int32_t unwarp_value;
+
     	uint8_t k0;
     	uint8_t k1;
 
