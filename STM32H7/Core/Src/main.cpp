@@ -135,7 +135,7 @@ uint16_t CRC16(uint8_t *buf, int len);
 //using namespace std;
 
 AMT21 encoderJ1(&huart4, 0xD4);
-AMT21 encoderJ3(&huart4, 0xC4);
+//AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
@@ -164,13 +164,13 @@ static float H3 = 0.065;
 static float H4 = 0.190;
 
 volatile float t = 0.0;
-volatile const float Time = 5;
+volatile const float Time = 3;
 
-volatile const float C0_q1 = 0.5;
+volatile const float C0_q1 = 0.9;
 volatile const float C2_q1 = (3.0*C0_q1) / (Time*Time);
 volatile const float C3_q1 = (2.0*C0_q1) / (Time*Time*Time);
 
-volatile const float C0_q3 = 1.0;
+volatile const float C0_q3 = 0.8;
 volatile const float C2_q3 = (3.0*C0_q3) / (Time*Time);
 volatile const float C3_q3 = (2.0*C0_q3) / (Time*Time*Time);
 
@@ -188,17 +188,21 @@ volatile bool direction = true;
 volatile float Goal_velocity_q1,Goal_velocity_q3 ;
 
 const float pi = 3.14159265;
-volatile float X11 = 0;
-volatile float X21 = 0;
-volatile float p11 = 1;
-volatile float p12 = 0;
-volatile float p21 = 0;
-volatile float p22 = 1;
+//volatile float X11 = 0;
+//volatile float X21 = 0;
+//volatile float p11 = 1;
+//volatile float p12 = 0;
+//volatile float p21 = 0;
+//volatile float p22 = 1;
 volatile float kalman_pos = 0;
 volatile float kalman_velo = 0;
-volatile float Q = 0.01 ;
-volatile float R = 0.00001;
+//volatile float Q = 0.01 ;
+//volatile float R = 0.00001;
 volatile const float dt = sample_time_1000;
+volatile const float dt2 = dt*dt;
+volatile const float dt3 = dt*dt*dt;
+volatile const float dt4 = dt*dt*dt*dt;
+
 volatile float velocity_kalman_q1, velocity_kalman_q3, velocity_kalman_q1_new, velocity_kalman_q3_new, kalman_velo_input;
 volatile float position_kalman_q1, position_kalman_q3, position_kalman_q1_new, position_kalman_q3_new;
 volatile float unwrap_pose = 0;
@@ -223,9 +227,9 @@ struct robot_joint{
 	volatile float Output_Stepper_Frequency, Output_Joint_W;
 	volatile float X11 = 0;
 	volatile float X21 = 0;
-	volatile float p11 = 0;
+	volatile float p11 = 1;
 	volatile float p12 = 0;
-	volatile float p21 = 0;
+	volatile float p21 = 1;
 	volatile float p22 = 0;
 	volatile float kalman_pos = 0;
 	volatile float kalman_velo = 0;
@@ -252,22 +256,58 @@ void Update_ivk(float Vx, float Vy, float Vz, float Wz)
 	float L12 = L1 + L2;
 	float L3S3 = L3 * S3;
 
-	volatile float w_q1 = (Vx*C13 + Vy*S13)/(S3*(L1 + L2));
+	volatile float w_q1 = (Vx*C13 + Vy*S13)/(S3*L12);
 	volatile float w_q2 = Vz;
-	volatile float w_q3 = -(Vx*(L3*C13 + L1*C1 + L2*C1))/(L3*S3*(L1 + L2)) - (Vy*(L3*S13 + L1*S1 + L2*S1))/(L3*S3*(L1 + L2));
+	volatile float w_q3 = -(Vx*(L3*C13 + L1*C1 + L2*C1))/(L3*S3*L12) - (Vy*(L3*S13 + L1*S1 + L2*S1))/(L3*S3*L12);
 	volatile float w_q4 = (Vx*C1 + Vy*S1 + L3*Wz*S3)/(L3*S3);
 
 };
 
 #endif
 
-void KalmanFilter(float theta_k,float X1,float X2,float P11,float P12,float P21,float P22)
+//void KalmanFilter(float theta_k,float X1,float X2,float P11,float P12,float P21,float P22, fcb_joint aaaa)
+//{
+//	bug1 = aaaa.Encoder;
+//	float X1 =
+//	X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//	X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//	p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//	p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);
+//	p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//	p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+////	 X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+////	 X21 = X2 - (((Q*dt3)/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+////	 p11 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+////	 p12 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*((Q*dt3)/2 + P22*dt + P12);
+////     p21 = P21 + P22*dt + (Q*dt3)/2 - (((Q*dt3)/2 + P22*dt + P21)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+////	 p22 = P22 + Q*dt2 - (((Q*dt3)/2 + P22*dt + P12)*((Q*dt3)/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+//}
+
+fcb_joint KalmanFilter(float theta_k, fcb_joint joint)
 {
- X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
- X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
- p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
- p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
- p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+//	bug1 = joint.Encoder;
+	float X1 = joint.X11;
+	float X2 = joint.X21;
+	float P11 = joint.p11;
+	float P12 = joint.p12;
+	float P21 = joint.p21;
+	float P22 = joint.p22;
+	float Q = joint.Q;
+	float R = joint.R;
+	joint.X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+	joint.X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+	joint.p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+	joint.p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);
+	joint.p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+	joint.p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+	return  joint;
+
+	//	 X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+//	 X21 = X2 - (((Q*dt3)/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+//	 p11 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+//	 p12 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*((Q*dt3)/2 + P22*dt + P12);
+//   p21 = P21 + P22*dt + (Q*dt3)/2 - (((Q*dt3)/2 + P22*dt + P21)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
+//	 p22 = P22 + Q*dt2 - (((Q*dt3)/2 + P22*dt + P12)*((Q*dt3)/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
 }
 
 joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear_z, float gripper_angular_yaw)
@@ -324,11 +364,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
 		}
 
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-		}
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+//		}
 
 
 
@@ -343,13 +383,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	    kalman_velo_input =  kalman_pos ;
 
 	    if (direction_traj == 1){
-	    	fcb_joint1.Goal_Position = unwrap_pose + (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) - 0.5 ;
+	    	fcb_joint1.Goal_Position = unwrap_pose + (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) - 0.8 ;
 	    	fcb_joint1.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * -2 ;
 	    	fcb_joint3.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * -2 ;
 	    }
 	    else
 	    {
-	    	fcb_joint1.Goal_Position = unwrap_pose - (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) + 0.5;
+	    	fcb_joint1.Goal_Position = unwrap_pose - (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) + 0.8;
 	    	fcb_joint1.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * 2 ;
 	    	fcb_joint3.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * 2 ;
 	    }
@@ -402,7 +442,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint3.Kd_v = 0.0 ;
 
 //		KalmanFilter(float theta_k,float kalman_pos,float kalman_velo,float P11,float P12,float P21,float P22);
-		KalmanFilter(fcb_joint1.Encoder/ 2609.0 , X11, X21, p11, p12, p21, p22);
+//		KalmanFilter(fcb_joint1.Encoder/ 2609.0 , X11, X21, p11, p12, p21, p22, fcb_joint1);
+		fcb_joint1 = KalmanFilter(fcb_joint1.Encoder/ 2609.0 ,fcb_joint1);
 //		fcb_joint1.Output_Stepper_Frequency = (fcb_joint1.Kp_p * fcb_joint1.Error_p) +
 //											  (fcb_joint1.Ki_p * fcb_joint1.Sum_Error_p) +
 //											  (fcb_joint1.Kd_p * (fcb_joint1.Error_p - fcb_joint1.Old_Error_p));
@@ -563,18 +604,16 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-//		stepperJ3.StepperOpenLoopSpeed(pi/2.0);
-//		HAL_GPIO_TogglePin(DIR_3_GPIO_Port, DIR_3_Pin);
-//
 //		encoderJ1.AMT21_Read();
 //		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 //		if (HALENCJ1OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ1.getAngPos180();
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
 //		}
+
 //		encoderJ3.AMT21_Read();
 //		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 //		if (HALENCJ3OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ3.getAngPos180();
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 //		}
 
 //		for (int i = 0;i < 500; i++){
