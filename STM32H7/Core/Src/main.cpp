@@ -186,8 +186,8 @@ uint16_t CRC16(uint8_t *buf, int len);
 
 //using namespace std;
 
-AMT21 encoderJ1(&huart4, 0xD4);
-AMT21 encoderJ2(&huart4, 0xB4);
+//AMT21 encoderJ1(&huart4, 0xD4);
+//AMT21 encoderJ2(&huart4, 0xB4);
 //AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
@@ -220,11 +220,11 @@ static float H4 = 0.190;
 volatile float t = 0.0;
 volatile const float Time = 3;
 
-volatile const float C0_q1 = 0.4;
+volatile const float C0_q1 = 0.8;
 volatile const float C2_q1 = (3.0*C0_q1) / (Time*Time);
 volatile const float C3_q1 = (2.0*C0_q1) / (Time*Time*Time);
 
-volatile const float C0_q3 = 0.6;
+volatile const float C0_q3 = 0.3;
 volatile const float C2_q3 = (3.0*C0_q3) / (Time*Time);
 volatile const float C3_q3 = (2.0*C0_q3) / (Time*Time*Time);
 
@@ -297,8 +297,8 @@ struct robot_joint{
 	volatile float Q = 0.095 ;
 	volatile float R = 0.00006;
 };
-float box_q1[200];
-float box_q3[200];
+float box_q1[80];
+float box_q3[80];
 
 typedef struct robot_joint fcb_joint;
 
@@ -423,18 +423,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim12){	//
 	}
 	if (htim == &htim5){	//
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-		}
+//		encoderJ1.AMT21_Read();
+//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//		if (HALENCJ1OK == HAL_OK) {
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+//		}
 
-		encoderJ2.AMT21_Read();
-		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-		if(HALENCJ2OK == HAL_OK){
-			encoderJ2.unwarp();
-			posJ2 = encoderJ2.getUnwarpValue();
-		}
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//		if(HALENCJ2OK == HAL_OK){
+//			encoderJ2.unwarp();
+//			posJ2 = encoderJ2.getUnwarpValue();
+//		}
 
 
 //		encoderJ3.AMT21_Read();
@@ -442,41 +442,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		if (HALENCJ3OK == HAL_OK) {
 //			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 //		}
-//
-//		stepperJ1.StepperSetFrequency(dq1*2.0);
-//		stepperJ3.StepperSetFrequency(dq3*3.0);
 
-//		int i;
-//		for (i = 1 ; i<200 ; i++)
-//		{
-//			box_q1[i-1] = box_q1[i];
-//			box_q3[i-1] = box_q3[i];
-//		}
-//		 box_q1[199] = dq1*3.0;
-//		 box_q3[199] = dq3*4.0;
-//
-//		u_q1 = 0.0;
-//		u_q3 = 0.0;
-//
-//		for(i = 0; i < 50; i++)
-//		{
-//			u_q1 += box_q1[i];
-//			u_q3 += box_q3[i];
-//		}
-//		stepperJ1.StepperSetFrequency(u_q1/200.0);
-//		stepperJ3.StepperSetFrequency(u_q3/200.0);
+		stepperJ1.StepperSetFrequency(dq1*4.0);
+		stepperJ3.StepperSetFrequency(dq3*3.0);
 
-
-
-//		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
 //		int i;
 //		for (i = 1 ; i<50 ; i++)
 //		{
 //			box_q1[i-1] = box_q1[i];
 //			box_q3[i-1] = box_q3[i];
 //		}
-//		 box_q1[49] = w_q1;
-//		 box_q3[49] = w_q3;
+//		 box_q1[49] = dq1*2.0;
+//		 box_q3[49] = dq3*4.0;
 //
 //		u_q1 = 0.0;
 //		u_q3 = 0.0;
@@ -486,8 +463,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			u_q1 += box_q1[i];
 //			u_q3 += box_q3[i];
 //		}
-//		stepperJ1.StepperOpenLoopSpeed(u_q1/50.0);
-//		stepperJ3.StepperOpenLoopSpeed(u_q3/50.0);
+//		stepperJ1.StepperSetFrequency(u_q1/50.0);
+//		stepperJ3.StepperSetFrequency(u_q3/50.0);
+
+
+
+//		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
+//		int i;
+//		for (i = 1 ; i<80 ; i++)
+//		{
+//			box_q1[i-1] = box_q1[i];
+//			box_q3[i-1] = box_q3[i];
+//		}
+//		 box_q1[79] = w_q1;
+//		 box_q3[79] = w_q3;
+//
+//		u_q1 = 0.0;
+//		u_q3 = 0.0;
+//
+//		for(i = 0; i < 80; i++)
+//		{
+//			u_q1 += box_q1[i];
+//			u_q3 += box_q3[i];
+//		}
+//		stepperJ1.StepperOpenLoopSpeed(u_q1/80.0);
+//		stepperJ3.StepperOpenLoopSpeed(u_q3/80.0);
 
 
 	}

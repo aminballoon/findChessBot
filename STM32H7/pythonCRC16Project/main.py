@@ -103,33 +103,36 @@ if __name__ == '__main__':
             q3_theta = 0
             q4_theta = 0
             if keyboard.is_pressed('q'):
-                q1_theta = 150
+                q1_theta = 5
 
             if keyboard.is_pressed('a'):
-                q1_theta = -150
+                q1_theta = -5
 
             if keyboard.is_pressed('w'):
-                q2_theta = 100
+                q2_theta = 5
 
             if keyboard.is_pressed('s'):
-                q2_theta = -100
+                q2_theta = -5
 
             if keyboard.is_pressed('e'):
-                q3_theta = 100
+                q3_theta = 5
 
             if keyboard.is_pressed('d'):
-                q3_theta = -100
+                q3_theta = -5
 
             if keyboard.is_pressed('r'):
-                q4_theta = 100
+                q4_theta = 5
 
             if keyboard.is_pressed('f'):
-                q4_theta = -100
+                q4_theta = -5
 
             frame = [0x61,low_byte(q1_theta),low_byte(q2_theta),low_byte(q3_theta),low_byte(q4_theta)]
             data = frame + crc16.calculate(frame)
             ser.write(data)
             time.sleep(0.1)
+
+
+
             # while(1):
             #     x_theta = 0
             #     y_theta = 0
