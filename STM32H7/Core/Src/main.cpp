@@ -236,10 +236,10 @@ volatile float kalman_pos = 0;
 volatile float kalman_velo = 0;
 //volatile float Q = 0.01 ;
 //volatile float R = 0.00001;
-volatile const float dt = sample_time_1000;
-volatile const float dt2 = dt*dt;
-volatile const float dt3 = dt*dt*dt;
-volatile const float dt4 = dt*dt*dt*dt;
+volatile const float dt = 0.001;
+volatile const float dt2 = pow(dt,2);
+volatile const float dt3 = pow(dt,3);
+volatile const float dt4 = pow(dt,4);
 
 volatile float velocity_kalman_q1, velocity_kalman_q3, velocity_kalman_q1_new, velocity_kalman_q3_new, kalman_velo_input;
 volatile float position_kalman_q1, position_kalman_q3, position_kalman_q1_new, position_kalman_q3_new;
@@ -271,8 +271,8 @@ struct robot_joint{
 	volatile float p22 = 0;
 	volatile float kalman_pos = 0;
 	volatile float kalman_velo = 0;
-	volatile float Q = 0.01 ;
-	volatile float R = 0.0001;
+	volatile float Q = 0.095 ;
+	volatile float R = 0.00006;
 };
 typedef struct robot_joint fcb_joint;
 
@@ -332,20 +332,23 @@ fcb_joint KalmanFilter(float theta_k, fcb_joint joint)
 	float P22 = joint.p22;
 	float Q = joint.Q;
 	float R = joint.R;
+
 	joint.X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
 	joint.X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
 	joint.p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
 	joint.p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);
 	joint.p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
 	joint.p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+
+//	joint.X11 = (4*R*x1 + 4*p11*theta_k + 4*dt2*p22*theta_k + 4*R*dt*x2 + 4*dt*p12*theta_k + 4*dt*p21*theta_k + Q*dt4*theta_k)/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
+//	joint.X21 = x2 - (((Q*dt3)/2 + p22*dt + p21)*(x1 - theta_k + dt*x2))/(R + p11 + dt*p21 + (Q*dt4)/4 + dt*(p12 + dt*p22));
+//	joint.p11 = (R*(4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22))/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
+//	joint.p12 = (2*R*(Q*dt3 + 2*p22*dt + 2*p12))/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
+//	joint.p21 = (2*R*(Q*dt3 + 2*p22*dt + 2*p21))/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
+//	joint.p22 = p22 + Q*dt2 - (((Q*dt3)/2 + p22*dt + p12)*((Q*dt3)/2 + p22*dt + p21))/(R + p11 + dt*p21 + (Q*dt4)/4 + dt*(p12 + dt*p22));
+
 	return  joint;
 
-	//	 X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
-//	 X21 = X2 - (((Q*dt3)/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
-//	 p11 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
-//	 p12 = -((P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)) - 1)*((Q*dt3)/2 + P22*dt + P12);
-//   p21 = P21 + P22*dt + (Q*dt3)/2 - (((Q*dt3)/2 + P22*dt + P21)*(P11 + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
-//	 p22 = P22 + Q*dt2 - (((Q*dt3)/2 + P22*dt + P12)*((Q*dt3)/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
 }
 
 joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear_z, float gripper_angular_yaw)
