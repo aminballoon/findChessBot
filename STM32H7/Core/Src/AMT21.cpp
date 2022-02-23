@@ -64,7 +64,7 @@ HAL_StatusTypeDef AMT21::AMT21_Check_Value() {
 int16_t AMT21::getRawValue() {
 	return this->raw_value;
 }
-int16_t AMT21::getPrevRawValue(){
+int16_t AMT21::getPrevRawValue() {
 	return this->prev_raw_value;
 }
 
@@ -72,19 +72,18 @@ int16_t AMT21::getAngPos180() {
 	return ((((this->raw_value & 0x2000) >> 13) * (-16383))
 			+ (this->raw_value & 0x3FFF)) * -1;
 }
-void AMT21::unwarp(int32_t pulse, int32_t prev_pulse){
+void AMT21::unwarp() {
 	int32_t dPulse = 0;
-	if (pulse - prev_pulse > 8191) {
-		dPulse = -(16383 - (pulse-prev_pulse));
-	} else if ( pulse -  prev_pulse < -8191) {
-		dPulse = 16383 - (prev_pulse - pulse);
+	if (this->raw_value - this->prev_raw_value > 8191) {
+		dPulse = -(16383 - (this->raw_value - this->prev_raw_value));
+	} else if (this->raw_value - this->prev_raw_value < -8191) {
+		dPulse = 16383 - (this->prev_raw_value - this->raw_value);
 	} else {
-		dPulse =  pulse -  prev_pulse;
+		dPulse = this->prev_raw_value - this->raw_value;
 	}
+	this->prev_raw_value = this->raw_value;
 	this->unwarp_value = this->unwarp_value + dPulse;
-//	return dPulse;
 }
-int32_t AMT21::getUnwarpValue()
-{
+int32_t AMT21::getUnwarpValue() {
 	return this->unwarp_value;
 }

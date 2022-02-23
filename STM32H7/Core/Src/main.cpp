@@ -187,8 +187,8 @@ uint16_t CRC16(uint8_t *buf, int len);
 //using namespace std;
 
 AMT21 encoderJ1(&huart4, 0xD4);
-//AMT21 encoderJ2(&huart4, 0xB4);
-AMT21 encoderJ3(&huart4, 0xC4);
+AMT21 encoderJ2(&huart4, 0xB4);
+//AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 //Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
@@ -200,6 +200,7 @@ Stepper stepperJ3(&htim15, TIM_CHANNEL_2, DIR_5_GPIO_Port, DIR_5_Pin);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 
 volatile int16_t posJ1, posJ3 ;
+volatile int32_t posJ2;
 volatile int32_t setpointJ1, setpointJ3;
 volatile int direction_traj = 0;
 volatile float errorJ1, errorJ3;
@@ -296,8 +297,8 @@ struct robot_joint{
 	volatile float Q = 0.095 ;
 	volatile float R = 0.00006;
 };
-float box_q1[50];
-float box_q3[50];
+float box_q1[200];
+float box_q3[200];
 
 typedef struct robot_joint fcb_joint;
 
@@ -428,18 +429,44 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
 		}
 
-//		encoderJ2.AMT21_Read();
-//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-
-
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+		encoderJ2.AMT21_Read();
+		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+		if(HALENCJ2OK == HAL_OK){
+			encoderJ2.unwarp();
+			posJ2 = encoderJ2.getUnwarpValue();
 		}
 
-		stepperJ1.StepperSetFrequency(dq1*3.0);
-		stepperJ3.StepperSetFrequency(dq3*4.0);
+
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+//		}
+//
+//		stepperJ1.StepperSetFrequency(dq1*2.0);
+//		stepperJ3.StepperSetFrequency(dq3*3.0);
+
+//		int i;
+//		for (i = 1 ; i<200 ; i++)
+//		{
+//			box_q1[i-1] = box_q1[i];
+//			box_q3[i-1] = box_q3[i];
+//		}
+//		 box_q1[199] = dq1*3.0;
+//		 box_q3[199] = dq3*4.0;
+//
+//		u_q1 = 0.0;
+//		u_q3 = 0.0;
+//
+//		for(i = 0; i < 50; i++)
+//		{
+//			u_q1 += box_q1[i];
+//			u_q3 += box_q3[i];
+//		}
+//		stepperJ1.StepperSetFrequency(u_q1/200.0);
+//		stepperJ3.StepperSetFrequency(u_q3/200.0);
+
+
 
 //		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
 //		int i;

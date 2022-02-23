@@ -103,10 +103,10 @@ if __name__ == '__main__':
             q3_theta = 0
             q4_theta = 0
             if keyboard.is_pressed('q'):
-                q1_theta = 80
+                q1_theta = 150
 
             if keyboard.is_pressed('a'):
-                q1_theta = -80
+                q1_theta = -150
 
             if keyboard.is_pressed('w'):
                 q2_theta = 100

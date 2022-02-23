@@ -7,5 +7,5 @@ AMT21.cpp:44:19:HAL_StatusTypeDef AMT21::AMT21_Check_Value()	24	static
 AMT21.cpp:64:9:int16_t AMT21::getRawValue()	16	static
 AMT21.cpp:67:9:int16_t AMT21::getPrevRawValue()	16	static
 AMT21.cpp:71:9:int16_t AMT21::getAngPos180()	16	static
-AMT21.cpp:75:6:void AMT21::unwarp(int32_t, int32_t)	32	static
+AMT21.cpp:75:6:void AMT21::unwarp()	24	static
 AMT21.cpp:87:9:int32_t AMT21::getUnwarpValue()	16	static

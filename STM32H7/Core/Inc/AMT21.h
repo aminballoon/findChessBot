@@ -30,7 +30,7 @@ class AMT21{
 
         int16_t getRawValue();
         int16_t getPrevRawValue();
-        void unwarp(int32_t pulse, int32_t prev_pulse);
+        void unwarp();
         int32_t getUnwarpValue();
 
         int16_t getAngPos180();
