@@ -191,10 +191,7 @@ uint16_t CRC16(uint8_t *buf, int len);
 //AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
-//Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
-
-//Stepper stepperJ1(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
-//Stepper stepperJ2(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
+Stepper stepperJ2(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 Stepper stepperJ3(&htim15, TIM_CHANNEL_2, DIR_5_GPIO_Port, DIR_5_Pin);
 //Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
@@ -220,7 +217,7 @@ static float H4 = 0.190;
 volatile float t = 0.0;
 volatile const float Time = 3;
 
-volatile const float C0_q1 = 0.8;
+volatile const float C0_q1 = 0.6;
 volatile const float C2_q1 = (3.0*C0_q1) / (Time*Time);
 volatile const float C3_q1 = (2.0*C0_q1) / (Time*Time*Time);
 
@@ -236,7 +233,8 @@ volatile const float sample_time_500 = 0.002;
 volatile const float sample_time_1000 = 0.001;
 volatile const float sample_time_2000 = 0.0005;
 
-volatile const float chessboard_angular_velocity = 	2.0 * 0.10472; // rpm to rad/s
+volatile const float Time_circle = 15;
+volatile const float chessboard_angular_velocity = 	4.0 * 0.10472; // rpm to rad/s
 
 volatile bool direction = true;
 volatile float Goal_velocity_q1,Goal_velocity_q3 ;
@@ -297,9 +295,11 @@ struct robot_joint{
 	volatile float Q = 0.095 ;
 	volatile float R = 0.00006;
 };
-float box_q1[80];
-float box_q3[80];
 
+int num = 20;
+float box_q1[20];
+float box_q3[20];
+float idx,idy ;
 typedef struct robot_joint fcb_joint;
 
 struct robot_kinematic{
@@ -414,15 +414,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	// tim12 2000 Hz
 	// tim6 200 Hz
 	// tim14 500Hz
+
 	if (htim == &htim6){	//
 
 	}
+
 	if (htim == &htim14){	//
 
 	}
+
 	if (htim == &htim12){	//
+
 	}
+
 	if (htim == &htim5){	//
+
+
 //		encoderJ1.AMT21_Read();
 //		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 //		if (HALENCJ1OK == HAL_OK) {
@@ -443,51 +450,60 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 //		}
 
-		stepperJ1.StepperSetFrequency(dq1*4.0);
-		stepperJ3.StepperSetFrequency(dq3*3.0);
+//		stepperJ1.StepperSetFrequency(dq1*100.0);
+//		stepperJ2.StepperSetFrequency(dq1*100.0);
+//		stepperJ3.StepperSetFrequency(dq1*100.0);
 
 //		int i;
-//		for (i = 1 ; i<50 ; i++)
+//		for (i = 1 ; i<num ; i++)
 //		{
 //			box_q1[i-1] = box_q1[i];
 //			box_q3[i-1] = box_q3[i];
 //		}
-//		 box_q1[49] = dq1*2.0;
-//		 box_q3[49] = dq3*4.0;
+//		 box_q1[num-1] = dq1*8.0;
+//		 box_q3[num-1] = dq3*8.0;
 //
 //		u_q1 = 0.0;
 //		u_q3 = 0.0;
 //
-//		for(i = 0; i < 50; i++)
+//		for(i = 0; i < num; i++)
 //		{
 //			u_q1 += box_q1[i];
 //			u_q3 += box_q3[i];
 //		}
-//		stepperJ1.StepperSetFrequency(u_q1/50.0);
-//		stepperJ3.StepperSetFrequency(u_q3/50.0);
+
+//		stepperJ2.StepperSetFrequency(dq1*10.0);
+//		stepperJ3.StepperSetFrequency(dq3*2.0);
+
+//		stepperJ2.StepperSetFrequency(u_q1/num*1.0);
+//		stepperJ3.StepperSetFrequency(u_q3/num*1.0);
 
 
 
-//		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
-//		int i;
-//		for (i = 1 ; i<80 ; i++)
-//		{
-//			box_q1[i-1] = box_q1[i];
-//			box_q3[i-1] = box_q3[i];
-//		}
-//		 box_q1[79] = w_q1;
-//		 box_q3[79] = w_q3;
+		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
 //
-//		u_q1 = 0.0;
-//		u_q3 = 0.0;
-//
-//		for(i = 0; i < 80; i++)
-//		{
-//			u_q1 += box_q1[i];
-//			u_q3 += box_q3[i];
-//		}
-//		stepperJ1.StepperOpenLoopSpeed(u_q1/80.0);
-//		stepperJ3.StepperOpenLoopSpeed(u_q3/80.0);
+//		stepperJ2.StepperOpenLoopSpeed(-1.0 * w_q1);
+//		stepperJ3.StepperOpenLoopSpeed(w_q3);
+
+		int i;
+				for (i = 1 ; i<num ; i++)
+				{
+					box_q1[i-1] = box_q1[i];
+					box_q3[i-1] = box_q3[i];
+				}
+				 box_q1[num-1] = w_q1;
+				 box_q3[num-1] = w_q3;
+
+				u_q1 = 0.0;
+				u_q3 = 0.0;
+
+				for(i = 0; i < num; i++)
+				{
+					u_q1 += box_q1[i];
+					u_q3 += box_q3[i];
+				}
+				stepperJ2.StepperOpenLoopSpeed(u_q1/num*-1.0);
+				stepperJ3.StepperOpenLoopSpeed(u_q3/num*1.0);
 
 
 	}
@@ -537,13 +553,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	    chess_board_ang = chessboard_angular_velocity * t;
 
 		joint_config findchessbot_joint_state;
-//		debug_pos_x = 0.247*cos(chess_board_ang)+0.42744;
-//		debug_pos_y = 0.247*sin(chess_board_ang)+0.00059371;
-//		findchessbot_joint_state = find_IK(
-//				debug_pos_x,
-//				debug_pos_y,
-//				0,
-//				0);
+		debug_pos_x = 0.247*cos(chess_board_ang)+0.42744;
+		debug_pos_y = 0.247*sin(chess_board_ang)+0.00059371;
+		idx = 0.247*cos(chess_board_ang) * chessboard_angular_velocity;
+		idy = 0.247*cos(chess_board_ang) * chessboard_angular_velocity;
+		findchessbot_joint_state = find_IK(
+				debug_pos_x,
+				debug_pos_y,
+				0,
+				0);
+//		Update_ivk(findchessbot_joint_state.q1 / 2609.0 ,0,findchessbot_joint_state.q3 / 2609.0,0, idx/1000.0, idy/1000.0, 0.0, 0.0);
 
 //		fcb_joint1.Goal_Position = findchessbot_joint_state.q1 * 2607;
 //		fcb_joint3.Goal_Position = findchessbot_joint_state.q3 * 2607;
@@ -593,8 +612,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		fcb_joint1.Output_Stepper_Frequency = (fcb_joint1.Kp_p * fcb_joint1.Error_p);
 //		fcb_joint3.Output_Stepper_Frequency = (fcb_joint3.Kp_p * fcb_joint3.Error_p);
 
-		fcb_joint1.Output_Stepper_Frequency = fcb_joint1.Goal_Position;
-		fcb_joint3.Output_Stepper_Frequency = fcb_joint3.Goal_Position;
+//		fcb_joint1.Output_Stepper_Frequency = fcb_joint1.Goal_Position;
+//		fcb_joint3.Output_Stepper_Frequency = fcb_joint3.Goal_Position;
 
 
 
@@ -611,8 +630,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ1.StepperSetFrequency(uJ1);
 //		stepperJ3.StepperSetFrequency(0.0f);
 
-		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Goal_Velocity);
+		stepperJ2.StepperOpenLoopSpeed(-1.0 * fcb_joint1.Goal_Velocity);
 		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Goal_Velocity);
+
+//		stepperJ1.StepperOpenLoopSpeed(w_q1);
+//		stepperJ3.StepperOpenLoopSpeed(w_q3);
 
 		#endif
 
@@ -623,6 +645,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			direction_traj ^= 1;
 			unwrap_pose =  fcb_joint1.Goal_Position;
 		}
+
+//		if (t >= Time_circle)
+//				{
+//					t = 0.0;
+//					direction_traj ^= 1;
+//					unwrap_pose =  fcb_joint1.Goal_Position;
+//				}
 
 	}
 }
@@ -685,9 +714,12 @@ int main(void)
 	stepperJ1.StepperSetMicrostep(16);
 	stepperJ1.StepperSetRatio(3);
 	stepperJ1.StepperEnable();
-//	stepperJ2.StepperSetMicrostep(1);
-//	stepperJ2.StepperSetRatio(1);
-//	stepperJ1.StepperSetFrequency(15842.0f);
+
+	stepperJ2.StepperSetFrequency(0.0f);
+	stepperJ2.StepperSetMicrostep(4);
+	stepperJ2.StepperSetRatio(42);
+	stepperJ2.StepperEnable();
+
 	stepperJ3.StepperSetFrequency(0.0f);
 	stepperJ3.StepperSetMicrostep(8);
 	stepperJ3.StepperSetRatio(9);
@@ -697,13 +729,13 @@ int main(void)
 //	stepperJ4.StepperSetRatio(1);
 #endif
 
-	HAL_TIM_Base_Start_IT(&htim5);
+//	HAL_TIM_Base_Start_IT(&htim5);
 //	HAL_TIM_Base_Start_IT(&htim6);
-//	HAL_TIM_Base_Start_IT(&htim7);
+	HAL_TIM_Base_Start_IT(&htim7);
 //	HAL_TIM_Base_Start_IT(&htim12);
 //	HAL_TIM_Base_Start_IT(&htim14);
 
-	// Encoder
+
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
 //	stepperJ1.StepperOpenLoopSpeed(1.00f);
