@@ -1,3 +1,12 @@
+cmath:260:3:constexpr float std::floor(float)	16	static
+cmath:1756:3:constexpr float std::round(float)	16	static
 ServoMotor.cpp:8:1:ServoMotor::ServoMotor(TIM_HandleTypeDef*, uint32_t)	24	static
-ServoMotor.cpp:14:1:ServoMotor::~ServoMotor()	16	static
-ServoMotor.cpp:16:6:void ServoMotor::ServoEnable()	16	static
+ServoMotor.cpp:43:1:ServoMotor::~ServoMotor()	16	static
+ServoMotor.cpp:45:6:void ServoMotor::ServoEnable()	16	static
+ServoMotor.cpp:48:6:void ServoMotor::ServoDisable()	16	static
+ServoMotor.cpp:51:6:void ServoMotor::ServoRotateDegree(int32_t)	40	static
+ServoMotor.cpp:103:6:void ServoMotor::setDegreeGripperOpen(int32_t)	16	static
+ServoMotor.cpp:107:6:void ServoMotor::setDegreeGripperClose(int32_t)	16	static
+ServoMotor.cpp:111:6:void ServoMotor::GripperClose()	16	static
+ServoMotor.cpp:116:6:void ServoMotor::GripperOpen()	16	static
+ServoMotor.cpp:121:9:int32_t ServoMotor::GripperMap(int32_t, int32_t, int32_t, int32_t, int32_t)	24	static

@@ -15,6 +15,7 @@ extern "C" {
 #include "main.h"
 #include "stm32h7xx_hal.h"
 #include "stdint.h"
+#include "stdbool.h"
 
 class ServoMotor{
 public:
@@ -22,17 +23,21 @@ public:
 	~ServoMotor();
 	void ServoEnable();
 	void ServoDisable();
-	void ServoRotateDegree();
-	void setDegreeGripperOpen();
-	void setDegreeGripperClose();
+	void ServoRotateDegree(int32_t _sdegrotate);
+	void setDegreeGripperOpen(int32_t _sdegopen);
+	void setDegreeGripperClose(int32_t _sdegclose);
 	void GripperClose();
 	void GripperOpen();
-	long GripperMap(long x, long in_min, long in_max, long out_min, long out_max);
+	int32_t GripperMap(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min, int32_t out_max);
 private:
     TIM_HandleTypeDef *servo_htim;
     uint32_t	SERVO_TIM_CHANNEL;
-	uint8_t sdegopen = 0;
-	uint8_t sdegclose = 0;
+    int32_t sdegopen = 0;
+	int32_t sdegclose = 0;
+	int32_t minsdeg = 0;
+	int32_t maxsdeg = 180;
+	bool isSetDegreeGripperOpen = false;
+	bool isSetDegreeGripperClose = false;
 };
 
 #ifdef __cplusplus

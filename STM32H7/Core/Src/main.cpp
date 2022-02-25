@@ -40,7 +40,7 @@
 //#endif
 #include "AMT21.h"
 #include "Stepper.h"
-#include "Actuator.h"
+#include "ServoMotor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,101 +91,7 @@ int fputc(int ch, FILE *f)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
-volatile int8_t dx = 0, dy = 0, dz = 0, dyaw = 0;
-volatile int16_t to_X_pose = 0, to_Y_pose = 0, to_Z_pose = 0, to_Yaw_pose = 0;
-
-volatile uint16_t CRCValue = 0;
-volatile uint16_t ExpectedCRCValue = 0;
-
-#define Rx_BUFFER_SIZE   20
-uint8_t Old_Rx_Buffer[Rx_BUFFER_SIZE] = {0};
-uint8_t New_Rx_Buffer[Rx_BUFFER_SIZE] = {0};
-volatile uint16_t cmdDataSize = 0;
-
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-	if (huart == &huart3) {
-		memcpy(Old_Rx_Buffer, &New_Rx_Buffer, Rx_BUFFER_SIZE);	// Keep buffer.
-		memset(New_Rx_Buffer, 0, Rx_BUFFER_SIZE);	// Clear received data.
-		if(Size - 2 > 0 && Size <= Rx_BUFFER_SIZE){	// Check if there's some data.
-			cmdDataSize = Size - 2;	// Calculate data length.
-			CRCValue = HAL_CRC_Calculate(&hcrc, (uint32_t *)Old_Rx_Buffer, cmdDataSize); // Calculate data only by STM32 Hardware CRC.
-			ExpectedCRCValue = Old_Rx_Buffer[cmdDataSize] << 8 | Old_Rx_Buffer[cmdDataSize+1]; // Read Expected CRC from Protocol.
-			if(CRCValue == ExpectedCRCValue){ // Check if CRC value is equal to Expected CRC value.
-				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-				if(Old_Rx_Buffer[0] == 0x41 && cmdDataSize == 3){	// Joint Jog q1
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dq1 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x42 && cmdDataSize == 3){	// Joint Jog q2
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dq2 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x43 && cmdDataSize == 3){	// Joint Jog q3
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dq3 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x44 && cmdDataSize == 3){	// Joint Jog q4
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dq4 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x51 && cmdDataSize == 3){	// Linear Jog X
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dx = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x52 && cmdDataSize == 3){	// Linear Jog Y
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dy = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x53 && cmdDataSize == 3){	// Linear Jog Z
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dz = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x54 && cmdDataSize == 3){	// Linear Jog Yaw
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dyaw = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-				}
-				else if(Old_Rx_Buffer[0] == 0x61 && cmdDataSize == 5){ // Joint Jog 4q
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dq1 = Old_Rx_Buffer[1];
-					dq2 = Old_Rx_Buffer[2];
-					dq3 = Old_Rx_Buffer[3];
-					dq4 = Old_Rx_Buffer[4];
-				}
-				else if(Old_Rx_Buffer[0] == 0x71 && cmdDataSize == 5){ // Linear Jog X,Y,Z,Yaw
-//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
-					dx = Old_Rx_Buffer[1];
-					dy = Old_Rx_Buffer[2];
-					dz = Old_Rx_Buffer[3];
-					dyaw = Old_Rx_Buffer[4];
-				}
-			}
-			else{
-				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-				HAL_UART_Transmit_DMA(&huart3, (uint8_t *)"CRC16 error\n", 12);
-			}
-		}
-		else{
-			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-			HAL_UART_Transmit_DMA(&huart3, (uint8_t *)"Protocol match error\n", 21);
-		}
-		/* start the DMA again */
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
-		__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
-	}
-}
-
-void Update_Coff(int kalman_pos, int y1, int kalman_velo, int y2, float Time);
-void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
-uint16_t CRC16(uint8_t *buf, int len);
 #ifdef __cplusplus
-
-//using namespace std;
-
 AMT21 encoderJ1(&huart4, 0xD4);
 //AMT21 encoderJ2(&huart4, 0xB4);
 AMT21 encoderJ3(&huart4, 0xC4);
@@ -193,10 +99,106 @@ AMT21 encoderJ3(&huart4, 0xC4);
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 Stepper stepperJ2(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 Stepper stepperJ3(&htim15, TIM_CHANNEL_2, DIR_5_GPIO_Port, DIR_5_Pin);
-//Stepper stepperJ4(&htim4, TIM_CHANNEL_3, DIR_4_GPIO_Port, DIR_4_Pin);
-HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
+Stepper stepperJ4(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
 
-volatile int16_t posJ1, posJ3 ;
+ServoMotor gripper(&htim4, TIM_CHANNEL_3);
+HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
+#endif
+
+volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
+volatile int8_t dx = 0, dy = 0, dz = 0, dyaw = 0;
+volatile int16_t to_X_pose = 0, to_Y_pose = 0, to_Z_pose = 0, to_Yaw_pose = 0;
+
+volatile uint16_t CRCValue = 0;
+volatile uint16_t ExpectedCRCValue = 0;
+volatile int gripperstate;
+#define Rx_BUFFER_SIZE   20
+uint8_t Old_Rx_Buffer[Rx_BUFFER_SIZE] = { 0 };
+uint8_t New_Rx_Buffer[Rx_BUFFER_SIZE] = { 0 };
+volatile uint16_t cmdDataSize = 0;
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+	if (huart == &huart3) {
+		memcpy(Old_Rx_Buffer, &New_Rx_Buffer, Rx_BUFFER_SIZE);	// Keep buffer.
+		memset(New_Rx_Buffer, 0, Rx_BUFFER_SIZE);	// Clear received data.
+		if (Size - 2 > 0 && Size <= Rx_BUFFER_SIZE) {// Check if there's some data.
+			cmdDataSize = Size - 2;	// Calculate data length.
+			CRCValue = HAL_CRC_Calculate(&hcrc, (uint32_t*) Old_Rx_Buffer,
+					cmdDataSize); // Calculate data only by STM32 Hardware CRC.
+			ExpectedCRCValue = Old_Rx_Buffer[cmdDataSize] << 8
+					| Old_Rx_Buffer[cmdDataSize + 1]; // Read Expected CRC from Protocol.
+			if (CRCValue == ExpectedCRCValue) { // Check if CRC value is equal to Expected CRC value.
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+				if (Old_Rx_Buffer[0] == 0x41 && cmdDataSize == 3) {	// Joint Jog q1
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq1 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x42 && cmdDataSize == 3) {// Joint Jog q2
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq2 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x43 && cmdDataSize == 3) {// Joint Jog q3
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq3 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x44 && cmdDataSize == 3) {// Joint Jog q4
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq4 = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x51 && cmdDataSize == 3) {// Linear Jog X
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dx = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x52 && cmdDataSize == 3) {// Linear Jog Y
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dy = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x53 && cmdDataSize == 3) {// Linear Jog Z
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dz = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x54 && cmdDataSize == 3) {// Linear Jog Yaw
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dyaw = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+				} else if (Old_Rx_Buffer[0] == 0x61 && cmdDataSize == 5) { // Joint Jog 4q
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dq1 = Old_Rx_Buffer[1];
+					dq2 = Old_Rx_Buffer[2];
+					dq3 = Old_Rx_Buffer[3];
+					dq4 = Old_Rx_Buffer[4];
+				} else if (Old_Rx_Buffer[0] == 0x71 && cmdDataSize == 5) { // Linear Jog X,Y,Z,Yaw
+//					HAL_UART_Transmit_DMA(&huart3, &Old_Rx_Buffer[0], 1);
+					dx = Old_Rx_Buffer[1];
+					dy = Old_Rx_Buffer[2];
+					dz = Old_Rx_Buffer[3];
+					dyaw = Old_Rx_Buffer[4];
+				} else if (Old_Rx_Buffer[0] == 0x81 && cmdDataSize == 2) {// Servo
+					gripperstate = Old_Rx_Buffer[1];
+					if (gripperstate == 0) {
+						gripper.GripperOpen();
+					} else {
+						gripper.GripperClose();
+					}
+
+				}
+			}
+		} else {
+			HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+			HAL_UART_Transmit_DMA(&huart3, (uint8_t*) "CRC16 error\n", 12);
+		}
+	} else {
+		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+		HAL_UART_Transmit_DMA(&huart3, (uint8_t*) "Protocol match error\n", 21);
+	}
+	/* start the DMA again */
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer,
+			Rx_BUFFER_SIZE);
+	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
+}
+
+
+void Update_Coff(int kalman_pos, int y1, int kalman_velo, int y2, float Time);
+void IPK_findChessBot(float X, float Y, float Z, float endEff_Yaw);
+uint16_t CRC16(uint8_t *buf, int len);
+#ifdef __cplusplus
+
+volatile int16_t posJ1, posJ3;
 volatile int32_t posJ2;
 volatile int32_t setpointJ1, setpointJ3;
 volatile int direction_traj = 0;
@@ -218,14 +220,14 @@ volatile float t = 0.0;
 volatile const float Time = 3;
 
 volatile const float C0_q1 = 0.6;
-volatile const float C2_q1 = (3.0*C0_q1) / (Time*Time);
-volatile const float C3_q1 = (2.0*C0_q1) / (Time*Time*Time);
+volatile const float C2_q1 = (3.0 * C0_q1) / (Time * Time);
+volatile const float C3_q1 = (2.0 * C0_q1) / (Time * Time * Time);
 
 volatile const float C0_q3 = 0.3;
-volatile const float C2_q3 = (3.0*C0_q3) / (Time*Time);
-volatile const float C3_q3 = (2.0*C0_q3) / (Time*Time*Time);
+volatile const float C2_q3 = (3.0 * C0_q3) / (Time * Time);
+volatile const float C3_q3 = (2.0 * C0_q3) / (Time * Time * Time);
 
-volatile float bug1,bug2,bug3,bug4,bug5 ;
+volatile float bug1, bug2, bug3, bug4, bug5;
 
 volatile const float sample_time_100 = 0.01;
 volatile const float sample_time_200 = 0.005;
@@ -234,10 +236,10 @@ volatile const float sample_time_1000 = 0.001;
 volatile const float sample_time_2000 = 0.0005;
 
 volatile const float Time_circle = 15;
-volatile const float chessboard_angular_velocity = 	4.0 * 0.10472; // rpm to rad/s
+volatile const float chessboard_angular_velocity = 4.0 * 0.10472; // rpm to rad/s
 
 volatile bool direction = true;
-volatile float Goal_velocity_q1,Goal_velocity_q3 ;
+volatile float Goal_velocity_q1, Goal_velocity_q3;
 
 const float pi = 3.14159265;
 //volatile float X11 = 0;
@@ -251,12 +253,14 @@ volatile float kalman_velo = 0;
 //volatile float Q = 0.01 ;
 //volatile float R = 0.00001;
 volatile const float dt = 0.001;
-volatile const float dt2 = pow(dt,2);
-volatile const float dt3 = pow(dt,3);
-volatile const float dt4 = pow(dt,4);
+volatile const float dt2 = pow(dt, 2);
+volatile const float dt3 = pow(dt, 3);
+volatile const float dt4 = pow(dt, 4);
 
-volatile float velocity_kalman_q1, velocity_kalman_q3, velocity_kalman_q1_new, velocity_kalman_q3_new, kalman_velo_input;
-volatile float position_kalman_q1, position_kalman_q3, position_kalman_q1_new, position_kalman_q3_new;
+volatile float velocity_kalman_q1, velocity_kalman_q3, velocity_kalman_q1_new,
+	velocity_kalman_q3_new, kalman_velo_input;
+volatile float position_kalman_q1, position_kalman_q3, position_kalman_q1_new,
+	position_kalman_q3_new;
 volatile float unwrap_pose = 0;
 volatile float Error_Old_q1 = 0.0;
 volatile float Error_Old_q3 = 0.0;
@@ -268,64 +272,71 @@ volatile float w_q2;
 volatile float w_q3;
 volatile float w_q4;
 volatile float u_q1 = 0.0;
+volatile float u_q2 = 0.0;
 volatile float u_q3 = 0.0;
+volatile float u_q4 = 0.0;
 
 struct joint_state {
-    float q1,q2,q3,q4;
+float q1, q2, q3, q4;
 };
 typedef struct joint_state joint_config;
 
-struct robot_joint{
-	volatile int16_t Encoder ;
-	volatile float Goal_Position, Goal_Velocity ;
-	volatile float Kalman_Position, Kalman_Velocity, Kalman_Position_New, Kalman_Velocity_New ;
+struct robot_joint {
+volatile int16_t Encoder;
+volatile float Goal_Position, Goal_Velocity;
+volatile float Kalman_Position, Kalman_Velocity, Kalman_Position_New,
+		Kalman_Velocity_New;
 
-	volatile float Kp_p, Ki_p, Kd_p, Kp_v, Ki_v, Kd_v;
-	volatile float Error_p, Old_Error_p, Sum_Error_p, Error_v, Old_Error_v, Sum_Error_v;
-	volatile float Old_p, Old_v;
-	volatile float Output_Stepper_Frequency, Output_Joint_W;
-	volatile float X11 = 0;
-	volatile float X21 = 0;
-	volatile float p11 = 1;
-	volatile float p12 = 0;
-	volatile float p21 = 1;
-	volatile float p22 = 0;
-	volatile float kalman_pos = 0;
-	volatile float kalman_velo = 0;
-	volatile float Q = 0.095 ;
-	volatile float R = 0.00006;
+volatile float Kp_p, Ki_p, Kd_p, Kp_v, Ki_v, Kd_v;
+volatile float Error_p, Old_Error_p, Sum_Error_p, Error_v, Old_Error_v,
+		Sum_Error_v;
+volatile float Old_p, Old_v;
+volatile float Output_Stepper_Frequency, Output_Joint_W;
+volatile float X11 = 0;
+volatile float X21 = 0;
+volatile float p11 = 1;
+volatile float p12 = 0;
+volatile float p21 = 1;
+volatile float p22 = 0;
+volatile float kalman_pos = 0;
+volatile float kalman_velo = 0;
+volatile float Q = 0.095;
+volatile float R = 0.00006;
 };
 
-int num = 20;
-float box_q1[20];
-float box_q3[20];
-float idx,idy ;
+int num = 30;
+float box_q1[30];
+float box_q2[30];
+float box_q3[30];
+float box_q4[30];
+float idx, idy;
 typedef struct robot_joint fcb_joint;
 
-struct robot_kinematic{
-	volatile float Pos_x, Pos_y, Pos_z, Ori_yaw;
+struct robot_kinematic {
+volatile float Pos_x, Pos_y, Pos_z, Ori_yaw;
 };
 typedef struct robot_kinematic fcb_kinematic;
 
 fcb_joint fcb_joint1, fcb_joint2, fcb_joint3, fcb_joint4;
 
+void Update_ivk(float q1, float q2, float q3, float q4, float Vx, float Vy,
+	float Vz, float Wz) {
+float S13 = sin(q1 + q3);
+float C13 = cos(q1 + q3);
+float S3 = sin(q3);
+float S1 = sin(q1);
+float C1 = cos(q1);
+float L12 = L1 + L2;
+float L3S3 = L3 * S3;
 
-void Update_ivk(float q1,float q2,float q3,float q4,float Vx, float Vy, float Vz, float Wz)
-{
-	float S13 = sin(q1+q3);
-	float C13 = cos(q1+q3);
-	float S3 = sin(q3);
-	float S1 = sin(q1);
-	float C1 = cos(q1);
-	float L12 = L1 + L2;
-	float L3S3 = L3 * S3;
+w_q1 = (Vx * C13 + Vy * S13) / (S3 * L12);
+w_q2 = Vz;
+w_q3 = -(Vx * (L3 * C13 + L1 * C1 + L2 * C1)) / (L3S3 * L12)
+		- (Vy * (L3 * S13 + L1 * S1 + L2 * S1)) / (L3S3 * L12);
+w_q4 = (Vx * C1 + Vy * S1 + L3 * Wz * S3) / (L3S3);
 
-	w_q1 = (Vx*C13 + Vy*S13)/(S3*L12);
-	w_q2 = Vz;
-	w_q3 = -(Vx*(L3*C13 + L1*C1 + L2*C1))/(L3S3*L12) - (Vy*(L3*S13 + L1*S1 + L2*S1))/(L3S3*L12);
-	w_q4 = (Vx*C1 + Vy*S1 + L3*Wz*S3)/(L3S3);
-
-};
+}
+;
 
 #endif
 
@@ -347,24 +358,46 @@ void Update_ivk(float q1,float q2,float q3,float q4,float Vx, float Vy, float Vz
 ////	 p22 = P22 + Q*dt2 - (((Q*dt3)/2 + P22*dt + P12)*((Q*dt3)/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*dt2)/4 + dt*(P12 + P22*dt));
 //}
 
-fcb_joint KalmanFilter(float theta_k, fcb_joint joint)
-{
+fcb_joint KalmanFilter(float theta_k, fcb_joint joint) {
 //	bug1 = joint.Encoder;
-	float X1 = joint.X11;
-	float X2 = joint.X21;
-	float P11 = joint.p11;
-	float P12 = joint.p12;
-	float P21 = joint.p21;
-	float P22 = joint.p22;
-	float Q = joint.Q;
-	float R = joint.R;
+float X1 = joint.X11;
+float X2 = joint.X21;
+float P11 = joint.p11;
+float P12 = joint.p12;
+float P21 = joint.p21;
+float P22 = joint.p22;
+float Q = joint.Q;
+float R = joint.R;
 
-	joint.X11 = X1 + (X2*dt) - ((X1 - theta_k + X2*dt)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
-	joint.X21 = X2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(X1 - theta_k + X2*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
-	joint.p11 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
-	joint.p12 = -((P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)) - 1)*((Q*pow(dt,3))/2 + P22*dt + P12);
-	joint.p21 = P21 + P22*dt + (Q*pow(dt,3))/2 - (((Q*pow(dt,3))/2 + P22*dt + P21)*(P11 + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt)))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
-	joint.p22 = P22 + Q*pow(dt,2) - (((Q*pow(dt,3))/2 + P22*dt + P12)*((Q*pow(dt,3))/2 + P22*dt + P21))/(P11 + R + P21*dt + (Q*pow(dt,4))/4 + dt*(P12 + P22*dt));
+joint.X11 =
+		X1 + (X2 * dt)
+				- ((X1 - theta_k + X2 * dt)
+						* (P11 + P21 * dt + (Q * pow(dt, 4)) / 4
+								+ dt * (P12 + P22 * dt)))
+						/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
+								+ dt * (P12 + P22 * dt));
+joint.X21 = X2
+		- (((Q * pow(dt, 3)) / 2 + P22 * dt + P21) * (X1 - theta_k + X2 * dt))
+				/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
+						+ dt * (P12 + P22 * dt));
+joint.p11 = -((P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
+		/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
+		- 1) * (P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt));
+joint.p12 = -((P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
+		/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
+		- 1) * ((Q * pow(dt, 3)) / 2 + P22 * dt + P12);
+joint.p21 =
+		P21 + P22 * dt + (Q * pow(dt, 3)) / 2
+				- (((Q * pow(dt, 3)) / 2 + P22 * dt + P21)
+						* (P11 + P21 * dt + (Q * pow(dt, 4)) / 4
+								+ dt * (P12 + P22 * dt)))
+						/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
+								+ dt * (P12 + P22 * dt));
+joint.p22 = P22 + Q * pow(dt, 2)
+		- (((Q * pow(dt, 3)) / 2 + P22 * dt + P12)
+				* ((Q * pow(dt, 3)) / 2 + P22 * dt + P21))
+				/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
+						+ dt * (P12 + P22 * dt));
 
 //	joint.X11 = (4*R*x1 + 4*p11*theta_k + 4*dt2*p22*theta_k + 4*R*dt*x2 + 4*dt*p12*theta_k + 4*dt*p21*theta_k + Q*dt4*theta_k)/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
 //	joint.X21 = x2 - (((Q*dt3)/2 + p22*dt + p21)*(x1 - theta_k + dt*x2))/(R + p11 + dt*p21 + (Q*dt4)/4 + dt*(p12 + dt*p22));
@@ -373,62 +406,60 @@ fcb_joint KalmanFilter(float theta_k, fcb_joint joint)
 //	joint.p21 = (2*R*(Q*dt3 + 2*p22*dt + 2*p21))/(4*R + 4*p11 + 4*dt*p12 + 4*dt*p21 + Q*dt4 + 4*dt2*p22);
 //	joint.p22 = p22 + Q*dt2 - (((Q*dt3)/2 + p22*dt + p12)*((Q*dt3)/2 + p22*dt + p21))/(R + p11 + dt*p21 + (Q*dt4)/4 + dt*(p12 + dt*p22));
 
-	return  joint;
+return joint;
 
 }
 
-joint_config find_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear_z, float gripper_angular_yaw)
-{
-	bug1 = gripper_linear_x*gripper_linear_x;
-	bug2 = gripper_linear_y*gripper_linear_y;
-	bug3 = L12*L12;
-	bug4 = L3*L3 ;
-	float C3 = ((gripper_linear_x*gripper_linear_x)+(gripper_linear_y*gripper_linear_y)-(L12*L12)-(L3*L3)) / (2*L12*L3);
-	float S3 = sqrt(1-(C3*C3));
-	float q3 = atan2(S3,C3);
+joint_config find_IK(float gripper_linear_x, float gripper_linear_y,
+	float gripper_linear_z, float gripper_angular_yaw) {
+bug1 = gripper_linear_x * gripper_linear_x;
+bug2 = gripper_linear_y * gripper_linear_y;
+bug3 = L12 * L12;
+bug4 = L3 * L3;
+float C3 = ((gripper_linear_x * gripper_linear_x)
+		+ (gripper_linear_y * gripper_linear_y) - (L12 * L12) - (L3 * L3))
+		/ (2 * L12 * L3);
+float S3 = sqrt(1 - (C3 * C3));
+float q3 = atan2(S3, C3);
 
-	float L3S3 = L3*S3;
-	float L123C3 = L12 + (L3*C3);
+float L3S3 = L3 * S3;
+float L123C3 = L12 + (L3 * C3);
 
-	float S1 = (-L3S3*gripper_linear_x) + (L123C3*gripper_linear_y);
-	float C1 = (L3S3*gripper_linear_y) + (L123C3*gripper_linear_x);
-	float q1 = atan2(S1,C1);
-	float q4 = gripper_angular_yaw - q1 - q3;
-	float q2 = gripper_linear_z + H4 - H3 - H1;
+float S1 = (-L3S3 * gripper_linear_x) + (L123C3 * gripper_linear_y);
+float C1 = (L3S3 * gripper_linear_y) + (L123C3 * gripper_linear_x);
+float q1 = atan2(S1, C1);
+float q4 = gripper_angular_yaw - q1 - q3;
+float q2 = gripper_linear_z + H4 - H3 - H1;
 
-	joint_config buff;
-	buff.q1 = q1;
-	buff.q2 = C3;
-	buff.q3 = q3;
-	buff.q4 = S3;
+joint_config buff;
+buff.q1 = q1;
+buff.q2 = C3;
+buff.q3 = q3;
+buff.q4 = S3;
 
-    return buff;
+return buff;
 }
-
-
-
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	// tim5 100 Hz
-	// tim7 1000 Hz
-	// tim12 2000 Hz
-	// tim6 200 Hz
-	// tim14 500Hz
+// tim5 100 Hz
+// tim7 1000 Hz
+// tim12 2000 Hz
+// tim6 200 Hz
+// tim14 500Hz
 
-	if (htim == &htim6){	//
+if (htim == &htim6) {	//
 
-	}
+}
 
-	if (htim == &htim14){	//
+if (htim == &htim14) {	//
 
-	}
+}
 
-	if (htim == &htim12){	//
+if (htim == &htim12) {	//
 
-	}
+}
 
-	if (htim == &htim5){	//
-
+if (htim == &htim5) {	//
 
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
@@ -443,45 +474,48 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			posJ2 = encoderJ2.getUnwarpValue();
 //		}
 
-
 		encoderJ3.AMT21_Read();
 		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 		if (HALENCJ3OK == HAL_OK) {
 			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 		}
 
-//		stepperJ1.StepperSetFrequency(dq1*100.0);
-//		stepperJ2.StepperSetFrequency(dq1*100.0);
-//		stepperJ3.StepperSetFrequency(dq3*100.0);
-
-//		int i;
-//		for (i = 1 ; i<num ; i++)
-//		{
-//			box_q1[i-1] = box_q1[i];
-//			box_q3[i-1] = box_q3[i];
-//		}
-//		 box_q1[num-1] = dq1*12.0;
-//		 box_q3[num-1] = dq3*8.0;
+//	int i;
+//	for (i = 1; i < num; i++) {
+//		box_q1[i - 1] = box_q1[i];
+//		box_q2[i - 1] = box_q2[i];
+//		box_q3[i - 1] = box_q3[i];
+//		box_q4[i - 1] = box_q4[i];
+//	}
+//	box_q1[num - 1] = dq1 / 10.0;
+//	box_q2[num - 1] = dq2 / 10.0;
+//	box_q3[num - 1] = dq3 / 10.0;
+//	box_q4[num - 1] = dq4 / 10.0;
 //
-//		u_q1 = 0.0;
-//		u_q3 = 0.0;
+//	u_q1 = 0.0;
+//	u_q2 = 0.0;
+//	u_q3 = 0.0;
+//	u_q4 = 0.0;
 //
-//		for(i = 0; i < num; i++)
-//		{
-//			u_q1 += box_q1[i];
-//			u_q3 += box_q3[i];
-//		}
+//	for (i = 0; i < num; i++) {
+//		u_q1 += box_q1[i];
+//		u_q2 += box_q2[i];
+//		u_q3 += box_q3[i];
+//		u_q4 += box_q4[i];
+//	}
+//
+//	stepperJ1.StepperSetFrequency(u_q1 * 2);
+//	stepperJ2.StepperSetFrequency(u_q2 * 3);
+//	stepperJ3.StepperSetFrequency(u_q3 * 2);
+//	stepperJ4.StepperSetFrequency(u_q4 * 2);
 
-//		stepperJ1.StepperSetFrequency(dq1*10.0);
-//		stepperJ3.StepperSetFrequency(dq3*2.0);
-
-//		stepperJ1.StepperSetFrequency(u_q1/num*1.0);
-//		stepperJ3.StepperSetFrequency(u_q3/num*1.0);
-
-
+//		stepperJ1.StepperSetFrequency(dq1);
+//		stepperJ2.StepperSetFrequency(dq2);
+//		stepperJ3.StepperSetFrequency(dq3);
+//		stepperJ4.StepperSetFrequency(dq4);
 
 		Update_ivk(fcb_joint1.Encoder / 2609.0 ,0,fcb_joint3.Encoder / 2609.0,0, dx/1000.0, dy/1000.0, dz/1000.0, dyaw/1000.0);
-//
+
 //		stepperJ2.StepperOpenLoopSpeed(-1.0 * w_q1);
 //		stepperJ3.StepperOpenLoopSpeed(w_q3);
 
@@ -489,24 +523,33 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				for (i = 1 ; i<num ; i++)
 				{
 					box_q1[i-1] = box_q1[i];
+					box_q2[i-1] = box_q2[i];
 					box_q3[i-1] = box_q3[i];
+					box_q4[i-1] = box_q4[i];
 				}
 				 box_q1[num-1] = w_q1;
+				 box_q2[num-1] = dz;
 				 box_q3[num-1] = w_q3;
+				 box_q4[num-1] = dyaw;
 
 				u_q1 = 0.0;
+				u_q2 = 0.0;
 				u_q3 = 0.0;
+				u_q4 = 0.0;
 
 				for(i = 0; i < num; i++)
 				{
 					u_q1 += box_q1[i];
+					u_q2 += box_q2[i];
 					u_q3 += box_q3[i];
+					u_q4 += box_q4[i];
 				}
+
 				stepperJ1.StepperOpenLoopSpeed(u_q1/num*-1.0);
+				stepperJ2.StepperSetFrequency(u_q2/3.0);
 				stepperJ3.StepperOpenLoopSpeed(u_q3/num*1.0);
-
-
-	}
+				stepperJ4.StepperSetFrequency(u_q4/3.0);
+}
 	if (htim == &htim7) { 	//
 
 //		encoderJ1.AMT21_Read();
@@ -521,47 +564,43 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 //		}
 
+		float t_2 = t * t;
+		float t_3 = t * t * t;
 
-
-	    float t_2 = t*t;
-	    float t_3 = t*t*t;
-
-	    fcb_joint3.Goal_Position =  C0_q1 + (C2_q1*t_2) - (C3_q1*t_3);
+		fcb_joint3.Goal_Position = C0_q1 + (C2_q1 * t_2) - (C3_q1 * t_3);
 
 //	    kalman_pos = fcb_joint1.Goal_Position;
-	    kalman_pos = (fcb_joint1.Old_p - fcb_joint1.Encoder);
+		kalman_pos = (fcb_joint1.Old_p - fcb_joint1.Encoder);
 
-	    kalman_velo_input =  kalman_pos ;
+		kalman_velo_input = kalman_pos;
 
-	    if (direction_traj == 1){
-	    	fcb_joint1.Goal_Position = unwrap_pose + (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) - 0.8 ;
-	    	fcb_joint1.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * -2 ;
-	    	fcb_joint3.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * -2 ;
-	    }
-	    else
-	    {
-	    	fcb_joint1.Goal_Position = unwrap_pose - (C0_q1 + (C2_q1*t_2) - (C3_q1*t_3)) + 0.8;
-	    	fcb_joint1.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * 2 ;
-	    	fcb_joint3.Goal_Velocity = ((2.0*C2_q1*t) - (3.0 * C3_q1*t_2)) * 2 ;
-	    }
-
-
+		if (direction_traj == 1) {
+			fcb_joint1.Goal_Position = unwrap_pose
+					+ (C0_q1 + (C2_q1 * t_2) - (C3_q1 * t_3)) - 0.8;
+			fcb_joint1.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
+					* -2;
+			fcb_joint3.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
+					* -2;
+		} else {
+			fcb_joint1.Goal_Position = unwrap_pose
+					- (C0_q1 + (C2_q1 * t_2) - (C3_q1 * t_3)) + 0.8;
+			fcb_joint1.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
+					* 2;
+			fcb_joint3.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
+					* 2;
+		}
 
 //		fcb_joint1.Goal_Velocity = sin(0.314 * 2 * t) * 2000;
 //		fcb_joint3.Goal_Velocity = sin(0.314 * 2 * t) * 4000;
 
-	    chess_board_ang = chessboard_angular_velocity * t;
+		chess_board_ang = chessboard_angular_velocity * t;
 
 		joint_config findchessbot_joint_state;
-		debug_pos_x = 0.247*cos(chess_board_ang)+0.42744;
-		debug_pos_y = 0.247*sin(chess_board_ang)+0.00059371;
-		idx = 0.247*cos(chess_board_ang) * chessboard_angular_velocity;
-		idy = 0.247*cos(chess_board_ang) * chessboard_angular_velocity;
-		findchessbot_joint_state = find_IK(
-				debug_pos_x,
-				debug_pos_y,
-				0,
-				0);
+		debug_pos_x = 0.247 * cos(chess_board_ang) + 0.42744;
+		debug_pos_y = 0.247 * sin(chess_board_ang) + 0.00059371;
+		idx = 0.247 * cos(chess_board_ang) * chessboard_angular_velocity;
+		idy = 0.247 * cos(chess_board_ang) * chessboard_angular_velocity;
+		findchessbot_joint_state = find_IK(debug_pos_x, debug_pos_y, 0, 0);
 //		Update_ivk(findchessbot_joint_state.q1 / 2609.0 ,0,findchessbot_joint_state.q3 / 2609.0,0, idx/1000.0, idy/1000.0, 0.0, 0.0);
 
 //		fcb_joint1.Goal_Position = findchessbot_joint_state.q1 * 2607;
@@ -573,32 +612,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		setpointJ1 = Goal_velocity_q1;
 //		setpointJ3 = Goal_velocity_q3;
 
-
 		fcb_joint1.Error_p = fcb_joint1.Goal_Position - fcb_joint1.Encoder;
 		fcb_joint3.Error_p = fcb_joint3.Goal_Position - fcb_joint3.Encoder;
 		fcb_joint1.Sum_Error_p += fcb_joint1.Error_p;
 		fcb_joint3.Sum_Error_p += fcb_joint3.Error_p;
 
-		fcb_joint1.Kp_p = 0.0 ;
-		fcb_joint1.Ki_p = 0.0 ;
-		fcb_joint1.Kd_p = 0.0 ;
+		fcb_joint1.Kp_p = 0.0;
+		fcb_joint1.Ki_p = 0.0;
+		fcb_joint1.Kd_p = 0.0;
 
-		fcb_joint1.Kp_v = 0.0 ;
-		fcb_joint1.Ki_v = 0.0 ;
-		fcb_joint1.Kd_v = 0.0 ;
+		fcb_joint1.Kp_v = 0.0;
+		fcb_joint1.Ki_v = 0.0;
+		fcb_joint1.Kd_v = 0.0;
 
-		fcb_joint3.Kp_p = 0.0 ;
-		fcb_joint3.Ki_p = 0.0 ;
-		fcb_joint3.Kd_p = 0.0 ;
+		fcb_joint3.Kp_p = 0.0;
+		fcb_joint3.Ki_p = 0.0;
+		fcb_joint3.Kd_p = 0.0;
 
-		fcb_joint3.Kp_v = 0.0 ;
-		fcb_joint3.Ki_v = 0.0 ;
-		fcb_joint3.Kd_v = 0.0 ;
+		fcb_joint3.Kp_v = 0.0;
+		fcb_joint3.Ki_v = 0.0;
+		fcb_joint3.Kd_v = 0.0;
 
 //		KalmanFilter(float theta_k,float kalman_pos,float kalman_velo,float P11,float P12,float P21,float P22);
 //		KalmanFilter(fcb_joint1.Encoder/ 2609.0 , X11, X21, p11, p12, p21, p22, fcb_joint1);
 
-		fcb_joint1 = KalmanFilter(fcb_joint1.Encoder/ 2609.0 ,fcb_joint1);
+		fcb_joint1 = KalmanFilter(fcb_joint1.Encoder / 2609.0, fcb_joint1);
 //		fcb_joint3 = KalmanFilter(fcb_joint3.Encoder/ 2609.0 ,fcb_joint3);
 
 //		fcb_joint1.Output_Stepper_Frequency = (fcb_joint1.Kp_p * fcb_joint1.Error_p) +
@@ -615,16 +653,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		fcb_joint1.Output_Stepper_Frequency = fcb_joint1.Goal_Position;
 //		fcb_joint3.Output_Stepper_Frequency = fcb_joint3.Goal_Position;
 
-
-
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint3.Old_Error_p = fcb_joint3.Error_p;
 		fcb_joint1.Old_p = fcb_joint1.Encoder;
 		fcb_joint3.Old_p = fcb_joint3.Encoder;
 
-
 //
-		#ifdef __cplusplus
+#ifdef __cplusplus
 //		stepperJ1.StepperSetFrequency(300.0f);
 
 //		stepperJ1.StepperSetFrequency(uJ1);
@@ -636,14 +671,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ1.StepperOpenLoopSpeed(w_q1);
 //		stepperJ3.StepperOpenLoopSpeed(w_q3);
 
-		#endif
+#endif
 
-		t = t + (sample_time_1000) ;
-		if (t >= Time)
-		{
+		t = t + (sample_time_1000);
+		if (t >= Time) {
 			t = 0.0;
 			direction_traj ^= 1;
-			unwrap_pose =  fcb_joint1.Goal_Position;
+			unwrap_pose = fcb_joint1.Goal_Position;
 		}
 
 //		if (t >= Time_circle)
@@ -659,65 +693,65 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
+	/* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_USART3_UART_Init();
-  MX_TIM2_Init();
-  MX_UART4_Init();
-  MX_TIM4_Init();
-  MX_SPI3_Init();
-  MX_TIM1_Init();
-  MX_TIM3_Init();
-  MX_TIM5_Init();
-  MX_TIM15_Init();
-  MX_CRC_Init();
-  MX_UART7_Init();
-  MX_TIM6_Init();
-  MX_TIM7_Init();
-  MX_TIM12_Init();
-  MX_TIM13_Init();
-  MX_TIM14_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_USART3_UART_Init();
+	MX_TIM2_Init();
+	MX_UART4_Init();
+	MX_TIM4_Init();
+	MX_SPI3_Init();
+	MX_TIM1_Init();
+	MX_TIM3_Init();
+	MX_TIM5_Init();
+	MX_TIM15_Init();
+	MX_CRC_Init();
+	MX_UART7_Init();
+	MX_TIM6_Init();
+	MX_TIM7_Init();
+	MX_TIM12_Init();
+	MX_TIM13_Init();
+	MX_TIM14_Init();
+	/* USER CODE BEGIN 2 */
 
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-#ifdef __cplusplus
+	#ifdef __cplusplus
 	stepperJ1.StepperSetFrequency(0.0f);
 	stepperJ1.StepperSetMicrostep(4);
 	stepperJ1.StepperSetRatio(42);
 	stepperJ1.StepperEnable();
 
 	stepperJ2.StepperSetFrequency(0.0f);
-	stepperJ2.StepperSetMicrostep(4);
-	stepperJ2.StepperSetRatio(42);
+	stepperJ2.StepperSetMicrostep(8);
+	stepperJ2.StepperSetRatio(3);
 	stepperJ2.StepperEnable();
 
 	stepperJ3.StepperSetFrequency(0.0f);
@@ -725,156 +759,169 @@ int main(void)
 	stepperJ3.StepperSetRatio(9);
 	stepperJ3.StepperEnable();
 
-//	stepperJ4.StepperSetMicrostep(1);
-//	stepperJ4.StepperSetRatio(1);
-#endif
+	stepperJ4.StepperSetFrequency(0.0f);
+	stepperJ4.StepperSetMicrostep(8);
+	stepperJ4.StepperSetRatio(3);
+	stepperJ4.StepperEnable();
 
-	HAL_TIM_Base_Start_IT(&htim5);
-//	HAL_TIM_Base_Start_IT(&htim6);
-//	HAL_TIM_Base_Start_IT(&htim7);
-//	HAL_TIM_Base_Start_IT(&htim12);
-//	HAL_TIM_Base_Start_IT(&htim14);
+	//	stepperJ4.StepperSetMicrostep(1);
+	//	stepperJ4.StepperSetRatio(1);
 
+	gripper.setDegreeGripperClose(65);
+	gripper.setDegreeGripperOpen(0);
+	//	gripper.ServoRotateDegree(90);
+	gripper.ServoEnable();
+	#endif
+
+	HAL_TIM_Base_Start_IT(&htim5); // Jog 100 Hz
+	//	HAL_TIM_Base_Start_IT(&htim6); // 200 Hz
+	//	HAL_TIM_Base_Start_IT(&htim7); // Control 1000 Hz
+	//	HAL_TIM_Base_Start_IT(&htim12); // 2000 Hz
+	//	HAL_TIM_Base_Start_IT(&htim14); // 500Hz
 
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
-//	stepperJ1.StepperOpenLoopSpeed(1.00f);
+	//	stepperJ1.StepperOpenLoopSpeed(1.00f);
 
 	// Backup
-	fcb_joint1.Kp_p = 0.0 ;
-	fcb_joint1.Kp_v = 0.0 ;
-	fcb_joint1.Ki_p = 0.0 ;
-	fcb_joint1.Ki_v = 0.0 ;
-	fcb_joint1.Kd_p = 0.0 ;
-	fcb_joint1.Kd_p = 0.0 ;
+	fcb_joint1.Kp_p = 0.0;
+	fcb_joint1.Kp_v = 0.0;
+	fcb_joint1.Ki_p = 0.0;
+	fcb_joint1.Ki_v = 0.0;
+	fcb_joint1.Kd_p = 0.0;
+	fcb_joint1.Kd_p = 0.0;
 
-	fcb_joint2.Kp_p = 0.0 ;
-	fcb_joint2.Kp_v = 0.0 ;
-	fcb_joint2.Ki_p = 0.0 ;
-	fcb_joint2.Ki_v = 0.0 ;
-	fcb_joint2.Kd_p = 0.0 ;
-	fcb_joint2.Kd_p = 0.0 ;
+	fcb_joint2.Kp_p = 0.0;
+	fcb_joint2.Kp_v = 0.0;
+	fcb_joint2.Ki_p = 0.0;
+	fcb_joint2.Ki_v = 0.0;
+	fcb_joint2.Kd_p = 0.0;
+	fcb_joint2.Kd_p = 0.0;
 
-	fcb_joint3.Kp_p = 0.0 ;
-	fcb_joint3.Kp_v = 0.0 ;
-	fcb_joint3.Ki_p = 0.0 ;
-	fcb_joint3.Ki_v = 0.0 ;
-	fcb_joint3.Kd_p = 0.0 ;
-	fcb_joint3.Kd_p = 0.0 ;
+	fcb_joint3.Kp_p = 0.0;
+	fcb_joint3.Kp_v = 0.0;
+	fcb_joint3.Ki_p = 0.0;
+	fcb_joint3.Ki_v = 0.0;
+	fcb_joint3.Kd_p = 0.0;
+	fcb_joint3.Kd_p = 0.0;
 
-	fcb_joint4.Kp_p = 0.0 ;
-	fcb_joint4.Kp_v = 0.0 ;
-	fcb_joint4.Ki_p = 0.0 ;
-	fcb_joint4.Ki_v = 0.0 ;
-	fcb_joint4.Kd_p = 0.0 ;
-	fcb_joint4.Kd_p = 0.0 ;
+	fcb_joint4.Kp_p = 0.0;
+	fcb_joint4.Kp_v = 0.0;
+	fcb_joint4.Ki_p = 0.0;
+	fcb_joint4.Ki_v = 0.0;
+	fcb_joint4.Kd_p = 0.0;
+	fcb_joint4.Kd_p = 0.0;
 
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-	while (1) {
-//		encoderJ1.AMT21_Read();
-//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//		if (HALENCJ1OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-//		}
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
+	while (1)
+	{
+		//		encoderJ1.AMT21_Read();
+		//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		//		if (HALENCJ1OK == HAL_OK) {
+		//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+		//		}
 
-//		encoderJ3.AMT21_Read();
-//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//		if (HALENCJ3OK == HAL_OK) {
-//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-//		}
+		//		encoderJ3.AMT21_Read();
+		//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		//		if (HALENCJ3OK == HAL_OK) {
+		//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+		//		}
 
-//		for (int i = 0;i < 500; i++){
-//			HAL_GPIO_TogglePin(STEP33_GPIO_Port, STEP33_Pin);
-//			HAL_Delay(10);
-//		}
-//		stepperJ1.StepperSetFrequency(-300.0f);
-//		stepperJ3.StepperSetFrequency(500.0f);
-//		HAL_Delay(2500);
+		//		for (int i = 0;i < 500; i++){
+		//			HAL_GPIO_TogglePin(STEP33_GPIO_Port, STEP33_Pin);
+		//			HAL_Delay(10);
+		//		}
+		//		stepperJ1.StepperSetFrequency(-300.0f);
+		//		stepperJ3.StepperSetFrequency(500.0f);
+		//		HAL_Delay(2500);
 
-//		stepperJ1.StepperSetFrequency(0.0f);
-//		stepperJ3.StepperSetFrequency(0.0f);
-//		HAL_Delay(3000);
+		//		stepperJ1.StepperSetFrequency(0.0f);
+		//		stepperJ3.StepperSetFrequency(0.0f);
+		//		HAL_Delay(3000);
 
-//		stepperJ1.StepperSetFrequency(300.0f);
-//		stepperJ3.StepperSetFrequency(-500.0f);
-//		HAL_Delay(2500);
+		//		stepperJ1.StepperSetFrequency(300.0f);
+		//		stepperJ3.StepperSetFrequency(-500.0f);
+		//		HAL_Delay(2500);
 
-//		stepperJ1.StepperSetFrequency(0.0f);
-////		stepperJ3.StepperSetFrequency(0.0f);
-//		HAL_Delay(1000);
+		//		stepperJ1.StepperSetFrequency(0.0f);
+		////		stepperJ3.StepperSetFrequency(0.0f);
+		//		HAL_Delay(1000);
 
-	}
-    /* USER CODE END WHILE */
+		//		gripper.GripperClose();
+		//		HAL_Delay(3000);
+		//		gripper.GripperOpen();
+		//		HAL_Delay(3000);
 
-    /* USER CODE BEGIN 3 */
+		}
+	/* USER CODE END WHILE */
+
+	/* USER CODE BEGIN 3 */
 
 	return 0;
 
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Supply configuration update enable
-  */
-  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+/** Supply configuration update enable
+ */
+HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
+/** Configure the main internal regulator output voltage
+ */
+__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 60;
-  RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 6;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
-  RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
-  RCC_OscInitStruct.PLL.PLLFRACN = 0;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
-  RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
+while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+/** Initializes the RCC Oscillators according to the specified parameters
+ * in the RCC_OscInitTypeDef structure.
+ */
+RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
+RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+RCC_OscInitStruct.PLL.PLLM = 4;
+RCC_OscInitStruct.PLL.PLLN = 60;
+RCC_OscInitStruct.PLL.PLLP = 2;
+RCC_OscInitStruct.PLL.PLLQ = 6;
+RCC_OscInitStruct.PLL.PLLR = 2;
+RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
+RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
+RCC_OscInitStruct.PLL.PLLFRACN = 0;
+if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+{
+	Error_Handler();
+}
+/** Initializes the CPU, AHB and APB buses clocks
+ */
+RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
+|RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
+RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
+RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
+RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;
+RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
+RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
+RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
+if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+{
+	Error_Handler();
+}
 }
 
 /* USER CODE BEGIN 4 */
-
-
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
@@ -886,20 +933,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
-	/* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-	while (1) {
-	}
-  /* USER CODE END Error_Handler_Debug */
+/* USER CODE BEGIN Error_Handler_Debug */
+HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+/* User can add his own implementation to report the HAL error return state */
+__disable_irq();
+while (1) {
+}
+/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

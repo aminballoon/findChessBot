@@ -1,8 +1,5 @@
 "./Core/Src/AMT21.o"
-"./Core/Src/Actuator.o"
-"./Core/Src/CircleTrajectory.o"
 "./Core/Src/Controller.o"
-"./Core/Src/Protocol.o"
 "./Core/Src/ServoMotor.o"
 "./Core/Src/Stepper.o"
 "./Core/Src/crc.o"
