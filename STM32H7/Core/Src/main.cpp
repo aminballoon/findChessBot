@@ -186,9 +186,9 @@ uint16_t CRC16(uint8_t *buf, int len);
 
 //using namespace std;
 
-//AMT21 encoderJ1(&huart4, 0xD4);
+AMT21 encoderJ1(&huart4, 0xD4);
 //AMT21 encoderJ2(&huart4, 0xB4);
-//AMT21 encoderJ3(&huart4, 0xC4);
+AMT21 encoderJ3(&huart4, 0xC4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 Stepper stepperJ2(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
@@ -430,11 +430,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim5){	//
 
 
-//		encoderJ1.AMT21_Read();
-//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//		if (HALENCJ1OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-//		}
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if (HALENCJ1OK == HAL_OK) {
+			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+		}
 
 //		encoderJ2.AMT21_Read();
 //		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
@@ -444,15 +444,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		}
 
 
-//		encoderJ3.AMT21_Read();
-//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//		if (HALENCJ3OK == HAL_OK) {
-//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-//		}
+		encoderJ3.AMT21_Read();
+		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		if (HALENCJ3OK == HAL_OK) {
+			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+		}
 
 //		stepperJ1.StepperSetFrequency(dq1*100.0);
 //		stepperJ2.StepperSetFrequency(dq1*100.0);
-//		stepperJ3.StepperSetFrequency(dq1*100.0);
+//		stepperJ3.StepperSetFrequency(dq3*100.0);
 
 //		int i;
 //		for (i = 1 ; i<num ; i++)
@@ -460,7 +460,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			box_q1[i-1] = box_q1[i];
 //			box_q3[i-1] = box_q3[i];
 //		}
-//		 box_q1[num-1] = dq1*8.0;
+//		 box_q1[num-1] = dq1*12.0;
 //		 box_q3[num-1] = dq3*8.0;
 //
 //		u_q1 = 0.0;
@@ -472,10 +472,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			u_q3 += box_q3[i];
 //		}
 
-//		stepperJ2.StepperSetFrequency(dq1*10.0);
+//		stepperJ1.StepperSetFrequency(dq1*10.0);
 //		stepperJ3.StepperSetFrequency(dq3*2.0);
 
-//		stepperJ2.StepperSetFrequency(u_q1/num*1.0);
+//		stepperJ1.StepperSetFrequency(u_q1/num*1.0);
 //		stepperJ3.StepperSetFrequency(u_q3/num*1.0);
 
 
@@ -502,7 +502,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 					u_q1 += box_q1[i];
 					u_q3 += box_q3[i];
 				}
-				stepperJ2.StepperOpenLoopSpeed(u_q1/num*-1.0);
+				stepperJ1.StepperOpenLoopSpeed(u_q1/num*-1.0);
 				stepperJ3.StepperOpenLoopSpeed(u_q3/num*1.0);
 
 
@@ -711,8 +711,8 @@ int main(void)
 
 #ifdef __cplusplus
 	stepperJ1.StepperSetFrequency(0.0f);
-	stepperJ1.StepperSetMicrostep(16);
-	stepperJ1.StepperSetRatio(3);
+	stepperJ1.StepperSetMicrostep(4);
+	stepperJ1.StepperSetRatio(42);
 	stepperJ1.StepperEnable();
 
 	stepperJ2.StepperSetFrequency(0.0f);
@@ -729,9 +729,9 @@ int main(void)
 //	stepperJ4.StepperSetRatio(1);
 #endif
 
-//	HAL_TIM_Base_Start_IT(&htim5);
+	HAL_TIM_Base_Start_IT(&htim5);
 //	HAL_TIM_Base_Start_IT(&htim6);
-	HAL_TIM_Base_Start_IT(&htim7);
+//	HAL_TIM_Base_Start_IT(&htim7);
 //	HAL_TIM_Base_Start_IT(&htim12);
 //	HAL_TIM_Base_Start_IT(&htim14);
 
