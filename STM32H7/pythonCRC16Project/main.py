@@ -96,6 +96,7 @@ if __name__ == '__main__':
     # print(dec_to_hex_in_list(frame_data_joint_jog_q1))
     # print(serial.to_bytes(frame_data_joint_jog_q1))
     # foo()
+
     try:
         if(Mode_Joint):
             print("Joint Jog Mode Calculation")
@@ -134,7 +135,7 @@ if __name__ == '__main__':
                     frame1 = [0x81,gripper]
                     data1 = frame1 + crc16.calculate(frame1)
                     ser.write(data1)
-                    # time.sleep(0.1)
+                    # time.sleep(0.1)wssssssssssssssssssssssssssssssss
 
                 if keyboard.is_pressed('p'):
                     gripper = 0
@@ -159,16 +160,16 @@ if __name__ == '__main__':
                 vyaw = 0
 
                 if keyboard.is_pressed('w'):
-                    vx = 60
+                    vx = 30
 
                 if keyboard.is_pressed('s'):
-                    vx = -60
+                    vx = -30
 
                 if keyboard.is_pressed('a'):
-                    vy = 60
+                    vy = 30
 
                 if keyboard.is_pressed('d'):
-                    vy = -60
+                    vy = -30
 
 
                 # if keyboard.is_pressed('q'):
