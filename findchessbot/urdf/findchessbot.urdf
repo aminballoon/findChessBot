@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
-     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
-     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+
 <robot
-  name="findchessbot">
+  name="findchessbot_robot">
   <link
     name="base_link">
     <visual>
@@ -12,7 +10,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/base_link.STL" />
+          filename="package://findchessbot/meshes/base_link.STL" />
       </geometry>
       <material
         name="">
@@ -26,7 +24,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/base_link.STL" />
+          filename="package://findchessbot/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -53,7 +51,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_1.STL" />
+          filename="package://findchessbot/meshes/link_1.STL" />
       </geometry>
       <material
         name="">
@@ -67,7 +65,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_1.STL" />
+          filename="package://findchessbot/meshes/link_1.STL" />
       </geometry>
     </collision>
   </link>
@@ -110,7 +108,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_2.STL" />
+          filename="package://findchessbot/meshes/link_2.STL" />
       </geometry>
       <material
         name="">
@@ -124,7 +122,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_2.STL" />
+          filename="package://findchessbot/meshes/link_2.STL" />
       </geometry>
     </collision>
   </link>
@@ -165,7 +163,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_3.STL" />
+          filename="package://findchessbot/meshes/link_3.STL" />
       </geometry>
       <material
         name="">
@@ -179,7 +177,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_3.STL" />
+          filename="package://findchessbot/meshes/link_3.STL" />
       </geometry>
     </collision>
   </link>
@@ -219,7 +217,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_4.STL" />
+          filename="package://findchessbot/meshes/link_4.STL" />
       </geometry>
       <material
         name="">
@@ -233,7 +231,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/link_4.STL" />
+          filename="package://findchessbot/meshes/link_4.STL" />
       </geometry>
     </collision>
   </link>
@@ -273,7 +271,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/chessboard.STL" />
+          filename="package://findchessbot/meshes/chessboard.STL" />
       </geometry>
       <material
         name="">
@@ -287,7 +285,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/chessboard.STL" />
+          filename="package://findchessbot/meshes/chessboard.STL" />
       </geometry>
     </collision>
   </link>
@@ -297,7 +295,8 @@
     name="joint_chess"
     type="revolute">
     <origin
-      xyz="0.42744 -0.00059371 0.099999"
+      
+      xyz="0.44 -0.00059371 0.099999"
       rpy="0 0 0" />
     <parent
       link="base_link" />
@@ -317,7 +316,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/chessboard_black.STL" />
+          filename="package://findchessbot/meshes/chessboard_black.STL" />
       </geometry>
       <material
         name="">
@@ -331,7 +330,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://findchessbot/chessboard_black.STL" />
+          filename="package://findchessbot/meshes/chessboard_black.STL" />
       </geometry>
     </collision>
   </link>
