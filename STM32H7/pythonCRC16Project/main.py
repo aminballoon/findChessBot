@@ -91,62 +91,73 @@ if __name__ == '__main__':
     # data_joint_jog_q1 = [0x42,*bytesy(q2_theta)]
     # frame_data_joint_jog_q1 = data_joint_jog_q1 + crc16.calculate(data_joint_jog_q1)
     # gripper = 0
-    Mode_Joint = False # True = Linear jog
+    Mode_Joint = False # False = Linear jog
     # print(frame_data_joint_jog_q1)
     # print(dec_to_hex_in_list(frame_data_joint_jog_q1))
     # print(serial.to_bytes(frame_data_joint_jog_q1))
     # foo()
+    omega = 50
 
     try:
         if(Mode_Joint):
             print("Joint Jog Mode Calculation")
+            print( "omega = "+ str(omega))
             while(1):
+                
                 q1_theta = 0
                 q2_theta = 0
                 q3_theta = 0
                 q4_theta = 0
 
+                if keyboard.is_pressed('page up'):
+                    omega += 2
+                    print( "omega = "+ str(omega))
+
+                if keyboard.is_pressed('page down'):
+                    omega -= 2
+                    print( "omega = "+ str(omega))
+
                 if keyboard.is_pressed('q'):
-                    q1_theta = 100
+                    q1_theta = omega
 
                 if keyboard.is_pressed('a'):
-                    q1_theta = -100
+                    q1_theta = -omega
 
                 if keyboard.is_pressed('w'):
-                    q2_theta = 100
+                    q2_theta = omega
 
                 if keyboard.is_pressed('s'):
-                    q2_theta = -100
+                    q2_theta = -omega
 
                 if keyboard.is_pressed('e'):
-                    q3_theta = 100
+                    q3_theta = omega
 
                 if keyboard.is_pressed('d'):
-                    q3_theta = -100
+                    q3_theta = -omega
 
                 if keyboard.is_pressed('r'):
-                    q4_theta = 100
+                    q4_theta = omega
 
                 if keyboard.is_pressed('f'):
-                    q4_theta = -100
+                    q4_theta = -omega
 
                 if keyboard.is_pressed('o'):
                     gripper = 1
                     frame1 = [0x81,gripper]
                     data1 = frame1 + crc16.calculate(frame1)
                     ser.write(data1)
-                    # time.sleep(0.1)wssssssssssssssssssssssssssssssss
-
+                    time.sleep(0.1)
                 if keyboard.is_pressed('p'):
                     gripper = 0
                     frame1 = [0x81,gripper]
                     data1 = frame1 + crc16.calculate(frame1)
                     ser.write(data1)
-                    # time.sleep(0.1)
+                    time.sleep(0.1)
 
                 frame = [0x61,low_byte(q1_theta),low_byte(q2_theta),low_byte(q3_theta),low_byte(q4_theta)]
                 data = frame + crc16.calculate(frame)
                 ser.write(data)
+                
                 time.sleep(0.1)
                 
                 # time.sleep(0.1)
@@ -160,16 +171,16 @@ if __name__ == '__main__':
                 vyaw = 0
 
                 if keyboard.is_pressed('w'):
-                    vx = 30
+                    vx = 60
 
                 if keyboard.is_pressed('s'):
-                    vx = -30
+                    vx = -60
 
                 if keyboard.is_pressed('a'):
-                    vy = 30
+                    vy = 60
 
                 if keyboard.is_pressed('d'):
-                    vy = -30
+                    vy = -60
 
 
                 # if keyboard.is_pressed('q'):
