@@ -191,11 +191,11 @@ def main():
     ga = 0.1  # goal accel [m/ss]
     max_accel = 1.0  # max accel [m/ss]
     max_jerk = 0.5  # max jerk [m/sss]
-    dt = 0.1  # time tick [s]
+    dt = 1  # time tick [s]
 
     time, x, y, yaw, v, a, j = quintic_polynomials_planner(
         sx, sy, syaw, sv, sa, gx, gy, gyaw, gv, ga, max_accel, max_jerk, dt)
-
+    print(x)
     if show_animation:  # pragma: no cover
         plt.plot(x, y, "-r")
 

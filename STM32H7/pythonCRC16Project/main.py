@@ -171,16 +171,16 @@ if __name__ == '__main__':
                 vyaw = 0
 
                 if keyboard.is_pressed('w'):
-                    vx = 60
+                    vx = 120
 
                 if keyboard.is_pressed('s'):
-                    vx = -60
+                    vx = -120
 
                 if keyboard.is_pressed('a'):
-                    vy = 60
+                    vy = 120
 
                 if keyboard.is_pressed('d'):
-                    vy = -60
+                    vy = -120
 
 
                 # if keyboard.is_pressed('q'):
@@ -200,10 +200,10 @@ if __name__ == '__main__':
                 #     y_theta = -60
 
                 if keyboard.is_pressed('up'):
-                    vz = 100
+                    vz = 80
 
                 if keyboard.is_pressed('down'):
-                    vz = -100
+                    vz = -80
 
                 if keyboard.is_pressed('right'):
                     vyaw = 100
