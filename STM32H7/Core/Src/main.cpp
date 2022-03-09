@@ -41,6 +41,7 @@
 #include "AMT21.h"
 #include "Stepper.h"
 #include "ServoMotor.h"
+#include "RobotJoint.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
