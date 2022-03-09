@@ -96,7 +96,7 @@ int fputc(int ch, FILE *f)
 AMT21 encoderJ1(&huart4, 0xD4);
 //AMT21 encoderJ2(&huart4, 0xB4);
 AMT21 encoderJ3(&huart4, 0xC4);
-//AMT21 encoderJ4(&huart4, 0xA4);
+AMT21 encoderJ4(&huart4, 0xA4);
 
 Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 Stepper stepperJ2(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
@@ -540,11 +540,11 @@ if (htim == &htim5) {	//
 			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 		}
 
-//		encoderJ4.AMT21_Read();
-//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-//		if (HALENCJ4OK == HAL_OK) {
-//			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
-//		}
+		encoderJ4.AMT21_Read();
+		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+		if (HALENCJ4OK == HAL_OK) {
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
+		}
 
 
 //	int i;
@@ -640,11 +640,11 @@ if (htim == &htim5) {	//
 			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
 		}
 
-//		encoderJ4.AMT21_Read();
-//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-//		if (HALENCJ4OK == HAL_OK) {
-//			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
-//		}
+		encoderJ4.AMT21_Read();
+		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+		if (HALENCJ4OK == HAL_OK) {
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
+		}
 
 		float t2 = t * t;
 		float t3 = t * t * t;

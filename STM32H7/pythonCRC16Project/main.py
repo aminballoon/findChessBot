@@ -171,16 +171,16 @@ if __name__ == '__main__':
                 vyaw = 0
 
                 if keyboard.is_pressed('w'):
-                    vx = 120
+                    vx = 60
 
                 if keyboard.is_pressed('s'):
-                    vx = -120
+                    vx = -60
 
                 if keyboard.is_pressed('a'):
-                    vy = 120
+                    vy = 60
 
                 if keyboard.is_pressed('d'):
-                    vy = -120
+                    vy = -60
 
 
                 # if keyboard.is_pressed('q'):
