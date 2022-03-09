@@ -117,7 +117,7 @@ void RobotJoint::FindIK(float gripper_linear_x, float gripper_linear_y,
 	float S1 = (-L3S3 * gripper_linear_x) + (L123C3 * gripper_linear_y);
 	float C1 = (L3S3 * gripper_linear_y) + (L123C3 * gripper_linear_x);
 	float _q1 = atan2(S1, C1);
-	float _q4 = gripper_angular_yaw - q1 - q3;
+	float _q4 = gripper_angular_yaw - _q1 - _q3;
 	float _q2 = gripper_linear_z + this->H4 - this->H3 - this->H1;
 
 	this->q1 = _q1;
