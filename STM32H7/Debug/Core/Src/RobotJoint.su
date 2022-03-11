@@ -1,0 +1,11 @@
+cmath:144:3:constexpr float std::atan2(float, float)	16	static
+cmath:184:3:constexpr float std::cos(float)	16	static
+cmath:425:3:constexpr float std::sin(float)	16	static
+cmath:463:3:constexpr float std::sqrt(float)	16	static
+RobotJoint.cpp:10:1:RobotJoint::RobotJoint()	16	static
+RobotJoint.cpp:13:1:RobotJoint::~RobotJoint()	16	static
+RobotJoint.cpp:16:6:void RobotJoint::UpdateIVK(float, float, float, float, float, float, float, float)	72	static
+RobotJoint.cpp:33:6:void RobotJoint::UpdateQuinticCoff(float, float, float, float, float, float, float)	72	static
+RobotJoint.cpp:57:6:void RobotJoint::KalmanFillter(float)	80	static
+RobotJoint.cpp:102:6:void RobotJoint::FindIK(float, float, float, float)	72	static
+cmath:415:5:constexpr typename __gnu_cxx::__promote_2<_Tp, _Up>::__type std::pow(_Tp, _Up) [with _Tp = float; _Up = int]	16	static

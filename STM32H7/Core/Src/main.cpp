@@ -103,6 +103,11 @@ Stepper stepperJ1(&htim3, TIM_CHANNEL_1, DIR_3_GPIO_Port, DIR_3_Pin);
 Stepper stepperJ2(&htim1, TIM_CHANNEL_2, DIR_1_GPIO_Port, DIR_1_Pin);
 Stepper stepperJ3(&htim15, TIM_CHANNEL_2, DIR_5_GPIO_Port, DIR_5_Pin);
 Stepper stepperJ4(&htim2, TIM_CHANNEL_3, DIR_2_GPIO_Port, DIR_2_Pin);
+RobotJoint fcb_joint1;
+RobotJoint fcb_joint2;
+RobotJoint fcb_joint3;
+RobotJoint fcb_joint4;
+
 
 ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
@@ -216,13 +221,13 @@ volatile float chess_board_ang = 0.0;
 volatile float debug_pos_x, debug_pos_y;
 volatile u_int32_t county;
 //volatile float C1,S1,C3,S3,q1,q3;
-static float L1 = 0.01325; // 0.053
-static float L2 = 0.370; // 0.36625
-static float L3 = 0.315;
-static float L12 = 0.38325;
-static float H1 = 0.125;
-static float H3 = 0.065;
-static float H4 = 0.190;
+//static float L1 = 0.01325; // 0.053
+//static float L2 = 0.370; // 0.36625
+//static float L3 = 0.315;
+//static float L12 = 0.38325;
+//static float H1 = 0.125;
+//static float H3 = 0.065;
+//static float H4 = 0.190;
 
 volatile float t = 0.0;
 volatile const float Time = 3;
@@ -251,30 +256,6 @@ volatile bool direction = true;
 volatile float Goal_velocity_q1, Goal_velocity_q3;
 
 const float pi = 3.14159265;
-//volatile float X11 = 0;
-//volatile float X21 = 0;
-//volatile float p11 = 1;
-//volatile float p12 = 0;
-//volatile float p21 = 0;
-//volatile float p22 = 1;
-volatile float kalman_pos = 0;
-volatile float kalman_velo = 0;
-//volatile float Q = 0.01 ;
-//volatile float R = 0.00001;
-volatile const float dt = 0.001;
-volatile const float dt2 = pow(dt, 2);
-volatile const float dt3 = pow(dt, 3);
-volatile const float dt4 = pow(dt, 4);
-
-volatile float velocity_kalman_q1, velocity_kalman_q3, velocity_kalman_q1_new,
-	velocity_kalman_q3_new, kalman_velo_input;
-volatile float position_kalman_q1, position_kalman_q3, position_kalman_q1_new,
-	position_kalman_q3_new;
-volatile float unwrap_pose = 0;
-volatile float Error_Old_q1 = 0.0;
-volatile float Error_Old_q3 = 0.0;
-volatile float Sum_Error_q1 = 0.0;
-volatile float Sum_Error_q3 = 0.0;
 
 volatile float w_q1;
 volatile float w_q2;
@@ -329,142 +310,17 @@ float box_q4[30];
 float idx, idy;
 typedef struct robot_joint fcb_joint;
 
-struct robot_kinematic {
-volatile float Pos_x, Pos_y, Pos_z, Ori_yaw;
-};
-typedef struct robot_kinematic fcb_kinematic;
 
-fcb_joint fcb_joint1, fcb_joint2, fcb_joint3, fcb_joint4;
-
-void Update_ivk(float q1, float q2, float q3, float q4, float Vx, float Vy, float Vz, float Wz) {
-float S13 = sin(q1 + q3);
-float C13 = cos(q1 + q3);
-float S3 = sin(q3);
-float S1 = sin(q1);
-float C1 = cos(q1);
-float L3S3 = L3 * S3;
-
-w_q1 = (Vx * C13 + Vy * S13) / (S3 * L12);
-w_q2 = Vz;
-w_q3 = -(Vx * (L3 * C13 + L1 * C1 + L2 * C1)) / (L3S3 * L12)
-		- (Vy * (L3 * S13 + L1 * S1 + L2 * S1)) / (L3S3 * L12);
-w_q4 = (Vx * C1 + Vy * S1 + L3 * Wz * S3) / (L3S3);
-
-};
 
 #endif
 
 
 
 
-fcb_joint Update_quintic_Coff(float T, float Start_pos, float Final_pos, float Start_velocity, float Final_velocity, float Start_acceleration, float Final_acceleration)
-{
-	fcb_joint joint;
-	joint.C0 = Start_pos;
-	joint.C1 = Start_velocity;
-	joint.C2 = Start_acceleration/2.0;
 
-	const float A = Final_pos - (Start_pos + (Start_velocity*T) + (Start_acceleration*T*T/2));
-	const float B = Final_velocity - (Start_velocity + (Start_acceleration*T));
-	const float C = Final_acceleration - Start_acceleration;
 
-	const float T2 = T*T;
-	const float T3 = T*T*T;
-	const float T4 = T*T*T*T;
-	const float T5 = T*T*T*T*T;
 
-	joint.C3 = (10.0*A/T3) - (4.0*B/T2) + (C/(2.0*T));
-	joint.C4 = (-15.0*A/T4) + (7.0*B/T3) - (C/T2);
-	joint.C5 = (6.0*A/T5) - (3.0*B/T4) + (C/(2.0*T3));
-	joint.T = T;
-	return joint;
-}
 
-//void control_loop(*void)
-//{
-//	t += control_loop_time;
-//	p = C0 + (C1*t) + (C2*t2) + (C3*t3) + (C4*t4) + (C5*t5);
-//	v = C1 + (2.0*C2*t) + (3.0*C3*t2) + (4.0*C4*t3) + (5.0*C5*t4);
-//	a = (2.0*C2) + (6.0*C3*t) + (12.0*C4*t2) + (20.0*C5*t3);
-//
-//}
-
-fcb_joint KalmanFilter(float theta_k, fcb_joint joint) {
-//	bug1 = joint.Encoder;
-float X1 = joint.X11;
-float X2 = joint.X21;
-float P11 = joint.p11;
-float P12 = joint.p12;
-float P21 = joint.p21;
-float P22 = joint.p22;
-float Q = joint.Q;
-float R = joint.R;
-
-joint.X11 =
-		X1 + (X2 * dt)
-				- ((X1 - theta_k + X2 * dt)
-						* (P11 + P21 * dt + (Q * pow(dt, 4)) / 4
-								+ dt * (P12 + P22 * dt)))
-						/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
-								+ dt * (P12 + P22 * dt));
-joint.X21 = X2
-		- (((Q * pow(dt, 3)) / 2 + P22 * dt + P21) * (X1 - theta_k + X2 * dt))
-				/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
-						+ dt * (P12 + P22 * dt));
-joint.p11 = -((P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
-		/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
-		- 1) * (P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt));
-joint.p12 = -((P11 + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
-		/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4 + dt * (P12 + P22 * dt))
-		- 1) * ((Q * pow(dt, 3)) / 2 + P22 * dt + P12);
-joint.p21 =
-		P21 + P22 * dt + (Q * pow(dt, 3)) / 2
-				- (((Q * pow(dt, 3)) / 2 + P22 * dt + P21)
-						* (P11 + P21 * dt + (Q * pow(dt, 4)) / 4
-								+ dt * (P12 + P22 * dt)))
-						/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
-								+ dt * (P12 + P22 * dt));
-joint.p22 = P22 + Q * pow(dt, 2)
-		- (((Q * pow(dt, 3)) / 2 + P22 * dt + P12)
-				* ((Q * pow(dt, 3)) / 2 + P22 * dt + P21))
-				/ (P11 + R + P21 * dt + (Q * pow(dt, 4)) / 4
-						+ dt * (P12 + P22 * dt));
-
-return joint;
-
-}
-volatile float v,p,a;
-volatile float printw_q1,printw_q2,printw_q3,printw_q4;
-volatile float printp_q3, printa_q3;
-joint_config find_IK(float gripper_linear_x, float gripper_linear_y,
-	float gripper_linear_z, float gripper_angular_yaw) {
-bug1 = gripper_linear_x * gripper_linear_x;
-bug2 = gripper_linear_y * gripper_linear_y;
-bug3 = L12 * L12;
-bug4 = L3 * L3;
-float C3 = ((gripper_linear_x * gripper_linear_x)
-		+ (gripper_linear_y * gripper_linear_y) - (L12 * L12) - (L3 * L3))
-		/ (2 * L12 * L3);
-float S3 = sqrt(1 - (C3 * C3));
-float q3 = atan2(S3, C3);
-
-float L3S3 = L3 * S3;
-float L123C3 = L12 + (L3 * C3);
-
-float S1 = (-L3S3 * gripper_linear_x) + (L123C3 * gripper_linear_y);
-float C1 = (L3S3 * gripper_linear_y) + (L123C3 * gripper_linear_x);
-float q1 = atan2(S1, C1);
-float q4 = gripper_angular_yaw - q1 - q3;
-float q2 = gripper_linear_z + H4 - H3 - H1;
-
-joint_config buff;
-buff.q1 = q1;
-buff.q2 = C3;
-buff.q3 = q3;
-buff.q4 = S3;
-
-return buff;
-}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 // tim5 100 Hz
@@ -475,40 +331,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 if (htim == &htim6) {	//
 
-	encoderJ1.AMT21_Read();
-	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-	if (HALENCJ1OK == HAL_OK) {
-		fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-	}
-
-	encoderJ3.AMT21_Read();
-	HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-	if (HALENCJ3OK == HAL_OK) {
-		fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-	}
-
-	float sethome_q1 = -0.4137;
-	float sethome_q2 = 0.1;
-	float sethome_q3 =   0.9638;
-	float sethome_yaw = -0.5501;
-
-	error_q1 = sethome_q1*2609.0 - fcb_joint1.Encoder;
-	error_q3 = sethome_q3*2609.0 - fcb_joint3.Encoder;
-
-	stepperJ1.StepperSetFrequency(error_q1*-2.0);
-	stepperJ3.StepperSetFrequency(error_q3/3);
-	if (abs(error_q3) < 20.0)
-	{
-		stepperJ3.StepperSetFrequency(0);
-	}
-	if ( abs(error_q1) < 15.0 )
-	{
-		State_Sethome = 0;
-		stepperJ1.StepperSetFrequency(0);
-		stepperJ3.StepperSetFrequency(0);
-		HAL_TIM_Base_Stop_IT(&htim6);
-		HAL_TIM_Base_Start_IT(&htim7);
-	}
+//	encoderJ1.AMT21_Read();
+//	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//	if (HALENCJ1OK == HAL_OK) {
+//		fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+//	}
+//
+//	encoderJ3.AMT21_Read();
+//	HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//	if (HALENCJ3OK == HAL_OK) {
+//		fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+//	}
+//
+//	float sethome_q1 = -0.4137;
+//	float sethome_q2 = 0.1;
+//	float sethome_q3 =   0.9638;
+//	float sethome_yaw = -0.5501;
+//
+//	error_q1 = sethome_q1*2609.0 - fcb_joint1.Encoder;
+//	error_q3 = sethome_q3*2609.0 - fcb_joint3.Encoder;
+//
+//	stepperJ1.StepperSetFrequency(error_q1*-2.0);
+//	stepperJ3.StepperSetFrequency(error_q3/3);
+//	if (abs(error_q3) < 20.0)
+//	{
+//		stepperJ3.StepperSetFrequency(0);
+//	}
+//	if ( abs(error_q1) < 15.0 )
+//	{
+//		State_Sethome = 0;
+//		stepperJ1.StepperSetFrequency(0);
+//		stepperJ3.StepperSetFrequency(0);
+//		HAL_TIM_Base_Stop_IT(&htim6);
+//		HAL_TIM_Base_Start_IT(&htim7);
+//	}
 
 }
 
@@ -522,11 +378,11 @@ if (htim == &htim12) {	//
 
 if (htim == &htim5) {	//
 
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-		}
+//		encoderJ1.AMT21_Read();
+//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//		if (HALENCJ1OK == HAL_OK) {
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
+//		}
 
 //		encoderJ2.AMT21_Read();
 //		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
@@ -535,17 +391,17 @@ if (htim == &htim5) {	//
 //			posJ2 = encoderJ2.getUnwarpValue();
 //		}
 
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-		}
-
-		encoderJ4.AMT21_Read();
-		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
-		}
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
+//		}
+//
+//		encoderJ4.AMT21_Read();
+//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+//		if (HALENCJ4OK == HAL_OK) {
+//			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
+//		}
 
 
 //	int i;
@@ -582,7 +438,7 @@ if (htim == &htim5) {	//
 //		stepperJ3.StepperSetFrequency(dq3);
 //		stepperJ4.StepperSetFrequency(dq4);
 
-		Update_ivk(fcb_joint1.Encoder / 2609.0 , 0.0,fcb_joint3.Encoder / 2609.0, 0.0, dx/1000.0, dy/1000.0, dz/1000.0, 0.0);
+//		Update_ivk(fcb_joint1.Encoder / 2609.0 , 0.0,fcb_joint3.Encoder / 2609.0, 0.0, dx/1000.0, dy/1000.0, dz/1000.0, 0.0);
 
 		int i;
 				for (i = 1 ; i<num ; i++)
@@ -622,156 +478,155 @@ if (htim == &htim5) {	//
 
 	if (htim == &htim7) {
 
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-		}
+				encoderJ1.AMT21_Read();
+				HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+				if (HALENCJ1OK == HAL_OK) {
+					fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+				}
 
-//		encoderJ2.AMT21_Read();
-//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//		if(HALENCJ2OK == HAL_OK){
-//			encoderJ2.unwarp();
-//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue();
-//		}
+//				encoderJ2.AMT21_Read();
+//				HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//				if(HALENCJ2OK == HAL_OK){
+//					encoderJ2.unwarp();
+//					fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+//				}
 
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-		}
+				encoderJ3.AMT21_Read();
+				HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+				if (HALENCJ3OK == HAL_OK) {
+					fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
+				}
 
-		encoderJ4.AMT21_Read();
-		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() ;
-		}
+				encoderJ4.AMT21_Read();
+				HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+				if (HALENCJ4OK == HAL_OK) {
+					fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
+				}
 
-		float t2 = t * t;
-		float t3 = t * t * t;
-		float t4 = t * t * t * t;
-		float t5 = t * t * t * t * t;
-
-
-//		if (direction_traj == 1) {
-////			fcb_joint1.Goal_Position = unwrap_pose
-////					+ (C0_q1 + (C2_q1 * t_2) - (C3_q1 * t_3)) - 0.8;
-////			fcb_joint1.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
-////					* -2;
-////			fcb_joint3.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
-////					* -2;
-//			v = -1.0 * (fcb_joint1.C1 + (2.0*fcb_joint1.C2*t) + (3.0*fcb_joint1.C3*t2) + (4.0*fcb_joint1.C4*t3) + (5.0*fcb_joint1.C5*t4));
-//			p = -1.0 * (fcb_joint1.C0 + (fcb_joint1.C1*t) + (fcb_joint1.C2*t2) + (fcb_joint1.C3*t3) + (fcb_joint1.C4*t4) + (fcb_joint1.C5*t5));
-//			a = -1.0 * ((2.0*fcb_joint1.C2) + (6.0*fcb_joint1.C3*t) + (12.0*fcb_joint1.C4*t2) + (20.0*fcb_joint1.C5*t3));
-//		} else {
-////			fcb_joint1.Goal_Position = unwrap_pose
-////					- (C0_q1 + (C2_q1 * t_2) - (C3_q1 * t_3)) + 0.8;
-////			fcb_joint1.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
-////					* 2;
-////			fcb_joint3.Goal_Velocity = ((2.0 * C2_q1 * t) - (3.0 * C3_q1 * t_2))
-////					* 2;
-//			v = fcb_joint1.C1 + (2.0*fcb_joint1.C2*t) + (3.0*fcb_joint1.C3*t2) + (4.0*fcb_joint1.C4*t3) + (5.0*fcb_joint1.C5*t4);
-//			p = (fcb_joint1.C0 + (fcb_joint1.C1*t) + (fcb_joint1.C2*t2) + (fcb_joint1.C3*t3) + (fcb_joint1.C4*t4) + (fcb_joint1.C5*t5));
-//			a = ((2.0*fcb_joint1.C2) + (6.0*fcb_joint1.C3*t) + (12.0*fcb_joint1.C4*t2) + (20.0*fcb_joint1.C5*t3));
-//		}
-
-		v = fcb_joint3.C1 + (2.0*fcb_joint3.C2*t) + (3.0*fcb_joint3.C3*t2) + (4.0*fcb_joint3.C4*t3) + (5.0*fcb_joint3.C5*t4);
-		p = (fcb_joint3.C0 + (fcb_joint3.C1*t) + (fcb_joint3.C2*t2) + (fcb_joint3.C3*t3) + (fcb_joint3.C4*t4) + (fcb_joint3.C5*t5));
-		a = ((2.0*fcb_joint3.C2) + (6.0*fcb_joint3.C3*t) + (12.0*fcb_joint3.C4*t2) + (20.0*fcb_joint3.C5*t3));
+				float t2 = t * t;
+				float t3 = t * t * t;
+				float t4 = t * t * t * t;
+				float t5 = t * t * t * t * t;
 
 
-// Fuck you
-//		chess_board_ang = chessboard_angular_velocity * t;
-//
-//		joint_config findchessbot_joint_state;
-//		debug_pos_x = (0.177 * cos(chess_board_ang)) + 0.4424 ;
-//		debug_pos_y = (0.177 * sin(chess_board_ang)) + 0.0106;
-//
-//		idx = -0.177 * sin(chess_board_ang)	* chessboard_angular_velocity;
-//		idy =  0.177 * cos(chess_board_ang)	* chessboard_angular_velocity ;
-//
-//		findchessbot_joint_state = find_IK(debug_pos_x, debug_pos_y, 0, 0);
-//		Update_ivk(fcb_joint1.Encoder / 2609.0 , 0, fcb_joint3.Encoder / 2609.0, 0, idx, idy, 0.0, 0.0);
-// Fuck you
 
+		fcb_joint1.Goal_Velocity = fcb_joint1.C1 + (2.0*fcb_joint1.C2*t) + (3.0*fcb_joint1.C3*t2) + (4.0*fcb_joint1.C4*t3) + (5.0*fcb_joint1.C5*t4);
+		fcb_joint1.Goal_Position = (fcb_joint1.C0 + (fcb_joint1.C1*t) + (fcb_joint1.C2*t2) + (fcb_joint1.C3*t3) + (fcb_joint1.C4*t4) + (fcb_joint1.C5*t5));
+
+		fcb_joint3.Goal_Velocity = fcb_joint3.C1 + (2.0*fcb_joint3.C2*t) + (3.0*fcb_joint3.C3*t2) + (4.0*fcb_joint3.C4*t3) + (5.0*fcb_joint3.C5*t4);
+		fcb_joint3.Goal_Position = (fcb_joint3.C0 + (fcb_joint3.C1*t) + (fcb_joint3.C2*t2) + (fcb_joint3.C3*t3) + (fcb_joint3.C4*t4) + (fcb_joint3.C5*t5));
+
+//		a = ((2.0*fcb_joint1.C2) + (6.0*fcb_joint1.C3*t) + (12.0*fcb_joint1.C4*t2) + (20.0*fcb_joint1.C5*t3));
+
+		// Fuck you
+		//		chess_board_ang = chessboard_angular_velocity * t;
+		//
+		//		joint_config findchessbot_joint_state;
+		//		debug_pos_x = (0.177 * cos(chess_board_ang)) + 0.4424 ;
+		//		debug_pos_y = (0.177 * sin(chess_board_ang)) + 0.0106;
+		//
+		//		idx = -0.177 * sin(chess_board_ang)	* chessboard_angular_velocity;
+		//		idy =  0.177 * cos(chess_board_ang)	* chessboard_angular_velocity ;
+		//
+		//		findchessbot_joint_state = find_IK(debug_pos_x, debug_pos_y, 0, 0);
+		//		Update_ivk(fcb_joint1.Encoder / 2609.0 , 0, fcb_joint3.Encoder / 2609.0, 0, idx, idy, 0.0, 0.0);
+		// Fuck you
+
+
+		//		fcb_joint1.Error_p = fcb_joint1.Goal_Position - fcb_joint1.Encoder;
+		//		fcb_joint3.Error_p = fcb_joint3.Goal_Position - fcb_joint3.Encoder;
+		//		fcb_joint1.Sum_Error_p += fcb_joint1.Error_p;
+		//		fcb_joint3.Sum_Error_p += fcb_joint3.Error_p;
+		//
+		fcb_joint1.KalmanFillter(fcb_joint1.Encoder);
+		fcb_joint1.kalman_pos = fcb_joint1.X11;
+		fcb_joint1.kalman_velo = fcb_joint1.X21;
+
+		fcb_joint3.KalmanFillter(fcb_joint3.Encoder);
+		fcb_joint3.kalman_pos = fcb_joint3.X11;
+		fcb_joint3.kalman_velo = fcb_joint3.X21;
+
+		fcb_joint1.Kp_p = 1.0;
+		fcb_joint1.Ki_p = 0.0;
+		fcb_joint1.Kd_p = 0.0;
+		fcb_joint3.Kp_p = 1.0;
+		fcb_joint3.Ki_p = 0.0;
+		fcb_joint3.Kd_p = 0.0;
+
+		fcb_joint1.Kp_v = 1.0;
+		fcb_joint1.Ki_v = 0.0;
+		fcb_joint1.Kd_v = 0.0;
+		fcb_joint3.Kp_v = 1.0;
+		fcb_joint3.Ki_v = 0.0;
+		fcb_joint3.Kd_v = 0.0;
 
 		fcb_joint1.Error_p = fcb_joint1.Goal_Position - fcb_joint1.Encoder;
 		fcb_joint3.Error_p = fcb_joint3.Goal_Position - fcb_joint3.Encoder;
+		fcb_joint1.Error_v = fcb_joint1.Goal_Velocity - fcb_joint1.kalman_velo;
+		fcb_joint3.Error_v = fcb_joint3.Goal_Velocity - fcb_joint3.kalman_velo;
+
 		fcb_joint1.Sum_Error_p += fcb_joint1.Error_p;
 		fcb_joint3.Sum_Error_p += fcb_joint3.Error_p;
+		fcb_joint1.Sum_Error_v += fcb_joint1.Error_v;
+		fcb_joint3.Sum_Error_v += fcb_joint3.Error_v;
 
-		fcb_joint1 = KalmanFilter(fcb_joint1.Encoder / 2609.0, fcb_joint1);
-		fcb_joint3 = KalmanFilter(fcb_joint3.Encoder/ 2609.0 ,fcb_joint3);
+		fcb_joint1.Output_Joint_W = fcb_joint1.Goal_Velocity+
+									(fcb_joint1.Kp_v * fcb_joint1.Error_v) +
+									(fcb_joint1.Ki_v * fcb_joint1.Sum_Error_v) +
+									(fcb_joint1.Kd_v * (fcb_joint1.Error_v - fcb_joint1.Old_v)) ;
+		fcb_joint3.Output_Joint_W = fcb_joint3.Goal_Velocity +
+									(fcb_joint3.Kp_v * fcb_joint3.Error_v) +
+									(fcb_joint3.Ki_v * fcb_joint3.Sum_Error_v) +
+									(fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v)) ;
 
-//		fcb_joint1.Output_Stepper_Frequency = (fcb_joint1.Kp_p * fcb_joint1.Error_p) +
-//											  (fcb_joint1.Ki_p * fcb_joint1.Sum_Error_p) +
-//											  (fcb_joint1.Kd_p * (fcb_joint1.Error_p - fcb_joint1.Old_Error_p));
-//
-//		fcb_joint3.Output_Stepper_Frequency = (fcb_joint3.Kp_p * fcb_joint3.Error_p) +
-//											  (fcb_joint3.Ki_p * fcb_joint3.Sum_Error_p) +
-//											  (fcb_joint3.Kd_p * (fcb_joint3.Error_p - fcb_joint3.Old_Error_p));
-//
-//		fcb_joint1.Output_Stepper_Frequency = (fcb_joint1.Kp_p * fcb_joint1.Error_p);
-//		fcb_joint3.Output_Stepper_Frequency = (fcb_joint3.Kp_p * fcb_joint3.Error_p);
-
-//		fcb_joint1.Output_Stepper_Frequency = fcb_joint1.Goal_Position;
-//		fcb_joint3.Output_Stepper_Frequency = fcb_joint3.Goal_Position;
+		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Output_Joint_W/1000.0);
+		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Output_Joint_W/1000.0);
 
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint3.Old_Error_p = fcb_joint3.Error_p;
+		fcb_joint1.Old_Error_v = fcb_joint1.Error_v;
+		fcb_joint3.Old_Error_v = fcb_joint3.Error_v;
+
 		fcb_joint1.Old_p = fcb_joint1.Encoder;
 		fcb_joint3.Old_p = fcb_joint3.Encoder;
-
-
-
-
-//		stepperJ1.StepperOpenLoopSpeed(-1.0 * w_q1);
-//		stepperJ3.StepperOpenLoopSpeed(w_q3);
-		printw_q1 = v * 1000;
-		printw_q2 = 0 * 1000;
-		printw_q3 = v * 2000;
-		printw_q4 = v * 1000;
-
-		printp_q3 = p * 1000.0;
-		printa_q3 = a * 1000.0;
-//		stepperJ1.StepperOpenLoopSpeed(v);
-//		stepperJ2.StepperOpenLoopSpeed(0);
-		stepperJ3.StepperOpenLoopSpeed(v);
-//		stepperJ4.StepperOpenLoopSpeed(v);
-
-//		stepperJ1.StepperOpenLoopSpeed
-		debug_j1_x11 = fcb_joint1.X11 * 1000.0;
-		debug_j3_x11 = fcb_joint3.X11 * 1000.0;
-		debug_j1_x21 = fcb_joint1.X21 * 1000.0;
-		debug_j3_x21 = fcb_joint3.X21 * 1000.0;
-		debug_wq1 = w_q1 * 1000.0;
-		debug_wq3 = w_q3 * 1000.0;
+		fcb_joint1.Old_v = fcb_joint1.kalman_velo;
+		fcb_joint3.Old_v = fcb_joint1.kalman_velo;
 
 		t = t + (sample_time_1000);
 
 
-		if (t >= fcb_joint3.T) {
+		if (t >= fcb_joint1.T)
+		{
 			t = 0.0;
 			direction_traj ^= 1;
-//			HAL_TIM_Base_Stop_IT(&htim7);
+
+			fcb_joint1.Sum_Error_p = 0;
+			fcb_joint3.Sum_Error_p = 0;
+			fcb_joint1.Sum_Error_v = 0;
+			fcb_joint3.Sum_Error_v = 0;
+			fcb_joint1.Old_Error_p = 0;
+			fcb_joint3.Old_Error_p = 0;
+			fcb_joint1.Old_Error_v = 0;
+			fcb_joint3.Old_Error_v = 0;
 			if (direction_traj == 0)
 			{
-				fcb_joint3 = Update_quintic_Coff(6.0, (fcb_joint3.Encoder / 2609.0), (fcb_joint3.Encoder / 2609.0) - 1.57, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint1.UpdateQuinticCoff(10.0, (fcb_joint1.Encoder), (fcb_joint1.Encoder) - 1570, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint3.UpdateQuinticCoff(10.0, (fcb_joint3.Encoder), (fcb_joint3.Encoder) - 1570, 0.0, 0.0, 0.0, 0.0);
 			}
 			else
 			{
-				fcb_joint3 = Update_quintic_Coff(6.0, (fcb_joint3.Encoder / 2609.0), (fcb_joint3.Encoder / 2609.0) + 1.57, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint1.UpdateQuinticCoff(10.0, (fcb_joint1.Encoder), (fcb_joint1.Encoder) + 1570, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint3.UpdateQuinticCoff(10.0, (fcb_joint3.Encoder), (fcb_joint3.Encoder) + 1570, 0.0, 0.0, 0.0, 0.0);
 			}
 
-//			unwrap_pose = fcb_joint1.Goal_Position;
 		}
 
-//		if (t >= Time_circle)
-//				{
-//					t = 0.0;
-//					chess_board_ang = 0.0;
-//					direction_traj ^= 1;
-//				}
+		//		if (t >= Time_circle)
+		//				{
+		//					t = 0.0;
+		//					chess_board_ang = 0.0;
+		//					direction_traj ^= 1;
+		//				}
 
 	}
 }
@@ -855,12 +710,13 @@ int main(void)
 
 	gripper.setDegreeGripperClose(65);
 	gripper.setDegreeGripperOpen(0);
-	//	gripper.ServoRotateDegree(90);
 	gripper.ServoEnable();
+	fcb_joint3.Q = 0.12;
+	fcb_joint3.R = 0.0001;
 	HAL_Delay(3000);
 	#endif
 
-		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
+//		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
 //		HAL_TIM_Base_Start_IT(&htim6); // Set home 	200 Hz
 //		HAL_TIM_Base_Start_IT(&htim7); // Control 	1000 Hz
 //		HAL_TIM_Base_Start_IT(&htim12); // 			2000 Hz
@@ -870,42 +726,9 @@ int main(void)
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
 	//	stepperJ1.StepperOpenLoopSpeed(1.00f);
 
-//	while(State_Sethome)
-//	{
-//		HAL_TIM_Base_Stop_IT(&htim6); // Set home 	200 Hz
-//	}
 
-	// Backup
-	fcb_joint1.Kp_p = 0.0;
-	fcb_joint1.Kp_v = 0.0;
-	fcb_joint1.Ki_p = 0.0;
-	fcb_joint1.Ki_v = 0.0;
-	fcb_joint1.Kd_p = 0.0;
-	fcb_joint1.Kd_p = 0.0;
-
-	fcb_joint2.Kp_p = 0.0;
-	fcb_joint2.Kp_v = 0.0;
-	fcb_joint2.Ki_p = 0.0;
-	fcb_joint2.Ki_v = 0.0;
-	fcb_joint2.Kd_p = 0.0;
-	fcb_joint2.Kd_p = 0.0;
-
-	fcb_joint3.Kp_p = 0.0;
-	fcb_joint3.Kp_v = 0.0;
-	fcb_joint3.Ki_p = 0.0;
-	fcb_joint3.Ki_v = 0.0;
-	fcb_joint3.Kd_p = 0.0;
-	fcb_joint3.Kd_p = 0.0;
-
-	fcb_joint4.Kp_p = 0.0;
-	fcb_joint4.Kp_v = 0.0;
-	fcb_joint4.Ki_p = 0.0;
-	fcb_joint4.Ki_v = 0.0;
-	fcb_joint4.Kd_p = 0.0;
-	fcb_joint4.Kd_p = 0.0;
-
-	fcb_joint3 = Update_quintic_Coff(6.0, fcb_joint3.Encoder / 2609.0, (fcb_joint3.Encoder / 2609.0) + 0.785, 0.0, 0.0, 0.0, 0.0);
-
+//	fcb_joint1.UpdateQuinticCoff(5.0, fcb_joint1.Encoder, fcb_joint1.Encoder + 785, 0.0, 0.0, 0.0, 0.0);
+//	fcb_joint3.UpdateQuinticCoff(5.0, fcb_joint3.Encoder, fcb_joint3.Encoder + 785, 0.0, 0.0, 0.0, 0.0);
 
 	/* USER CODE END 2 */
 
@@ -914,47 +737,15 @@ int main(void)
 	while (1)
 	{
 
-//		stepperJ1.StepperSetFrequency(300.0f); // + กลับด้าน +
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if (HALENCJ1OK == HAL_OK) {
+			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+		}
+		stepperJ1.StepperSetFrequency(20.0f); // + กลับด้าน +
 //		stepperJ2.StepperSetFrequency(300.0f); // + กลับด้านจากแกน แต่ดีแล้ว +
 //		stepperJ3.StepperSetFrequency(300.0f); // + ถูกด้าน +
 //		stepperJ4.StepperSetFrequency(300.0f); // + กลับด้าน +
-
-//				encoderJ1.AMT21_Read();
-//				HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//				if (HALENCJ1OK == HAL_OK) {
-//					fcb_joint1.Encoder = encoderJ1.getAngPos180() ;
-//				}
-//
-//				encoderJ3.AMT21_Read();
-//				HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//				if (HALENCJ3OK == HAL_OK) {
-//					fcb_joint3.Encoder = encoderJ3.getAngPos180() ;
-//				}
-
-		//		for (int i = 0;i < 500; i++){
-		//			HAL_GPIO_TogglePin(STEP33_GPIO_Port, STEP33_Pin);
-		//			HAL_Delay(10);
-		//		}
-		//		stepperJ1.StepperSetFrequency(-300.0f);
-		//		stepperJ3.StepperSetFrequency(500.0f);
-		//		HAL_Delay(2500);
-
-		//		stepperJ1.StepperSetFrequency(0.0f);
-		//		stepperJ3.StepperSetFrequency(0.0f);
-		//		HAL_Delay(3000);
-
-		//		stepperJ1.StepperSetFrequency(300.0f);
-		//		stepperJ3.StepperSetFrequency(-500.0f);
-		//		HAL_Delay(2500);
-
-		//		stepperJ1.StepperSetFrequency(0.0f);
-		////		stepperJ3.StepperSetFrequency(0.0f);
-		//		HAL_Delay(1000);
-
-		//		gripper.GripperClose();
-		//		HAL_Delay(3000);
-		//		gripper.GripperOpen();
-		//		HAL_Delay(3000);
 
 		}
 	/* USER CODE END WHILE */

@@ -1,5 +1,6 @@
 "./Core/Src/AMT21.o"
 "./Core/Src/Controller.o"
+"./Core/Src/RobotJoint.o"
 "./Core/Src/ServoMotor.o"
 "./Core/Src/Stepper.o"
 "./Core/Src/crc.o"

@@ -38,6 +38,7 @@ class Stepper {	// THIS CLASS, ENABLE PIN IS OFF AS DEFAULT!!!
         void        StepperSetMicrostep(uint8_t _microstep);
         void        StepperOpenLoopSpeed(float speed); //open-loop speed rad/s
         float		getFrequency();
+
     private:
         TIM_HandleTypeDef *stepper_htim;
         uint32_t	STEPPER_TIM_CHANNEL;

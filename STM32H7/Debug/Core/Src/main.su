@@ -1,22 +1,11 @@
-std_abs.h:75:3:constexpr float std::abs(float)	16	static
-cmath:144:3:constexpr float std::atan2(float, float)	16	static
-cmath:184:3:constexpr float std::cos(float)	16	static
-cmath:425:3:constexpr float std::sin(float)	16	static
-cmath:463:3:constexpr float std::sqrt(float)	16	static
-main.cpp:71:5:int _write(int, char*, int)	24	static
-main.cpp:122:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	24	static
-main.cpp:301:8:robot_joint::robot_joint()	16	static
-main.cpp:338:6:void Update_ivk(float, float, float, float, float, float, float, float)	64	static
-main.cpp:359:11:fcb_joint Update_quintic_Coff(float, float, float, float, float, float, float)	72	static
-main.cpp:391:11:fcb_joint KalmanFilter(float, fcb_joint)	80	static
-main.cpp:438:14:joint_config find_IK(float, float, float, float)	120	static
-main.cpp:468:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	392	static
-main.cpp:784:5:int main()	176	static
-main.cpp:972:6:void SystemClock_Config()	120	static
-main.cpp:1026:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
-main.cpp:1029:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
-main.cpp:1039:6:void Error_Handler()	8	static,ignoring_inline_asm
-cmath:415:5:constexpr typename __gnu_cxx::__promote_2<_Tp, _Up>::__type std::pow(_Tp, _Up) [with _Tp = float; _Up = int]	16	static
-main.cpp:1050:1:void __static_initialization_and_destruction_0(int, int)	24	static
-main.cpp:1050:1:cpp)	8	static
-main.cpp:1050:1:cpp)	8	static
+main.cpp:72:5:int _write(int, char*, int)	24	static
+main.cpp:128:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	24	static
+main.cpp:325:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	40	static
+main.cpp:640:5:int main()	8	static
+main.cpp:764:6:void SystemClock_Config()	120	static
+main.cpp:818:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
+main.cpp:821:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
+main.cpp:831:6:void Error_Handler()	8	static,ignoring_inline_asm
+main.cpp:842:1:void __static_initialization_and_destruction_0(int, int)	24	static
+main.cpp:842:1:cpp)	8	static
+main.cpp:842:1:cpp)	8	static

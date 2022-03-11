@@ -42,15 +42,14 @@ public:
 	volatile float w_q3;
 	volatile float w_q4;
 
-	volatile int16_t Encoder;
+	volatile float Encoder;
 
 	volatile float Goal_Position, Goal_Velocity;
 	volatile float Kalman_Position, Kalman_Velocity, Kalman_Position_New,
 			Kalman_Velocity_New;
 
 	volatile float Kp_p, Ki_p, Kd_p, Kp_v, Ki_v, Kd_v;
-	volatile float Error_p, Old_Error_p, Sum_Error_p, Error_v, Old_Error_v,
-			Sum_Error_v;
+	volatile float Error_p, Old_Error_p, Sum_Error_p, Error_v, Old_Error_v, Sum_Error_v;
 	volatile float Old_p, Old_v;
 
 	volatile float Output_Stepper_Frequency, Output_Joint_W;
@@ -63,8 +62,8 @@ public:
 	volatile float p22 = 0;
 	volatile float kalman_pos = 0;
 	volatile float kalman_velo = 0;
-	volatile float Q = 0.095;
-	volatile float R = 0.00006;
+	volatile float Q = 0.6;
+	volatile float R = 0.001;
 	volatile float C0, C1, C2, C3, C4, C5, T;
 
 	void FindIK(float gripper_linear_x, float gripper_linear_y,
