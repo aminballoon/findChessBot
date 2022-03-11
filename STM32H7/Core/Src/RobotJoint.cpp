@@ -121,7 +121,7 @@ void RobotJoint::FindIK(float gripper_linear_x, float gripper_linear_y,
 	float _q2 = gripper_linear_z + this->H4 - this->H3 - this->H1;
 
 	this->q1 = _q1;
-	this->q2 = C3;
+	this->q2 = _q2;
 	this->q3 = _q3;
-	this->q4 = S3;
+	this->q4 = _q4;
 }
