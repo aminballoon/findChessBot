@@ -36,7 +36,8 @@ class Stepper {	// THIS CLASS, ENABLE PIN IS OFF AS DEFAULT!!!
         void        StepperSetMaxFrequency(float _max_frequency);
         void        StepperSetRatio(float _ratio);
         void        StepperSetMicrostep(uint8_t _microstep);
-        void        StepperOpenLoopSpeed(float speed); //open-loop speed rad/s
+        void        StepperOpenLoopSpeed(float _speed); //open-loop speed rad/s
+        void        StepperOpenLoopSpeedM(float _speed_m); //open-loop speed mrad/s
         float		getFrequency();
 
     private:

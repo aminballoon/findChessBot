@@ -174,6 +174,15 @@ void Stepper::StepperOpenLoopSpeed(float _speed) {
 						/ (2.0f * PI)));
 //	}
 }
+void Stepper::StepperOpenLoopSpeedM(float _speed_m) {
+//	if (_speed > -0.07853981634f && _speed < 0.07853981634f) { // upper than abs(-20Hz) and lower than 20Hz
+//		this->StepperSetFrequency(0.0f);
+//	} else {
+		this->StepperSetFrequency(
+				(float) (_speed_m * this->microStep * this->ratio * this->SPR * 1
+						/ (2.0f * PI * 1000.0f)));
+//	}
+}
 float Stepper::getFrequency()
 {
 	return this->frequency;
