@@ -470,26 +470,26 @@ if (htim == &htim5) {	//
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2609.0 ;
 		}
 
 //				encoderJ2.AMT21_Read();
 //				HALENCJ2OK = encoderJ2.AMT21_Check_Value();
 //				if(HALENCJ2OK == HAL_OK){
 //					encoderJ2.unwarp();
-//					fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+//					fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2609.0 ;
 //				}
 
 		encoderJ3.AMT21_Read();
 		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
+			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2609.0 ;
 		}
 
 		encoderJ4.AMT21_Read();
 		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2609.0 ;
 		}
 
 		float t2 = t * t;
@@ -502,12 +502,13 @@ if (htim == &htim5) {	//
 		fcb_X.Goal_Velocity = (fcb_X.C1 + (2.0*fcb_X.C2*t) + (3.0*fcb_X.C3*t2) + (4.0*fcb_X.C4*t3) + (5.0*fcb_X.C5*t4));
 		fcb_X.Goal_Position = ((fcb_X.C0 + (fcb_X.C1*t) + (fcb_X.C2*t2) + (fcb_X.C3*t3) + (fcb_X.C4*t4) + (fcb_X.C5*t5)));
 
-		fcb_X.UpdateIVK(fcb_joint1.Encoder/1000.0, 0, fcb_joint3.Encoder/1000.0, fcb_joint4.Encoder/1000.0, fcb_X.Goal_Velocity/1000.0, 0, 0, 0);
+		fcb_X.UpdateIVK(fcb_joint1.Encoder, 0.0, fcb_joint3.Encoder, fcb_joint4.Encoder, fcb_X.Goal_Velocity, fcb_X.Goal_Velocity, 0.0, 0.0);
 //		fcb_X.FindIK(fcb_X.Goal_Position/1000.0, Robot_Y, Robot_Z, Robot_Yaw);
 
-//		fcb_joint1.Goal_Velocity = fcb_X.w_q1;
-		fcb_joint1.Goal_Position = fcb_X.q1;
+		fcb_joint1.Goal_Velocity = fcb_X.w_q1;
+//		fcb_joint1.Goal_Position = fcb_X.q1;
 		fcb_joint3.Goal_Velocity = fcb_X.w_q3;
+		fcb_joint4.Goal_Velocity = fcb_X.w_q4;
 //		fcb_joint3.Goal_Position = fcb_X.q3;
 
 
@@ -557,10 +558,10 @@ if (htim == &htim5) {	//
 		fcb_joint3.Ki_p = 0.0;
 		fcb_joint3.Kd_p = 0.0;
 
-		fcb_joint1.Kp_v = 1.0;
+		fcb_joint1.Kp_v = 0.1;
 		fcb_joint1.Ki_v = 0.0;
 		fcb_joint1.Kd_v = 0.0;
-		fcb_joint3.Kp_v = 1.0;
+		fcb_joint3.Kp_v = 0.1;
 		fcb_joint3.Ki_v = 0.0;
 		fcb_joint3.Kd_v = 0.0;
 
@@ -574,20 +575,21 @@ if (htim == &htim5) {	//
 		fcb_joint1.Sum_Error_v += fcb_joint1.Error_v;
 		fcb_joint3.Sum_Error_v += fcb_joint3.Error_v;
 
-//		fcb_joint1.Output_Joint_W = fcb_joint1.Goal_Velocity+
-//									(fcb_joint1.Kp_v * fcb_joint1.Error_v) +
-//									(fcb_joint1.Ki_v * fcb_joint1.Sum_Error_v) +
-//									(fcb_joint1.Kd_v * (fcb_joint1.Error_v - fcb_joint1.Old_v)) ;
-//		fcb_joint3.Output_Joint_W = fcb_joint3.Goal_Velocity +
-//									(fcb_joint3.Kp_v * fcb_joint3.Error_v) +
-//									(fcb_joint3.Ki_v * fcb_joint3.Sum_Error_v) +
-//									(fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v)) ;
+		fcb_joint1.Output_Joint_W = fcb_joint1.Goal_Velocity +
+									(fcb_joint1.Kp_v * fcb_joint1.Error_v ) +
+									(fcb_joint1.Ki_v * fcb_joint1.Sum_Error_v ) +
+									(fcb_joint1.Kd_v * (fcb_joint1.Error_v - fcb_joint1.Old_v) ) ;
+		fcb_joint3.Output_Joint_W = fcb_joint3.Goal_Velocity +
+									(fcb_joint3.Kp_v * fcb_joint3.Error_v) +
+									(fcb_joint3.Ki_v * fcb_joint3.Sum_Error_v ) +
+									(fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v) ) ;
 //
-//		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Output_Joint_W/1000.0);
-//		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Output_Joint_W/1000.0);
+		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Output_Joint_W);
+		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Output_Joint_W);
 
-		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Goal_Velocity);
-		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Goal_Velocity);
+//		stepperJ1.StepperOpenLoopSpeed(fcb_joint1.Goal_Velocity);
+//		stepperJ3.StepperOpenLoopSpeed(fcb_joint3.Goal_Velocity);
+		stepperJ4.StepperOpenLoopSpeed(-1.0 * fcb_joint4.Goal_Velocity);
 
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint3.Old_Error_p = fcb_joint3.Error_p;
@@ -627,11 +629,13 @@ if (htim == &htim5) {	//
 			{
 //				fcb_joint1.UpdateQuinticCoff(10.0, (fcb_joint1.Encoder), (fcb_joint1.Encoder) - 1570, 0.0, 0.0, 0.0, 0.0);
 //				fcb_joint3.UpdateQuinticCoff(10.0, (fcb_joint3.Encoder), (fcb_joint3.Encoder) - 1570, 0.0, 0.0, 0.0, 0.0);
+				fcb_X.UpdateQuinticCoff(2.0, Robot_X, Robot_X - 0.1, 0, 0, 0, 0);
 			}
 			else
 			{
 //				fcb_joint1.UpdateQuinticCoff(10.0, (fcb_joint1.Encoder), (fcb_joint1.Encoder) + 1570, 0.0, 0.0, 0.0, 0.0);
 //				fcb_joint3.UpdateQuinticCoff(10.0, (fcb_joint3.Encoder), (fcb_joint3.Encoder) + 1570, 0.0, 0.0, 0.0, 0.0);
+				fcb_X.UpdateQuinticCoff(2.0, Robot_X, Robot_X + 0.1, 0, 0, 0, 0);
 			}
 
 		}
@@ -726,22 +730,24 @@ int main(void)
 	gripper.setDegreeGripperClose(65);
 	gripper.setDegreeGripperOpen(0);
 	gripper.ServoEnable();
-	fcb_joint3.Q = 0.12;
-	fcb_joint3.R = 0.0001;
+//	fcb_joint3.Q = 0.12;
+//	fcb_joint3.R = 0.0001;
 
 	encoderJ1.AMT21_Read();
 	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 	if (HALENCJ1OK == HAL_OK) {
-		fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;}
+		fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2609.0 ;}
 	encoderJ3.AMT21_Read();
 	HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 	if (HALENCJ3OK == HAL_OK) {
-		fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;}
+		fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2609.0 ;}
 	encoderJ4.AMT21_Read();
 	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 	if (HALENCJ4OK == HAL_OK) {
-		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;}
+		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2609.0 ;}
 	fcb_FK(fcb_joint1.Encoder, 0, fcb_joint3.Encoder, fcb_joint4.Encoder);
+	fcb_joint1.X11 = fcb_joint1.Encoder;
+	fcb_joint3.X11 = fcb_joint3.Encoder;
 	HAL_Delay(3000);
 	#endif
 
@@ -758,8 +764,10 @@ int main(void)
 
 //	fcb_joint1.UpdateQuinticCoff(5.0, fcb_joint1.Encoder, fcb_joint1.Encoder + 785, 0.0, 0.0, 0.0, 0.0);
 //	fcb_joint3.UpdateQuinticCoff(5.0, fcb_joint3.Encoder, fcb_joint3.Encoder + 785, 0.0, 0.0, 0.0, 0.0);
-	fcb_X.UpdateQuinticCoff(10.0, Robot_X * 1000.0, (Robot_X * 1000.0) +  20, 0, 0, 0, 0);
 
+
+	fcb_X.UpdateQuinticCoff(2.0, Robot_X, Robot_X + 0.05, 0, 0, 0, 0);
+	fcb_Y.UpdateQuinticCoff(2.0, Robot_X, Robot_X + 0.05, 0, 0, 0, 0);
 			/* USER CODE END 2 */
 
 	/* Infinite loop */

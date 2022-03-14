@@ -62,8 +62,8 @@ public:
 	volatile float p22 = 0;
 	volatile float kalman_pos = 0;
 	volatile float kalman_velo = 0;
-	volatile float Q = 0.6;
-	volatile float R = 0.001;
+	volatile float Q = 0.1;
+	volatile float R = 0.000001;
 	volatile float C0, C1, C2, C3, C4, C5, T;
 
 	void FindIK(float gripper_linear_x, float gripper_linear_y,

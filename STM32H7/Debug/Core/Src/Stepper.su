@@ -10,5 +10,6 @@ Stepper.cpp:162:6:void Stepper::StepperSetRatio(float)	16	static
 cmath:253:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::fabs(_Tp) [with _Tp = unsigned char]	16	static
 Stepper.cpp:165:6:void Stepper::StepperSetMicrostep(uint8_t)	16	static
 Stepper.cpp:168:6:void Stepper::StepperOpenLoopSpeed(float)	16	static
-Stepper.cpp:177:7:float Stepper::getFrequency()	16	static
+Stepper.cpp:177:6:void Stepper::StepperOpenLoopSpeedM(float)	16	static
+Stepper.cpp:186:7:float Stepper::getFrequency()	16	static
 cmath:1768:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::round(_Tp) [with _Tp = long unsigned int]	16	static
