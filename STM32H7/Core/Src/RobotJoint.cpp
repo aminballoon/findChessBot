@@ -15,20 +15,20 @@ RobotJoint::~RobotJoint() {
 }
 void RobotJoint::UpdateIVK(float _q1, float _q2, float _q3, float _q4, float Vx,
 		float Vy, float Vz, float Wz) {
-	float S13 = sin(_q1 + _q3);
-	float C13 = cos(_q1 + _q3);
-	float S3 = sin(_q3);
-	float S1 = sin(_q1);
-	float C1 = cos(_q1);
+	float S13 = sin((_q1 + _q3)*1000.0);
+	float C13 = cos((_q1 + _q3)*1000.0);
+	float S3 = sin(_q3*1000.0);
+	float S1 = sin(_q1*1000.0);
+	float C1 = cos(_q1*1000.0);
 	float L3S3 = this->L3 * S3;
 
-	this->w_q1 = (Vx * C13 + Vy * S13) / (S3 * this->L12);
-	this->w_q2 = Vz;
-	this->w_q3 = -(Vx * (this->L3 * C13 + this->L1 * C1 + this->L2 * C1))
+	this->w_q1 = ((Vx * C13 + Vy * S13) / (S3 * this->L12))* 1000.0;
+	this->w_q2 = Vz * 1000.0;
+	this->w_q3 = (-(Vx * (this->L3 * C13 + this->L1 * C1 + this->L2 * C1))
 			/ (L3S3 * this->L12)
 			- (Vy * (this->L3 * S13 + this->L1 * S1 + this->L2 * S1))
-					/ (L3S3 * this->L12);
-	this->w_q4 = (Vx * C1 + Vy * S1 + this->L3 * Wz * S3) / (L3S3);
+					/ (L3S3 * this->L12)) * 1000.0;
+	this->w_q4 = ((Vx * C1 + Vy * S1 + this->L3 * Wz * S3) / (L3S3)) * 1000.0;
 }
 void RobotJoint::UpdateQuinticCoff(float T, float Start_pos, float Final_pos,
 		float Start_velocity, float Final_velocity, float Start_acceleration,
@@ -53,6 +53,7 @@ void RobotJoint::UpdateQuinticCoff(float T, float Start_pos, float Final_pos,
 	this->C4 = (-15.0 * A / T4) + (7.0 * B / T3) - (C / T2);
 	this->C5 = (6.0 * A / T5) - (3.0 * B / T4) + (C / (2.0 * T3));
 	this->T = T;
+
 }
 void RobotJoint::KalmanFillter(float theta_k) {
 	float X1 = this->X11;
@@ -105,6 +106,7 @@ void RobotJoint::FindIK(float gripper_linear_x, float gripper_linear_y,
 	this->bug2 = gripper_linear_y * gripper_linear_y;
 	this->bug3 = this->L12 * this->L12;
 	this->bug4 = this->L3 * this->L3;
+
 	float C3 = ((gripper_linear_x * gripper_linear_x)
 			+ (gripper_linear_y * gripper_linear_y) - (this->L12 * this->L12)
 			- (this->L3 * this->L3)) / (2 * this->L12 * this->L3);

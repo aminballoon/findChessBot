@@ -1,12 +1,12 @@
 main.cpp:72:5:int _write(int, char*, int)	24	static
-main.cpp:129:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	24	static
-main.cpp:271:6:void fcb_FK(float, float, float, float)	72	static
-main.cpp:314:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	40	static
-main.cpp:659:5:int main()	8	static
-main.cpp:802:6:void SystemClock_Config()	120	static
-main.cpp:856:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
-main.cpp:859:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
-main.cpp:869:6:void Error_Handler()	8	static,ignoring_inline_asm
-main.cpp:880:1:void __static_initialization_and_destruction_0(int, int)	24	static
-main.cpp:880:1:cpp)	8	static
-main.cpp:880:1:cpp)	8	static
+main.cpp:192:6:void fcb_FK(float, float, float, float)	72	static
+main.cpp:229:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	24	static
+main.cpp:320:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	40	static
+main.cpp:718:5:int main()	8	static
+main.cpp:887:6:void SystemClock_Config()	120	static
+main.cpp:941:6:void HAL_UART_RxCpltCallback(UART_HandleTypeDef*)	16	static
+main.cpp:944:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
+main.cpp:954:6:void Error_Handler()	8	static,ignoring_inline_asm
+main.cpp:965:1:void __static_initialization_and_destruction_0(int, int)	24	static
+main.cpp:965:1:cpp)	8	static
+main.cpp:965:1:cpp)	8	static

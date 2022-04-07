@@ -20,18 +20,18 @@ public:
 	RobotJoint();
 	~RobotJoint();
 
-	volatile const float dt = 0.001;
+	volatile const float dt = 0.002;
 	volatile const float dt2 = pow(this->dt, 2);
 	volatile const float dt3 = pow(this->dt, 3);
 	volatile const float dt4 = pow(this->dt, 4);
 
-	static constexpr float L1 = 0.01325; // 0.053
-	static constexpr float L2 = 0.370; // 0.36625
-	static constexpr float L3 = 0.315;
-	static constexpr float L12 = 0.38325;
-	static constexpr float H1 = 0.125;
-	static constexpr float H3 = 0.065;
-	static constexpr float H4 = 0.190;
+	static constexpr float L1 = 13.25; // 0.053
+	static constexpr float L2 = 370.0; // 0.36625
+	static constexpr float L3 = 315.0;
+	static constexpr float L12 = 383.25;
+	static constexpr float H1 = 125.0;
+	static constexpr float H3 = 65.0;
+	static constexpr float H4 = 190.0;
 
 	volatile float bug1, bug2, bug3, bug4, bug5;
 
@@ -63,7 +63,7 @@ public:
 	volatile float kalman_pos = 0;
 	volatile float kalman_velo = 0;
 	volatile float Q = 0.1;
-	volatile float R = 0.000001;
+	volatile float R = 0.001;
 	volatile float C0, C1, C2, C3, C4, C5, T;
 
 	void FindIK(float gripper_linear_x, float gripper_linear_y,
