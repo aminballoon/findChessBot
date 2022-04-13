@@ -1,4 +1,4 @@
-float32 delta_x
-float32 delta_y
-float32 delta_z
-float32 delta_yaw
+float32 linear_velocity_x
+float32 linear_velocity_y
+float32 linear_velocity_z
+float32 angular_velocity_yaw

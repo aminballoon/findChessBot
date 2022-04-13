@@ -6,7 +6,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-
+import sys
 
 
 # def generate_launch_description():
@@ -99,18 +99,16 @@ def generate_launch_description():
         arguments=['-d', rviz_file_path],
         output='screen')
 
-
-
     findchessbot_input_chessboard_rpm_Node = Node(
         package='findchessbot',
-        executable='input_chessboard_rpm.py',
-        name='input_chessboard_rpm',
+        executable='Chessboard_jointstate.py',
+        name='Chessboard_jointstate',
         output='screen')
 
     findchessbot_state_pubilsher_Node = Node(
         package='findchessbot',
-        executable='findchessbot_state_publisher.py',
-        name='findchessbot_state_publisher',
+        executable='Robot_jointstate.py',
+        name='Robot_jointstate',
         output='screen')
 
     robot_state_publisher = Node(package='robot_state_publisher',
@@ -118,7 +116,7 @@ def generate_launch_description():
                                   output='screen',
                                   parameters=[params])
 
-    print(robot_state_publisher)
+    # print(robot_state_publisher)
     ld = LaunchDescription()
     ld.add_action(stdout_linebuf_envvar)
     ld.add_action(robot_state_publisher)
@@ -127,3 +125,15 @@ def generate_launch_description():
     # ld.add_action(rviz_Node)
 
     return ld
+
+
+def main(args=None):
+    try:
+        generate_launch_description()
+    except KeyboardInterrupt:
+        # quit
+        sys.exit()
+
+
+if __name__ == '__main__':
+    main()
