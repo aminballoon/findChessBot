@@ -235,6 +235,9 @@ def getMatrixFromImage(img):
             cv2.circle(img_show,a.astype(np.int), 5, (0,255,0), -1)
             img_show = cv2.putText(img_show, str(i), a.astype(np.int),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,200,0))
         ans = ans.flatten()
+        cv2.imshow('ha', img_show)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         return ans, img_show
 
     else:
