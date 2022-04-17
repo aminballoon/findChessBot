@@ -60,9 +60,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define STEP_5_Pin GPIO_PIN_6
 #define STEP_5_GPIO_Port GPIOE
-#define Blue_Button_Pin_Pin GPIO_PIN_13
-#define Blue_Button_Pin_GPIO_Port GPIOC
-#define Blue_Button_Pin_EXTI_IRQn EXTI15_10_IRQn
 #define STEP_3_Pin GPIO_PIN_6
 #define STEP_3_GPIO_Port GPIOA
 #define LD1_Pin GPIO_PIN_0
@@ -75,6 +72,9 @@ void Error_Handler(void);
 #define LM1_Pin GPIO_PIN_12
 #define LM1_GPIO_Port GPIOE
 #define LM1_EXTI_IRQn EXTI15_10_IRQn
+#define LM_Z_BOTTOM_Pin GPIO_PIN_13
+#define LM_Z_BOTTOM_GPIO_Port GPIOE
+#define LM_Z_BOTTOM_EXTI_IRQn EXTI15_10_IRQn
 #define DIR_1_Pin GPIO_PIN_14
 #define DIR_1_GPIO_Port GPIOE
 #define DIR_5_Pin GPIO_PIN_15
@@ -91,17 +91,17 @@ void Error_Handler(void);
 #define SPI3_CS_GPIO_Port GPIOC
 #define UART4_DE_Pin GPIO_PIN_15
 #define UART4_DE_GPIO_Port GPIOA
-#define LM5_Pin GPIO_PIN_14
-#define LM5_GPIO_Port GPIOG
-#define LM5_EXTI_IRQn EXTI15_10_IRQn
+#define LM_Z_TOP_Pin GPIO_PIN_14
+#define LM_Z_TOP_GPIO_Port GPIOG
+#define LM_Z_TOP_EXTI_IRQn EXTI15_10_IRQn
 #define DIR_3_Pin GPIO_PIN_5
 #define DIR_3_GPIO_Port GPIOB
-#define LM4_Pin GPIO_PIN_6
-#define LM4_GPIO_Port GPIOB
-#define LM4_EXTI_IRQn EXTI9_5_IRQn
-#define LM3_Pin GPIO_PIN_7
-#define LM3_GPIO_Port GPIOB
-#define LM3_EXTI_IRQn EXTI9_5_IRQn
+#define LM_LED_Pin GPIO_PIN_6
+#define LM_LED_GPIO_Port GPIOB
+#define LM_LED_EXTI_IRQn EXTI9_5_IRQn
+#define LM_SERVO_Pin GPIO_PIN_7
+#define LM_SERVO_GPIO_Port GPIOB
+#define LM_SERVO_EXTI_IRQn EXTI9_5_IRQn
 #define STEP_4_Pin GPIO_PIN_8
 #define STEP_4_GPIO_Port GPIOB
 #define DIR_4_Pin GPIO_PIN_9

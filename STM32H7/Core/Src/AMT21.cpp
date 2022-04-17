@@ -29,7 +29,7 @@ void AMT21::AMT21_Set_Zero() {
 //	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 1);
 	uint8_t set_zero_command[2] = { (this->address + 0x02), 0x5E };
 	HAL_UART_Transmit(this->amt21_huart, (uint8_t*) set_zero_command,
-			sizeof(this->address), 100);
+			sizeof(set_zero_command), 100);
 //	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 0);
 }
 
@@ -37,7 +37,7 @@ void AMT21::AMT21_Reset() {
 	//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 1);
 	uint8_t set_zero_command[2] = { (this->address + 0x02), 0x75 };
 	HAL_UART_Transmit(this->amt21_huart, (uint8_t*) set_zero_command,
-			sizeof(this->address), 100);
+			sizeof(set_zero_command), 100);
 	//	HAL_GPIO_WritePin(dev->DE_port, dev->DE_pin, 0);
 }
 

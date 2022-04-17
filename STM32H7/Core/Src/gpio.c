@@ -68,12 +68,6 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(UART4_DE_GPIO_Port, UART4_DE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = Blue_Button_Pin_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Blue_Button_Pin_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : PBPin PBPin PBPin PBPin
                            PBPin */
   GPIO_InitStruct.Pin = LD1_Pin|DIR_2_Pin|LD3_Pin|DIR_3_Pin
@@ -83,8 +77,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PEPin PEPin */
-  GPIO_InitStruct.Pin = LM2_Pin|LM1_Pin;
+  /*Configure GPIO pins : PEPin PEPin PEPin */
+  GPIO_InitStruct.Pin = LM2_Pin|LM1_Pin|LM_Z_BOTTOM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -118,13 +112,13 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(UART4_DE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = LM5_Pin;
+  GPIO_InitStruct.Pin = LM_Z_TOP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(LM5_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(LM_Z_TOP_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin */
-  GPIO_InitStruct.Pin = LM4_Pin|LM3_Pin;
+  GPIO_InitStruct.Pin = LM_LED_Pin|LM_SERVO_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

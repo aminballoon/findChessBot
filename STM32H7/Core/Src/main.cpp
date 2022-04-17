@@ -95,7 +95,7 @@ int fputc(int ch, FILE *f)
 #ifdef __cplusplus
 
 //AMT21 encoderJ1(&huart4, 0xD4);
-//AMT21 encoderJ2(&huart4, 0xB4);
+AMT21 encoderJ2(&huart4, 0xB4);
 //AMT21 encoderJ3(&huart4, 0xC4);
 //AMT21 encoderJ4(&huart4, 0xA4);
 
@@ -943,7 +943,7 @@ int main(void)
 //		HAL_TIM_Base_Start_IT(&htim12); // 			2000 Hz
 //		HAL_TIM_Base_Start_IT(&htim14); // 			500Hz
 //		HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
-
+//	encoderJ2.AMT21_Set_Zero();
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
 	//	stepperJ1.StepperOpenLoopSpeed(1.00f);
@@ -966,13 +966,18 @@ int main(void)
 //		if (HALENCJ1OK == HAL_OK) {
 //			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
 //		}
-//		stepperJ1.StepperSetFrequency(20.0f); // + �?ลับด้าน +
-//		stepperJ2.StepperSetFrequency(300.0f); // + �?ลับด้านจา�?�?�?น �?ต่ดี�?ล้ว +
-//		stepperJ3.StepperSetFrequency(300.0f); // + ถู�?ด้าน +
-//		stepperJ4.StepperSetFrequency(300.0f); // + �?ลับด้าน +
+//		stepperJ1.StepperSetFrequency(20.0f); // + �?ลั�?ด�?า�? +
+//		stepperJ2.StepperSetFrequency(300.0f); // + �?ลั�?ด�?า�?�?า�?�?�?�? �?ต�?ดี�?ล�?ว +
+//		stepperJ3.StepperSetFrequency(300.0f); // + ถู�?ด�?า�? +
+//		stepperJ4.StepperSetFrequency(300.0f); // + �?ลั�?ด�?า�? +
 
 //		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
 //		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
+//				encoderJ2.AMT21_Read();
+//				HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//				if(HALENCJ2OK == HAL_OK){
+//					encoderJ2.unwarp();
+//				}
 
 		}
     /* USER CODE END WHILE */
@@ -1042,11 +1047,23 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-
-}
+/*void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+//
+//}
+*/
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if(GPIO_Pin == LM_Z_BOTTOM_Pin){	// Limit Switch Bottom Z-axis
 
+	}
+	if(GPIO_Pin == LM_Z_TOP_Pin){	// Limit Switch Top Z-axis
+
+	}
+	if(GPIO_Pin == LM_SERVO_Pin){	// Limit Switch Servo
+
+	}
+	if(GPIO_Pin == LM_LED_Pin){	// Limit Switch LED on Cabinet
+
+	}
 }
 
 /* USER CODE END 4 */
