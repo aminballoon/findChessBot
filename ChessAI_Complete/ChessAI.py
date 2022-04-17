@@ -317,9 +317,9 @@ class AI:
 '''
 [Example Program]
 flag {0: Normal move, 1: Capture piece, 2: Promote pawn}
+'''
 
-
-ai = AI(max_depth = 6, timeMax = 45, FEN = '8/3k1P2/8/8/8/8/1p2K3/8 w - - 0 1')
+ai = AI(max_depth = 6, timeMax = 45, FEN = None)
 
 while True:
     m = input("move : ")
@@ -338,10 +338,10 @@ while True:
     print(ai.s)
 
     # Save SVG
-    f = open("haha.svg", "w")
-    f.write(ai.getSVG())
-    f.close()
-'''
+    # f = open("haha.svg", "w")
+    # f.write(ai.getSVG())
+    # f.close()
+
 
 
     

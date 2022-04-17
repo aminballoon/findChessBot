@@ -1,0 +1,5 @@
+string chess_square_eat
+string chess_square_pick
+string chess_square_place
+---
+bool result

@@ -32,22 +32,29 @@ include_directories(include)
 
 find_package(rosidl_default_generators REQUIRED)
 set(srv_files 
-  "srv/AddTwoInts.srv"
+  "srv/Capture.srv"
+  "srv/Castling.srv"
   "srv/MoveChesspiece.srv"
-  "srv/PoseGripper.srv"  
+  "srv/PicknPlace.srv"
+  "srv/PoseGripper.srv"
   "srv/PoseJoint.srv"
+  "srv/PromotePawn.srv"
 )
 set(msg_files 
   "msg/JogJoint.msg"
   "msg/JogLinear.msg"
 )
-
+set(action_files 
+  "action/PickandPlace.action"
+)
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${srv_files}
   ${msg_files}
+  ${action_files}
   DEPENDENCIES std_msgs geometry_msgs
   ADD_LINTER_TESTS
 )
+
 ################### INSTALL C++  #####################
 # add_library(cpp_lib src/cpp_lib.cpp)
 # add_executable(cpp_node src/cpp_node.cpp)
@@ -61,18 +68,19 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ament_python_install_package(python_lib)
 # Install Python executables
 install(PROGRAMS
-  scripts/python_node.py
+  # scripts/python_node.py
   scripts/Server.py
   # scripts/input_chessboard_rpm.py  
-  scripts/python_node.py  
-  scripts/findchessbot_state_publisher.py
+  scripts/Robot_jointstate.py  
+  scripts/Chessboard_jointstate.py
   # scripts/input_to_jointstate.py   
   scripts/Server.py       
   scripts/Super_OS.py
+  scripts/Action_call.py
+  scripts/Action_Server.py
+  scripts/Test_traj.py
   DESTINATION lib/${PROJECT_NAME}
 )
-# scripts/kidnapped_detection.py
-# scripts/scan_matcher.py
 
 ####################### END ##########################
 ################ INSTALL LAUNCH, ETC #################
