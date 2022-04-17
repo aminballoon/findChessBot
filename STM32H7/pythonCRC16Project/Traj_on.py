@@ -52,7 +52,9 @@ if __name__ == '__main__':
     try:
         ser = serial.Serial('COM8', 115200, timeout=1)
         crc16 = CRC16()
-        frame1 = [0x85,1]
+        # frame1 = [0x85,1]
+        # frame1 = [0x86,14]
+        frame1 = [0x87,1]
         data1 = frame1 + crc16.calculate(frame1)
         ser.write(data1)
 
