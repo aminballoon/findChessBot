@@ -52,13 +52,55 @@ if __name__ == '__main__':
     try:
         ser = serial.Serial('COM8', 115200, timeout=1)
         crc16 = CRC16()
+
+        # frame1 = [0x86,0]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+
+
+
+
+        # num = 8
+        # for i in range(num,num+8):
+        #     frame1 = [0x86,i*3]
+        #     data1 = frame1 + crc16.calculate(frame1)
+        #     ser.write(data1)
+        #     time.sleep(1)
+
+        
+        # frame1 = [0x87,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(2)
         # frame1 = [0x85,1]
-        # frame1 = [0x86,14]
-        frame1 = [0x87,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        
+
+
+        frame1 = [0x89,1]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(1)
+        frame1 = [0x89,1]
         data1 = frame1 + crc16.calculate(frame1)
         ser.write(data1)
 
 
+        # frame1 = [0x90,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+
+  
     except KeyboardInterrupt:
         pass
             

@@ -91,12 +91,12 @@ if __name__ == '__main__':
     # data_joint_jog_q1 = [0x42,*bytesy(q2_theta)]
     # frame_data_joint_jog_q1 = data_joint_jog_q1 + crc16.calculate(data_joint_jog_q1)
     # gripper = 0
-    Mode_Joint = False # False = Linear jog
+    Mode_Joint = True # False = Linear jog
     # print(frame_data_joint_jog_q1)
     # print(dec_to_hex_in_list(frame_data_joint_jog_q1))
     # print(serial.to_bytes(frame_data_joint_jog_q1))
     # foo()
-    omega = 50
+    omega = 100
 
     try:
         if(Mode_Joint):

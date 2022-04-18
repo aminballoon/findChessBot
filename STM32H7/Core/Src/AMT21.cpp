@@ -84,6 +84,9 @@ void AMT21::unwarp() {
 	this->prev_raw_value = this->raw_value;
 	this->unwarp_value = this->unwarp_value + dPulse;
 }
+void AMT21::setUnwarpZero(){
+	this->unwarp_value = 0;
+}
 int32_t AMT21::getUnwarpValue() {
 	return this->unwarp_value;
 }

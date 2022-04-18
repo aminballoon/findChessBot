@@ -37,6 +37,8 @@ class AMT21{
 
         void AMT21_Set_Zero();	// Set Zero Position (single turn encoders only)
         void AMT21_Reset();		// Reset Encoder
+
+        void setUnwarpZero();
     private:
     	UART_HandleTypeDef *amt21_huart;
     	GPIO_TypeDef *DE_port;
