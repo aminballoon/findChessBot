@@ -113,6 +113,7 @@ RobotJoint fcb_X;
 ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 #endif
+volatile bool State_FIN = false;
 volatile float Max_Time = 0;
 volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
 volatile int8_t dx = 0, dy = 0, dz = 0, dyaw = 0;
@@ -160,8 +161,8 @@ volatile float radias[] = { 247, 215, 190, 177, 177, 190, 215, 247, 215, 177, 14
 //
 volatile char control_state = 0;
 volatile int direction_traj = 0;
-volatile int Traj_Flag = 0;
 
+volatile int Balloon = 0;
 volatile float t = 0;
 volatile const float Time = 3;
 
@@ -296,84 +297,68 @@ int indexy;
 float pos_x,pos_y;
 void Update_State_Machine()
 {
+
     switch (control_state)
     {
 	case 41: // Update Trajectory
 		indexy = Call_queue();
 		if (indexy != 255)
-		{
-			encoderJ1.AMT21_Read();
-			HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-			if (HALENCJ1OK == HAL_OK) {
-				fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+			{
+				test_value_r = radias[indexy];
+				test_value_theta = theta[indexy];
+				pos_x = test_value_r*cos(test_value_theta/1000.0) + 415.0;
+				pos_y = test_value_r*sin(test_value_theta/1000.0) - 0.59371;
+				fcb_IK(pos_x, pos_y, 0, 0);
+				Max_Time = 7;
+				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
+				control_state = 51;
+
+			}
+		else
+			{
+				control_state = 0;
 			}
 
-			encoderJ2.AMT21_Read();
-			HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-			if(HALENCJ2OK == HAL_OK){
-				encoderJ2.unwarp();
-				fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-			}
-
-			encoderJ3.AMT21_Read();
-			HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-			if (HALENCJ3OK == HAL_OK) {
-				fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
-			}
-
-			encoderJ4.AMT21_Read();
-			HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-			if (HALENCJ4OK == HAL_OK) {
-				fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
-			}
-
-			test_value_r = radias[indexy];
-			test_value_theta = theta[indexy];
-			pos_x = test_value_r*cos(test_value_theta/1000.0) + 415.0;
-			pos_y = test_value_r*sin(test_value_theta/1000.0) - 0.59371;
-			fcb_IK(pos_x, pos_y, 0, 0);
-			Max_Time = 7;
-			fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
-			fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
-//			fcb_joint1.UpdateQuinticCoff(7.0, fcb_joint1.Encoder, 0.0, 0.0, 0.0, 0.0, 0.0);
-//			fcb_joint3.UpdateQuinticCoff(7.0, fcb_joint3.Encoder, 0.0, 0.0, 0.0, 0.0, 0.0);
-		}
 //		Planning_q1
 //		Planning_q3
 
 		break;
 
 	case 42:
-		encoderJ2.AMT21_Read();
-		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-		if(HALENCJ2OK == HAL_OK){
-			encoderJ2.unwarp();
-			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-		}
-		Max_Time = 15;
-		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder, -20500.0, 0.0, 0.0, 0.0, 0.0);
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//		if(HALENCJ2OK == HAL_OK){
+//			encoderJ2.unwarp();
+//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+//		}
+		Max_Time = 10;
+		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder, -10200.0, 0.0, 0.0, 0.0, 0.0);
 		control_state = 53;
+		State_FIN = true;
 		break;
 
 	case 43:
-		encoderJ2.AMT21_Read();
-		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-		if(HALENCJ2OK == HAL_OK){
-			encoderJ2.unwarp();
-			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-		}
-		Max_Time = 15;
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//		if(HALENCJ2OK == HAL_OK){
+//			encoderJ2.unwarp();
+//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+//		}
+		Max_Time = 10;
 		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder, -200.0, 0.0, 0.0, 0.0, 0.0);
 		control_state = 55;
+		State_FIN = true;
 		break;
 
 
 	case 51:
-		Traj_Flag = 1;
 		t = 0;
 		HAL_TIM_Base_Start_IT(&htim14);
 		control_state = 52;
+//		State_FIN = true;
 		break;
+
 	case 52:
 		HAL_TIM_Base_Stop_IT(&htim14);
 
@@ -393,18 +378,16 @@ void Update_State_Machine()
 		fcb_joint3.C4 = 0;
 		fcb_joint1.C5 = 0;
 		fcb_joint3.C5 = 0;
-		fcb_joint1.Goal_Velocity = 0;
-		fcb_joint1.Goal_Position = 0;
-		fcb_joint3.Goal_Velocity = 0;
-		fcb_joint3.Goal_Position = 0;
 
 		control_state = 42;
+		State_FIN = true;
 		break;
 
 	case 53:
 		t = 0;
 		HAL_TIM_Base_Start_IT(&htim14);
 		control_state = 54;
+//		State_FIN = true;
 		break;
 
 	case 54:
@@ -418,14 +401,15 @@ void Update_State_Machine()
 		fcb_joint2.C4 = 0;
 		fcb_joint2.C5 = 0;
 		fcb_joint2.Goal_Velocity = 0;
-		fcb_joint2.Goal_Position = 0;
 		control_state = 43;
+		State_FIN = true;
 		break;
 
 	case 55:
 		t = 0;
 		HAL_TIM_Base_Start_IT(&htim14);
 		control_state = 56;
+//		State_FIN = true;
 		break;
 
 	case 56:
@@ -439,12 +423,13 @@ void Update_State_Machine()
 		fcb_joint2.C4 = 0;
 		fcb_joint2.C5 = 0;
 		fcb_joint2.Goal_Velocity = 0;
-		fcb_joint2.Goal_Position = 0;
 		control_state = 41;
+		State_FIN = true;
 		break;
 
 	default:
 		control_state = 0;
+		State_FIN = false;
 		break;
     }
 }
@@ -537,17 +522,15 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 				}
 				else if(Old_Rx_Buffer[0] == 0x87 && cmdDataSize == 2)
 				{
-					control_state = 41;
+					char state_input = Old_Rx_Buffer[1];
+					control_state = state_input;
+					Update_State_Machine();
+//					State_FIN = true;
 				}
 				else if(Old_Rx_Buffer[0] == 0x89 && cmdDataSize == 2)
 				{
 					Update_State_Machine();
 				}
-				else if(Old_Rx_Buffer[0] == 0x90 && cmdDataSize == 2)
-				{
-					control_state = 0;
-				}
-
 				else if (Old_Rx_Buffer[0] == 0x81 && cmdDataSize == 2) // Servo
 				{
 					gripperstate = Old_Rx_Buffer[1];
@@ -711,35 +694,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	if (htim == &htim16)
 	{
-//		encoderJ1.AMT21_Read();
-//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//		if (HALENCJ1OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
-//		}
-//
-//		encoderJ2.AMT21_Read();
-//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//		if(HALENCJ2OK == HAL_OK){
-//			encoderJ2.unwarp();
-//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-//		}
-//
-//
-//		encoderJ3.AMT21_Read();
-//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//		if (HALENCJ3OK == HAL_OK) {
-//			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
-//		}
-//
-//		encoderJ4.AMT21_Read();
-//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-//		if (HALENCJ4OK == HAL_OK) {
-//			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
-//		}
-	}
-
-	if (htim == &htim14) {
-		// ######################## Encoder ##########################################
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
@@ -765,6 +719,44 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (HALENCJ4OK == HAL_OK) {
 			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
 		}
+
+		if (State_FIN)
+		 {
+			Balloon++;
+			Update_State_Machine();
+			Update_State_Machine();
+			State_FIN = false;
+		 }
+
+	}
+
+	if (htim == &htim14) {
+		// ######################## Encoder ##########################################
+//		encoderJ1.AMT21_Read();
+//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//		if (HALENCJ1OK == HAL_OK) {
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+//		}
+//
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//		if(HALENCJ2OK == HAL_OK){
+//			encoderJ2.unwarp();
+//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+//		}
+//
+//
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
+//		}
+//
+//		encoderJ4.AMT21_Read();
+//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+//		if (HALENCJ4OK == HAL_OK) {
+//			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
+//		}
 		// #############################################################################
 
 		// ######################## Setpoint ##########################################
@@ -901,16 +893,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint1.Old_v = fcb_joint1.kalman_velo;
 		fcb_joint3.Old_v = fcb_joint1.kalman_velo;
 
-//		if (Traj_Flag == 1){
-//			t = t + sample_time_500;
-//		}
+
 		t = t + sample_time_500;
-		//-  (sample_time_500*40.0)
 		if (t >= Max_Time )
 				{
 
 
-			Traj_Flag = 0;
 			t = (int)0;
 //			HAL_TIM_Base_Stop_IT(&htim14);
 			fcb_joint1.Sum_Error_p = 0;
@@ -925,7 +913,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint3.Old_p = 0;
 			fcb_joint1.Old_v = 0;
 			fcb_joint3.Old_v = 0;
-			Update_State_Machine();
+			State_FIN = true;
+
 
 
 				}
@@ -997,7 +986,7 @@ int main(void)
 	stepperJ1.StepperEnable();
 
 	stepperJ2.StepperSetFrequency(0.0f);
-	stepperJ2.StepperSetMicrostep(8);
+	stepperJ2.StepperSetMicrostep(16);
 	stepperJ2.StepperSetRatio(3);
 	stepperJ2.StepperEnable();
 
@@ -1013,8 +1002,8 @@ int main(void)
 
 	//	stepperJ4.StepperSetMicrostep(1);
 	//	stepperJ4.StepperSetRatio(1);
-
-	gripper.setDegreeGripperClose(40);
+	gripper.setDegreeGripperClose(60);
+//	gripper.setDegreeGripperClose(40);
 	gripper.setDegreeGripperOpen(0);
 	gripper.ServoEnable();
 //	fcb_joint3.Q = 0.12;
@@ -1039,14 +1028,14 @@ int main(void)
 
 	while(!Limit_sw_Z_Top)
 	{
-		stepperJ2.StepperSetFrequency(500.0f);
+		stepperJ2.StepperSetFrequency(1000.0f);
 	}
 	stepperJ2.StepperSetFrequency(0.0f);
-	HAL_Delay(100);
-	stepperJ2.StepperSetFrequency(-300.0f);
+	HAL_Delay(200);
+	stepperJ2.StepperSetFrequency(-800.0f);
 	HAL_Delay(2000);
 	stepperJ2.StepperSetFrequency(0.0f);
-	HAL_Delay(4000);
+	HAL_Delay(2000);
 	Limit_sw_Z_Top = false;
 //	Limit_sw_Z_Top = true;
 
@@ -1054,16 +1043,19 @@ int main(void)
 	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 	if (HALENCJ1OK == HAL_OK) {
 		fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;}
+
 	encoderJ2.AMT21_Read();
 	HALENCJ2OK = encoderJ2.AMT21_Check_Value();
 	if (HALENCJ2OK == HAL_OK) {
 		encoderJ2.unwarp();
 		encoderJ2.setUnwarpZero();
-	}
+		fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;}
+
 	encoderJ3.AMT21_Read();
 	HALENCJ3OK = encoderJ3.AMT21_Check_Value();
 	if (HALENCJ3OK == HAL_OK) {
 		fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;}
+
 	encoderJ4.AMT21_Read();
 	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 	if (HALENCJ4OK == HAL_OK) {
@@ -1078,13 +1070,13 @@ int main(void)
 //	fcb_joint1.UpdateQuinticCoff(15, fcb_joint1.Encoder, 785.0, 0, 0, 0, 0);
 //	fcb_joint3.UpdateQuinticCoff(15, fcb_joint3.Encoder, -1570.0, 0, 0, 0, 0);
 
-//		Traj_Flag = 1 ;
+
 //		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
 //		HAL_TIM_Base_Start_IT(&htim6); // Set home 	200 Hz
 //		HAL_TIM_Base_Start_IT(&htim7); // Control 	1000 Hz
 //		HAL_TIM_Base_Start_IT(&htim12); // 			2000 Hz
 //		HAL_TIM_Base_Start_IT(&htim14); // 			500Hz
-//		HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
+		HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
 //	encoderJ2.AMT21_Set_Zero();
 
 	//	stepperJ1.StepperOpenLoopSpeed(1.00f);

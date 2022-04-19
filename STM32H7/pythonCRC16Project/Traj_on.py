@@ -56,8 +56,29 @@ if __name__ == '__main__':
         # frame1 = [0x86,0]
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
+        # time.sleep(0.1)
 
-
+        frame1 = [0x86,63]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(1)
+        frame1 = [0x86,30]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(1)
+        # frame1 = [0x86,35]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
+        # frame1 = [0x86,3]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        time.sleep(1)
+        control_state = 41
+        frame1 = [0x87,control_state]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+ 
 
 
         # num = 8
@@ -68,39 +89,62 @@ if __name__ == '__main__':
         #     time.sleep(1)
 
         
-        # frame1 = [0x87,1]
+        # # Gripper Close
+        # frame1 = [0x81,1]
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
-        # time.sleep(1)
+        # time.sleep(0.5)
+
+        # # Gripper Open
+        # frame1 = [0x81,0]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.5)
 
         # frame1 = [0x89,1]
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
-        # time.sleep(2)
-        # frame1 = [0x85,1]
-        # data1 = frame1 + crc16.calculate(frame1)
-        # ser.write(data1)
-        # time.sleep(1)
+        # time.sleep(0.5)
         # frame1 = [0x89,1]
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
+
         
 
 
-        frame1 = [0x89,1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(1)
-        frame1 = [0x89,1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-
-
-        # frame1 = [0x90,1]
+        # control_state = 0;
+        # frame1 = [0x87,control_state]
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
 
-  
+
+        # control_state = 42; # Down
+        # frame1 = [0x87,control_state]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+
+        # control_state = 43; # Up
+        # frame1 = [0x87,control_state]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(1)
+        # frame1 = [0x89,1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+
+
     except KeyboardInterrupt:
         pass
             
