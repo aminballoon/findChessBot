@@ -138,6 +138,7 @@ uint16_t CRC16(uint8_t *buf, int len);
 // ############ Queue ############
 #define LIMIT 10
 volatile int queue[LIMIT];
+volatile int Gripper_State[LIMIT];
 volatile int first = -1;
 volatile int bot = -1;
 volatile int test_value, test_value_r, test_value_theta;
@@ -190,7 +191,7 @@ volatile float u_q4 = 0.0;
 volatile float Robot_X, Robot_Y, Robot_Z, Robot_Yaw;
 volatile float Planning_q1, Planning_q2, Planning_q3, Planning_q4;
 
-bool Insert_queue(int value)
+bool Insert_queue(int value, int gripper_value)
 {
     if (bot == LIMIT - 1)
     {
@@ -204,6 +205,7 @@ bool Insert_queue(int value)
         }
 		bot++;
 		queue[bot] = value;
+		Gripper_State[bot] = gripper_value;
 		return true;
     }
 }
@@ -312,8 +314,9 @@ void Update_State_Machine()
 				Max_Time = 7;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
-				control_state = 51;
-
+				t = 0;
+				HAL_TIM_Base_Start_IT(&htim14);
+				control_state = 52;
 			}
 		else
 			{
@@ -326,42 +329,31 @@ void Update_State_Machine()
 		break;
 
 	case 42:
-//		encoderJ2.AMT21_Read();
-//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//		if(HALENCJ2OK == HAL_OK){
-//			encoderJ2.unwarp();
-//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-//		}
-		Max_Time = 10;
+		Max_Time = 6;
 		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder, -10200.0, 0.0, 0.0, 0.0, 0.0);
-		control_state = 53;
+		t = 0;
+		HAL_TIM_Base_Start_IT(&htim14);
+		control_state = 54;
 		State_FIN = true;
 		break;
 
 	case 43:
-//		encoderJ2.AMT21_Read();
-//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//		if(HALENCJ2OK == HAL_OK){
-//			encoderJ2.unwarp();
-//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
-//		}
-		Max_Time = 10;
+		Max_Time = 6;
 		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder, -200.0, 0.0, 0.0, 0.0, 0.0);
-		control_state = 55;
+		t = 0;
+		HAL_TIM_Base_Start_IT(&htim14);
+		control_state = 56;
 		State_FIN = true;
 		break;
 
 
 	case 51:
-		t = 0;
-		HAL_TIM_Base_Start_IT(&htim14);
-		control_state = 52;
+
 //		State_FIN = true;
 		break;
 
 	case 52:
 		HAL_TIM_Base_Stop_IT(&htim14);
-
 		fcb_joint1.Goal_Velocity = 0;
 		fcb_joint3.Goal_Velocity = 0;
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
@@ -384,9 +376,7 @@ void Update_State_Machine()
 		break;
 
 	case 53:
-		t = 0;
-		HAL_TIM_Base_Start_IT(&htim14);
-		control_state = 54;
+
 //		State_FIN = true;
 		break;
 
@@ -394,6 +384,15 @@ void Update_State_Machine()
 		fcb_joint2.Goal_Velocity = 0;
 		stepperJ2.StepperOpenLoopSpeedM(0.0);
 		HAL_TIM_Base_Stop_IT(&htim14);
+		if (Gripper_State[first] == 0)
+				{
+					gripper.GripperClose();
+				}
+				else
+				{
+					gripper.GripperOpen();
+				}
+		for (int i =0 ;i <1000000;i++) {}
 		fcb_joint2.C0 = 0;
 		fcb_joint2.C1 = 0;
 		fcb_joint2.C2 = 0;
@@ -406,10 +405,7 @@ void Update_State_Machine()
 		break;
 
 	case 55:
-		t = 0;
-		HAL_TIM_Base_Start_IT(&htim14);
-		control_state = 56;
-//		State_FIN = true;
+
 		break;
 
 	case 56:
@@ -515,10 +511,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 				{
 					control_state = 51;
 				}
-				else if(Old_Rx_Buffer[0] == 0x86 && cmdDataSize == 2) //
+				else if(Old_Rx_Buffer[0] == 0x86 && cmdDataSize == 3) //
 				{
 					int value_input = Old_Rx_Buffer[1];
-					Insert_queue(value_input);
+					int value_gripper = Old_Rx_Buffer[2];
+					Insert_queue(value_input, value_gripper);
 				}
 				else if(Old_Rx_Buffer[0] == 0x87 && cmdDataSize == 2)
 				{
@@ -1036,7 +1033,9 @@ int main(void)
 	HAL_Delay(2000);
 	stepperJ2.StepperSetFrequency(0.0f);
 	HAL_Delay(2000);
+	gripper.GripperOpen();
 	Limit_sw_Z_Top = false;
+
 //	Limit_sw_Z_Top = true;
 
 	encoderJ1.AMT21_Read();
@@ -1060,6 +1059,7 @@ int main(void)
 	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 	if (HALENCJ4OK == HAL_OK) {
 		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;}
+
 
 	#endif
 

@@ -2,7 +2,7 @@ import serial
 from CRC16 import CRC16
 import time, threading
 import keyboard
-
+import random
 def low_byte(_input):
     return int(int(_input) & 0xFF)
 
@@ -57,23 +57,43 @@ if __name__ == '__main__':
         # data1 = frame1 + crc16.calculate(frame1)
         # ser.write(data1)
         # time.sleep(0.1)
+        # x = random.randint(3, 6)
 
-        frame1 = [0x86,63]
+        frame1 = [0x86,37,1]
         data1 = frame1 + crc16.calculate(frame1)
         ser.write(data1)
-        time.sleep(1)
-        frame1 = [0x86,30]
+        time.sleep(0.1)
+        frame1 = [0x86,20,0]
         data1 = frame1 + crc16.calculate(frame1)
         ser.write(data1)
-        time.sleep(1)
-        # frame1 = [0x86,35]
-        # data1 = frame1 + crc16.calculate(frame1)
-        # ser.write(data1)
-        # time.sleep(0.1)
-        # frame1 = [0x86,3]
-        # data1 = frame1 + crc16.calculate(frame1)
-        # ser.write(data1)
-        time.sleep(1)
+        time.sleep(0.1)
+        frame1 = [0x86,4,1]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+        frame1 = [0x86,48,0]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+
+        frame1 = [0x86,53,1]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+        frame1 = [0x86,20,0]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+        frame1 = [0x86,60,1]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+        frame1 = [0x86,34,0]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+
+    
         control_state = 41
         frame1 = [0x87,control_state]
         data1 = frame1 + crc16.calculate(frame1)
