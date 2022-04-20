@@ -136,7 +136,7 @@ volatile bool Limit_sw_Emergancy = false;
 uint16_t CRC16(uint8_t *buf, int len);
 #ifdef __cplusplus
 // ############ Queue ############
-#define LIMIT 10
+#define LIMIT 20
 volatile int queue[LIMIT];
 volatile int Gripper_State[LIMIT];
 volatile int first = -1;
@@ -294,7 +294,8 @@ void fcb_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear
 	Planning_q4 = q4*1000.0;
 
 }
-
+float offset_x = 430.0;
+float offset_y = 20.59371 ;
 int indexy;
 float pos_x,pos_y;
 void Update_State_Machine()
@@ -308,10 +309,10 @@ void Update_State_Machine()
 			{
 				test_value_r = radias[indexy];
 				test_value_theta = theta[indexy];
-				pos_x = test_value_r*cos(test_value_theta/1000.0) + 415.0;
-				pos_y = test_value_r*sin(test_value_theta/1000.0) - 0.59371;
+				pos_x = (test_value_r*cos(test_value_theta/1000.0)) + offset_x;
+				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y; //
 				fcb_IK(pos_x, pos_y, 0, 0);
-				Max_Time = 7;
+				Max_Time = 3;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
 				t = 0;
@@ -358,8 +359,8 @@ void Update_State_Machine()
 		fcb_joint3.Goal_Velocity = 0;
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
-		fcb_joint1.C0 = 0;
-		fcb_joint3.C0 = 0;
+		fcb_joint1.C0 = fcb_joint1.Encoder;
+		fcb_joint3.C0 = fcb_joint3.Encoder;
 		fcb_joint1.C1 = 0;
 		fcb_joint3.C1 = 0;
 		fcb_joint1.C2 = 0;
@@ -384,15 +385,15 @@ void Update_State_Machine()
 		fcb_joint2.Goal_Velocity = 0;
 		stepperJ2.StepperOpenLoopSpeedM(0.0);
 		HAL_TIM_Base_Stop_IT(&htim14);
-		if (Gripper_State[first] == 0)
-				{
-					gripper.GripperClose();
-				}
-				else
-				{
-					gripper.GripperOpen();
-				}
-		for (int i =0 ;i <1000000;i++) {}
+		if (Gripper_State[first-1] == 1)
+		{
+			gripper.GripperClose();
+		}
+		else if (Gripper_State[first-1] == 2)
+		{
+			gripper.GripperOpen();
+		}
+//		for (int i =0 ;i <1000000;i++) {}
 		fcb_joint2.C0 = 0;
 		fcb_joint2.C1 = 0;
 		fcb_joint2.C2 = 0;
@@ -534,10 +535,12 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 					if (gripperstate == 0)
 					{
 						gripper.GripperOpen();
+//						HAL_UART_Transmit_DMA(&huart3, (uint8_t*) "A", 1);
 					}
 					else
 					{
 						gripper.GripperClose();
+//						HAL_UART_Transmit_DMA(&huart3, (uint8_t*) "B", 1);
 					}
 
 				}
@@ -592,33 +595,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 
 	if (htim == &htim5) {	//
+		encoderJ1.AMT21_Read();
+		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+		if (HALENCJ1OK == HAL_OK) {
+			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
+		}
 
-//			encoderJ1.AMT21_Read();
-//			HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//			if (HALENCJ1OK == HAL_OK) {
-//				fcb_joint1.Encoder = encoderJ1.getAngPos180()/ 2609.0 ;
-//			}
+		encoderJ2.AMT21_Read();
+		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+		if(HALENCJ2OK == HAL_OK){
+			encoderJ2.unwarp();
+			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609 ;
+		}
 
-//			encoderJ2.AMT21_Read();
-//			HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//			if(HALENCJ2OK == HAL_OK){
-//				encoderJ2.unwarp();
-////				posJ2 = encoderJ2.getUnwarpValue();
-//			}
 
-//			encoderJ3.AMT21_Read();
-//			HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//			if (HALENCJ3OK == HAL_OK) {
-//				fcb_joint3.Encoder = encoderJ3.getAngPos180()/ 2609.0 ;
-//			}
+		encoderJ3.AMT21_Read();
+		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+		if (HALENCJ3OK == HAL_OK) {
+			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;
+		}
 
-//			encoderJ4.AMT21_Read();
-//			HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-//			if (HALENCJ4OK == HAL_OK) {
-//				fcb_joint4.Encoder = encoderJ4.getAngPos180()/ 2609.0 ;
-//			}
+		encoderJ4.AMT21_Read();
+		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+		if (HALENCJ4OK == HAL_OK) {
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
+		}
 
-//
 //			int i;
 //			for (i = 1; i < num; i++) {
 //				box_q1[i - 1] = box_q1[i];
@@ -654,8 +656,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //			stepperJ4.StepperSetFrequency(dq4);
 
 
-//			fcb_X.UpdateIVK(fcb_joint1.Encoder , 0.0,fcb_joint3.Encoder, 0.0, dx/1000.0, dy/1000.0, dz/1000.0, 0.0);
-//
+			fcb_X.UpdateIVK(fcb_joint1.Encoder , 0.0,fcb_joint3.Encoder, 0.0, dx, dy, dz, 0.0);
+
+			stepperJ1.StepperOpenLoopSpeedM(fcb_X.w_q1);
+//			stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
+			stepperJ3.StepperOpenLoopSpeedM(fcb_X.w_q3);
+
 //			int i;
 //					for (i = 1 ; i<num ; i++)
 //					{
@@ -682,10 +688,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //						u_q4 += box_q4[i];
 //					}
 
-	//				stepperJ1.StepperOpenLoopSpeed(u_q1/num);
-	//				stepperJ2.StepperSetFrequency(u_q2/3.0);
-	//				stepperJ3.StepperOpenLoopSpeed(u_q3/num);
-	//				stepperJ4.StepperOpenLoopSpeed(u_q4/num);
+//					stepperJ1.StepperOpenLoopSpeed(u_q1/num);
+//					stepperJ2.StepperSetFrequency(u_q2/3.0);
+//					stepperJ3.StepperOpenLoopSpeed(u_q3/num);
+//					stepperJ4.StepperOpenLoopSpeed(u_q4/num);
 
 	}
 
@@ -826,12 +832,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		fcb_joint3.Ki_p = 0.009; // 0.009
 //		fcb_joint3.Kd_p = 0.0015; // 0.0015
 
-		fcb_joint1.Kp_p = 0.0;
-		fcb_joint1.Ki_p = 0.0;
-		fcb_joint1.Kd_p = 0.0;
-		fcb_joint3.Kp_p = 0.0;
-		fcb_joint3.Ki_p = 0.0;
-		fcb_joint3.Kd_p = 0.0;
+		fcb_joint1.Kp_p = 100.0;
+		fcb_joint1.Ki_p = 50.0;
+		fcb_joint1.Kd_p = 50.0;
+		fcb_joint3.Kp_p = 150.0;
+		fcb_joint3.Ki_p = 50.0;
+		fcb_joint3.Kd_p = 50.0;
 //		fcb_joint3.Kp_p = 0.0006;
 //		fcb_joint3.Ki_p = 0.00001;
 //		fcb_joint3.Kd_p = 0.00001;
@@ -870,6 +876,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 									(fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v) ) ;
 
 //		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Output_Joint_W);
+//		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Output_Joint_W);
 //		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Output_Joint_W);
 
 //		stepperJ1.StepperOpenLoopSpeedM(0.0);
@@ -893,11 +900,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		t = t + sample_time_500;
 		if (t >= Max_Time )
-				{
-
-
+			{
 			t = (int)0;
-//			HAL_TIM_Base_Stop_IT(&htim14);
 			fcb_joint1.Sum_Error_p = 0;
 			fcb_joint3.Sum_Error_p = 0;
 			fcb_joint1.Sum_Error_v = 0;
@@ -911,10 +915,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint1.Old_v = 0;
 			fcb_joint3.Old_v = 0;
 			State_FIN = true;
-
-
-
-				}
+			}
 
 
 	}
@@ -997,35 +998,15 @@ int main(void)
 	stepperJ4.StepperSetRatio(3);
 	stepperJ4.StepperEnable();
 
-	//	stepperJ4.StepperSetMicrostep(1);
-	//	stepperJ4.StepperSetRatio(1);
+//	gripper.setDegreeGripperClose(80);
 	gripper.setDegreeGripperClose(60);
 //	gripper.setDegreeGripperClose(40);
 	gripper.setDegreeGripperOpen(0);
 	gripper.ServoEnable();
-//	fcb_joint3.Q = 0.12;
-//	fcb_joint3.R = 0.0001;
-
-//	encoderJ1.AMT21_Read();
-//	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//	if (HALENCJ1OK == HAL_OK) {
-//		fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;}
-//	encoderJ3.AMT21_Read();
-//	HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-//	if (HALENCJ3OK == HAL_OK) {
-//		fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609 ;}
-//	encoderJ4.AMT21_Read();
-//	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-//	if (HALENCJ4OK == HAL_OK) {
-//		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;}
-
-//	fcb_FK(fcb_joint1.Encoder, 0, fcb_joint3.Encoder, fcb_joint4.Encoder);
-//	fcb_joint1.X11 = fcb_joint1.Encoder;
-//	fcb_joint3.X11 = fcb_joint3.Encoder;
-
+	gripper.GripperClose();
 	while(!Limit_sw_Z_Top)
 	{
-		stepperJ2.StepperSetFrequency(1000.0f);
+		stepperJ2.StepperSetFrequency(1200.0f);
 	}
 	stepperJ2.StepperSetFrequency(0.0f);
 	HAL_Delay(200);
@@ -1035,8 +1016,6 @@ int main(void)
 	HAL_Delay(2000);
 	gripper.GripperOpen();
 	Limit_sw_Z_Top = false;
-
-//	Limit_sw_Z_Top = true;
 
 	encoderJ1.AMT21_Read();
 	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
@@ -1063,14 +1042,6 @@ int main(void)
 
 	#endif
 
-
-//	fcb_joint1.UpdateQuinticCoff(6, fcb_joint1.Encoder, 0, 0, 0, 0, 0);
-//	fcb_joint3.UpdateQuinticCoff(6, fcb_joint3.Encoder, 0, 0, 0, 0, 0);
-
-//	fcb_joint1.UpdateQuinticCoff(15, fcb_joint1.Encoder, 785.0, 0, 0, 0, 0);
-//	fcb_joint3.UpdateQuinticCoff(15, fcb_joint3.Encoder, -1570.0, 0, 0, 0, 0);
-
-
 //		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
 //		HAL_TIM_Base_Start_IT(&htim6); // Set home 	200 Hz
 //		HAL_TIM_Base_Start_IT(&htim7); // Control 	1000 Hz
@@ -1079,13 +1050,6 @@ int main(void)
 		HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
 //	encoderJ2.AMT21_Set_Zero();
 
-	//	stepperJ1.StepperOpenLoopSpeed(1.00f);
-
-
-
-
-//	fcb_X.UpdateQuinticCoff(3.5, Robot_X, Robot_X + 0.05, 0, 0, 0, 0);
-//	fcb_Y.UpdateQuinticCoff(3.5, Robot_X, Robot_X + 0.05, 0, 0, 0, 0);
 
   /* USER CODE END 2 */
 
@@ -1094,25 +1058,7 @@ int main(void)
  while (1)
 	{
 
-//		encoderJ1.AMT21_Read();
-//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-//		if (HALENCJ1OK == HAL_OK) {
-//			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609 ;
-//		}
-//		stepperJ1.StepperSetFrequency(20.0f); // + �?ลั�?ด�?า�? +
-//		stepperJ2.StepperSetFrequency(300.0f); // + �?ลั�?ด�?า�?�?า�?�?�?�? �?ต�?ดี�?ล�?ว +
-//		stepperJ3.StepperSetFrequency(300.0f); // + ถู�?ด�?า�? +
-//		stepperJ4.StepperSetFrequency(300.0f); // + �?ลั�?ด�?า�? +
-
-//		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
-//		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
-//				encoderJ2.AMT21_Read();
-//				HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-//				if(HALENCJ2OK == HAL_OK){
-//					encoderJ2.unwarp();
-//				}
-
-		}
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

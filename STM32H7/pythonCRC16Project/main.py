@@ -91,7 +91,7 @@ if __name__ == '__main__':
     # data_joint_jog_q1 = [0x42,*bytesy(q2_theta)]
     # frame_data_joint_jog_q1 = data_joint_jog_q1 + crc16.calculate(data_joint_jog_q1)
     # gripper = 0
-    Mode_Joint = True # False = Linear jog
+    Mode_Joint = False # False = Linear jog
     # print(frame_data_joint_jog_q1)
     # print(dec_to_hex_in_list(frame_data_joint_jog_q1))
     # print(serial.to_bytes(frame_data_joint_jog_q1))
@@ -171,16 +171,16 @@ if __name__ == '__main__':
                 vyaw = 0
 
                 if keyboard.is_pressed('w'):
-                    vx = 60
+                    vx = 20
 
                 if keyboard.is_pressed('s'):
-                    vx = -60
+                    vx = -20
 
                 if keyboard.is_pressed('a'):
-                    vy = 60
+                    vy = 20
 
                 if keyboard.is_pressed('d'):
-                    vy = -60
+                    vy = -20
 
 
                 # if keyboard.is_pressed('q'):
@@ -200,16 +200,16 @@ if __name__ == '__main__':
                 #     y_theta = -60
 
                 if keyboard.is_pressed('up'):
-                    vz = 80
+                    vz = 1
 
                 if keyboard.is_pressed('down'):
-                    vz = -80
+                    vz = -1
 
                 if keyboard.is_pressed('right'):
-                    vyaw = 100
+                    vyaw = 1
 
                 if keyboard.is_pressed('left'):
-                    vyaw = -100
+                    vyaw = -1
 
                 if keyboard.is_pressed('o'):
                     gripper = 1

@@ -15,14 +15,14 @@ RobotJoint::~RobotJoint() {
 }
 void RobotJoint::UpdateIVK(float _q1, float _q2, float _q3, float _q4, float Vx,
 		float Vy, float Vz, float Wz) {
-	float S13 = sin((_q1 + _q3)*1000.0);
-	float C13 = cos((_q1 + _q3)*1000.0);
-	float S3 = sin(_q3*1000.0);
-	float S1 = sin(_q1*1000.0);
-	float C1 = cos(_q1*1000.0);
+	float S13 = sin((_q1 + _q3)/1000.0);
+	float C13 = cos((_q1 + _q3)/1000.0);
+	float S3 = sin(_q3/1000.0);
+	float S1 = sin(_q1/1000.0);
+	float C1 = cos(_q1/1000.0);
 	float L3S3 = this->L3 * S3;
 
-	this->w_q1 = ((Vx * C13 + Vy * S13) / (S3 * this->L12))* 1000.0;
+	this->w_q1 = ((Vx * C13 + Vy * S13) / (S3 * this->L12)) * 1000.0;
 	this->w_q2 = Vz * 1000.0;
 	this->w_q3 = (-(Vx * (this->L3 * C13 + this->L1 * C1 + this->L2 * C1))
 			/ (L3S3 * this->L12)
