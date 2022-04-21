@@ -935,6 +935,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 
 	}
+	if(htim == &htim17){
+		uint8_t encoder_state[12] = {
+				(uint8_t)(((int16_t)fcb_joint1.Encoder >> 16) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint1.Encoder >> 8) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint1.Encoder) & 0xFF),
+				(uint8_t)(((int32_t)fcb_joint2.Encoder >> 16) & 0xFF),
+				(uint8_t)(((int32_t)fcb_joint2.Encoder >> 8) & 0xFF),
+				(uint8_t)(((int32_t)fcb_joint2.Encoder) & 0xFF),
+				(uint8_t)(((int32_t)fcb_joint3.Encoder >> 16) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint3.Encoder >> 8) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint3.Encoder) & 0xFF),
+				(uint8_t)(((int32_t)fcb_joint4.Encoder >> 16) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint4.Encoder >> 8) & 0xFF),
+				(uint8_t)(((int16_t)fcb_joint4.Encoder) & 0xFF),
+		};
+		HAL_UART_Transmit_DMA(&huart2, (uint8_t *)&encoder_state, 12);
+	}
 }
 
 /* USER CODE END 0 */
@@ -985,6 +1002,8 @@ int main(void)
   MX_TIM13_Init();
   MX_TIM14_Init();
   MX_TIM16_Init();
+  MX_USART2_UART_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart3, (uint8_t*) New_Rx_Buffer, Rx_BUFFER_SIZE);
 	__HAL_DMA_DISABLE_IT(&hdma_usart3_rx, DMA_IT_HT);
@@ -1064,6 +1083,7 @@ int main(void)
 //		HAL_TIM_Base_Start_IT(&htim12); // 			2000 Hz
 //		HAL_TIM_Base_Start_IT(&htim14); // 			500Hz
 		HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
+		HAL_TIM_Base_Start_IT(&htim17);	// Joint State 50Hz
 //	encoderJ2.AMT21_Set_Zero();
 
 
