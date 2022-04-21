@@ -92,9 +92,10 @@ class StatePublisher(Node):
         self.q2 = 0.
         self.q3 = 0.
         self.q4 = 0.
-        T = 4
-        self.Traj = Quintic_Traj()
-        self.C0, self.C1, self.C2, self.C3, self.C4, self.C5 = self.Traj.Traj_Gen()
+        # T = 4
+        # self.Traj = Quintic_Traj()
+        # self.C0, self.C1, self.C2, self.C3, self.C4, self.C5 = self.Traj.Traj_Gen()
+
     def timer_callback(self):
         # update joint_state
         # q2 = -0.135

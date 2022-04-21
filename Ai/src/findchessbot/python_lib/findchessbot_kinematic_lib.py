@@ -54,7 +54,7 @@ class findchessbot():
 
     def IK(self,X,Y,Z,Yaw):
         C3 = ((X*X) + (Y*Y) - (pow(self.L12,2)) - (pow(self.L3,2)) ) / (2*self.L12*self.L3)
-        S3 = sqrt(1-pow(C3,2))
+        S3 = -sqrt(1-pow(C3,2))
         q3 = atan2(S3,C3)
         L3s3 = self.L3*S3
         L123c3 = self.L12+(self.L3*C3)
