@@ -315,6 +315,7 @@ void Update_State_Machine()
 				Max_Time = 3;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder, Planning_q4, 0.0, 0.0, 0.0, 0.0);
 				t = 0;
 				HAL_TIM_Base_Start_IT(&htim14);
 				control_state = 52;
@@ -360,6 +361,7 @@ void Update_State_Machine()
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
 		fcb_joint1.C0 = fcb_joint1.Encoder;
+		fcb_joint4.C0 = fcb_joint4.Encoder;
 		fcb_joint3.C0 = fcb_joint3.Encoder;
 		fcb_joint1.C1 = 0;
 		fcb_joint3.C1 = 0;
@@ -371,6 +373,11 @@ void Update_State_Machine()
 		fcb_joint3.C4 = 0;
 		fcb_joint1.C5 = 0;
 		fcb_joint3.C5 = 0;
+		fcb_joint4.C1 = 0;
+		fcb_joint4.C2 = 0;
+		fcb_joint4.C3 = 0;
+		fcb_joint4.C4 = 0;
+		fcb_joint4.C5 = 0;
 
 		control_state = 42;
 		State_FIN = true;
@@ -793,6 +800,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint3.Goal_Velocity = fcb_joint3.C1 + (2.0*fcb_joint3.C2*t) + (3.0*fcb_joint3.C3*t2) + (4.0*fcb_joint3.C4*t3) + (5.0*fcb_joint3.C5*t4);
 		fcb_joint3.Goal_Position = (fcb_joint3.C0 + (fcb_joint3.C1*t) + (fcb_joint3.C2*t2) + (fcb_joint3.C3*t3) + (fcb_joint3.C4*t4) + (fcb_joint3.C5*t5));
 
+		fcb_joint4.Goal_Velocity = fcb_joint4.C1 + (2.0*fcb_joint4.C2*t) + (3.0*fcb_joint4.C3*t2) + (4.0*fcb_joint4.C4*t3) + (5.0*fcb_joint4.C5*t4);
+		fcb_joint4.Goal_Position = (fcb_joint4.C0 + (fcb_joint4.C1*t) + (fcb_joint4.C2*t2) + (fcb_joint4.C3*t3) + (fcb_joint4.C4*t4) + (fcb_joint4.C5*t5));
+
+
 		// #############################################################################
 
 		// Fuck you
@@ -832,12 +843,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		fcb_joint3.Ki_p = 0.009; // 0.009
 //		fcb_joint3.Kd_p = 0.0015; // 0.0015
 
-		fcb_joint1.Kp_p = 100.0;
-		fcb_joint1.Ki_p = 50.0;
-		fcb_joint1.Kd_p = 50.0;
-		fcb_joint3.Kp_p = 150.0;
-		fcb_joint3.Ki_p = 50.0;
-		fcb_joint3.Kd_p = 50.0;
+		fcb_joint1.Kp_p = 1.0;
+		fcb_joint1.Ki_p = 1.0;
+		fcb_joint1.Kd_p = 1.0;
+		fcb_joint3.Kp_p = 1.0;
+		fcb_joint3.Ki_p = 1.0;
+		fcb_joint3.Kd_p = 1.0;
 //		fcb_joint3.Kp_p = 0.0006;
 //		fcb_joint3.Ki_p = 0.00001;
 //		fcb_joint3.Kd_p = 0.00001;
@@ -885,7 +896,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
 		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
 		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
-//		stepperJ4.StepperOpenLoopSpeed(-4.0 * fcb_joint1.Goal_Velocity);
+		stepperJ4.StepperOpenLoopSpeed(fcb_joint4.Goal_Velocity);
 
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint3.Old_Error_p = fcb_joint3.Error_p;
@@ -994,7 +1005,7 @@ int main(void)
 	stepperJ3.StepperEnable();
 
 	stepperJ4.StepperSetFrequency(0.0f);
-	stepperJ4.StepperSetMicrostep(16);
+	stepperJ4.StepperSetMicrostep(1);
 	stepperJ4.StepperSetRatio(3);
 	stepperJ4.StepperEnable();
 
@@ -1013,7 +1024,7 @@ int main(void)
 	stepperJ2.StepperSetFrequency(-800.0f);
 	HAL_Delay(2000);
 	stepperJ2.StepperSetFrequency(0.0f);
-	HAL_Delay(2000);
+	HAL_Delay(1000);
 	gripper.GripperOpen();
 	Limit_sw_Z_Top = false;
 
