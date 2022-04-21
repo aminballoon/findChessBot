@@ -1,6 +1,0 @@
-string pick
-string place
----
-string move_result
----
-float32 move_feedback

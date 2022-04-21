@@ -77,7 +77,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     ai_client = AiClientAsync()
-    cam = cv2.VideoCapture(2)
+    cam = cv2.VideoCapture(4)
     print("[Waiting] Program")
     time.sleep(3.0)
     print("[Ready] Program")

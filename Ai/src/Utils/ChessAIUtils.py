@@ -17,6 +17,7 @@ class AI:
         self.isWhite = 0
         self.gamma = 0.2
         self.isEndgame = 0
+        self.pathh = '/home/aminballoon/Bally_ws/src/Ai/src/Utils'
         if(FEN == None):
             self.s = chess.Board() # game state
         else:
@@ -30,10 +31,10 @@ class AI:
                 'K':+900,'k':-900
             }
         # import NNUE
-        self.nnue = cdll.LoadLibrary("/home/trapoom555/fcb_ws/src/Ai/src/Utils/libnnueprobe.so")
+        self.nnue = cdll.LoadLibrary(self.pathh + "/libnnueprobe.so")
         self.nnue.nnue_init(b"gek-net.bin")
         # read opening book
-        self.reader = chess.polyglot.open_reader('/home/trapoom555/fcb_ws/src/Ai/src/Utils/GMopenings.bin')
+        self.reader = chess.polyglot.open_reader(self.pathh + '/GMopenings.bin')
         # set isWhite
         self.setisWhite()
 

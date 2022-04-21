@@ -20,7 +20,7 @@ import Utils.ImageProcessingUtils as df
 ''' -------------------------------------- LOAD ML MODEL --------------------------------------'''
 
 def loadModels():
-  clf_save_path = "/home/trapoom555/fcb_ws/src/Ai/src/Model/CNNClassification_150421_val_acc0p9393"
+  clf_save_path = "/home/aminballoon/Bally_ws/src/Ai/src/Model/CNNClassification_150421_val_acc0p9393"
   clf = tf.keras.models.load_model(clf_save_path)
   return clf
 
@@ -60,7 +60,7 @@ def calc_img_band_score(img1, img2):
         color_err = (255 - med_img1) + med_img2
         flag_win = 1
 
-    return color_err + 100*(std_img1 + std_img2), flag_win
+    return 20*color_err + (std_img1 + std_img2), flag_win
 
 
 
@@ -162,13 +162,13 @@ def getMatrixFromImage(img):
         M = cv2.getPerspectiveTransform(pts1,pts2)
         outerCornerX_img_coord1,outerCornerY_img_coord1 = mapLatticeInverse([0,400,0,400], [-30,-30,430,430], M)
         outerCornerX_img_coord2, outerCornerY_img_coord2 = mapLatticeInverse([-30,-30,430,430], [0,400,0,400], M)
-        # for i in range(len(outerCornerX_img_coord1)):
-        #     cv2.circle(img_rgb, (int(outerCornerX_img_coord1[i]), int(outerCornerY_img_coord1[i])), 5, (0,0,255), -1)
-        #     cv2.circle(img_rgb, (int(outerCornerX_img_coord2[i]), int(outerCornerY_img_coord2[i])), 5, (255,0,0), -1)
-        #     img_rgb = cv2.putText(img_rgb, str(i), (int(outerCornerX_img_coord1[i]), int(outerCornerY_img_coord1[i])),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255))
-        #     img_rgb = cv2.putText(img_rgb, str(i), (int(outerCornerX_img_coord2[i]), int(outerCornerY_img_coord2[i])),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255,0,0))
-        # cv2.imshow('ha', img_rgb)
-        # cv2.waitKey(0)
+        for i in range(len(outerCornerX_img_coord1)):
+            cv2.circle(img_rgb, (int(outerCornerX_img_coord1[i]), int(outerCornerY_img_coord1[i])), 5, (0,0,255), -1)
+            cv2.circle(img_rgb, (int(outerCornerX_img_coord2[i]), int(outerCornerY_img_coord2[i])), 5, (255,0,0), -1)
+            img_rgb = cv2.putText(img_rgb, str(i), (int(outerCornerX_img_coord1[i]), int(outerCornerY_img_coord1[i])),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(0,0,255))
+            img_rgb = cv2.putText(img_rgb, str(i), (int(outerCornerX_img_coord2[i]), int(outerCornerY_img_coord2[i])),fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255,0,0))
+        cv2.imshow('ha', img_rgb)
+        cv2.waitKey(0)
 
         outerCorner1 = np.float32(np.concatenate((np.array(outerCornerX_img_coord1).reshape(-1,1),np.array(outerCornerY_img_coord1).reshape(-1,1)),axis = -1))
         outerCorner1, sortOrder = order_points(outerCorner1)
@@ -226,8 +226,8 @@ def getMatrixFromImage(img):
             #     cv2.imshow('white', lowerImage)
             #     cv2.imshow('black', upperImage)
             # cv2.imshow('ha_warp', dst1)
-        # print("err red : {}", err_img1)
-        # print("err blue : {}", err_img2)
+        print("err red : {}", err_img1)
+        print("err blue : {}", err_img2)
 
         img_show = np.dstack([img, img, img])
         for i in range(len(ans)):

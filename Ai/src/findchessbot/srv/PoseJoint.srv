@@ -1,6 +1,0 @@
-float32 orientation_joint1
-float32 position_joint2
-float32 orientation_joint3
-float32 orientation_joint4
----
-bool result

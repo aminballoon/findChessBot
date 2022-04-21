@@ -1,6 +1,0 @@
-string chess_square_pick_king
-string chess_square_place_king
-string chess_square_pick_rook
-string chess_square_place_rook
----
-bool result
