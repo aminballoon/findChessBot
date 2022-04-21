@@ -73,17 +73,54 @@ class CRC16:
             0x43, 0x83, 0x41, 0x81, 0x80, 0x40
         ]
 
-    # Calculate CRC-16/Modbus Function
+        # Calculate CRC-16/Modbus Function
     def calculate(self, data_package_list, pack_mode='LH'):
-        crc16h = (self.init_value >> 8) & 0xFF
-        crc16l = self.init_value & 0xFF
-        for i in range(0, len(data_package_list)):
-            crc16idx = crc16h ^ data_package_list[i]
-            crc16h = crc16l ^ self.crc16h_table[crc16idx]
-            crc16l = self.crc16l_table[crc16idx]
-        if pack_mode == 'LH':
-            return [crc16l, crc16h]
-        elif pack_mode == 'HL':
-            return [crc16h, crc16l]
+            crc16h = (self.init_value >> 8) & 0xFF
+            crc16l = self.init_value & 0xFF
+            for i in range(0, len(data_package_list)):
+                crc16idx = crc16h ^ data_package_list[i]
+                crc16h = crc16l ^ self.crc16h_table[crc16idx]
+                crc16l = self.crc16l_table[crc16idx]
+            if pack_mode == 'LH':
+                return [crc16l, crc16h]
+            elif pack_mode == 'HL':
+                return [crc16h, crc16l]
+            else:
+                return [crc16l, crc16h]
+
+    def low_byte(self, _input):
+        return int(int(_input) & 0xFF)
+
+    def high_byte(self, _input):
+        return int((int(_input) >> 8) & 0xFF)
+
+    def convert_to_signed_14bit_data(self, _input):
+        if -8191 <= _input <= 8191:
+            if _input < 0:
+                return 0x2000 | abs(_input)
+            else:
+                return _input
+        elif _input < -8191:
+            return 0x2000 | 8191
+        elif _input > 8191:
+            return 8191
         else:
-            return [crc16l, crc16h]
+            return 0
+
+    def convert_to_unsigned_8bit_data_lim(self, _input, _l_lim, _u_lim):
+        if _input < _l_lim:
+            return int(_l_lim)
+        elif _input > _u_lim:
+            return int(_u_lim)
+        else:
+            return int(_input)
+
+
+    def dec_to_hex_in_list(self, _input):
+        result = []
+        for x in _input:
+            if len(str(hex(x)[2:].upper())) >= 2:
+                result.append(str(hex(x)[2:].upper()))
+            else:
+                result.append('0' + str(hex(x)[2:].upper()))
+        return result

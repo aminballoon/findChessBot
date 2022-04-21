@@ -312,7 +312,7 @@ void Update_State_Machine()
 				pos_x = (test_value_r*cos(test_value_theta/1000.0)) + offset_x;
 				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y;
 				fcb_IK(pos_x, pos_y, 0, 0);
-				Max_Time = 8;
+				Max_Time = 3;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder, Planning_q4, 0.0, 0.0, 0.0, 0.0);
@@ -1015,9 +1015,9 @@ int main(void)
 	stepperJ4.StepperEnable();
 
 //	gripper.setDegreeGripperClose(80);
-	gripper.setDegreeGripperClose(60);
+	gripper.setDegreeGripperClose(120);
 //	gripper.setDegreeGripperClose(40);
-	gripper.setDegreeGripperOpen(0);
+	gripper.setDegreeGripperOpen(50);
 	gripper.ServoEnable();
 	gripper.GripperClose();
 	while(!Limit_sw_Z_Top)
