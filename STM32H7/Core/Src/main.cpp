@@ -295,7 +295,7 @@ void fcb_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear
 
 }
 float offset_x = 430.0;
-float offset_y = 20.59371 ;
+float offset_y = 0.59371 ;
 int indexy;
 float pos_x,pos_y;
 void Update_State_Machine()
@@ -310,9 +310,9 @@ void Update_State_Machine()
 				test_value_r = radias[indexy];
 				test_value_theta = theta[indexy];
 				pos_x = (test_value_r*cos(test_value_theta/1000.0)) + offset_x;
-				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y; //
+				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y;
 				fcb_IK(pos_x, pos_y, 0, 0);
-				Max_Time = 3;
+				Max_Time = 8;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder, Planning_q4, 0.0, 0.0, 0.0, 0.0);
@@ -843,12 +843,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		fcb_joint3.Ki_p = 0.009; // 0.009
 //		fcb_joint3.Kd_p = 0.0015; // 0.0015
 
-		fcb_joint1.Kp_p = 1.0;
-		fcb_joint1.Ki_p = 1.0;
-		fcb_joint1.Kd_p = 1.0;
-		fcb_joint3.Kp_p = 1.0;
-		fcb_joint3.Ki_p = 1.0;
-		fcb_joint3.Kd_p = 1.0;
+		fcb_joint1.Kp_p = 0.2;
+		fcb_joint1.Ki_p = 0.0001;
+		fcb_joint1.Kd_p = 0.0001;
+		fcb_joint3.Kp_p = 0.002;
+		fcb_joint3.Ki_p = 0.0;
+		fcb_joint3.Kd_p = 0.0;
 //		fcb_joint3.Kp_p = 0.0006;
 //		fcb_joint3.Ki_p = 0.00001;
 //		fcb_joint3.Kd_p = 0.00001;
@@ -894,9 +894,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ3.StepperOpenLoopSpeedM(0.0);
 
 		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
-		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
+//		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
 		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
-		stepperJ4.StepperOpenLoopSpeed(fcb_joint4.Goal_Velocity);
+//		stepperJ4.StepperOpenLoopSpeedM(fcb_joint4.Goal_Velocity);
+//
+//		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
+		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
+//		stepperJ3.StepperOpenLoopSpeedM(0);
+		stepperJ4.StepperOpenLoopSpeedM(0);
 
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint3.Old_Error_p = fcb_joint3.Error_p;

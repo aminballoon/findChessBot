@@ -113,37 +113,37 @@ if __name__ == '__main__':
         ser.write(data1)
         time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['b2'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['b2'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['c3'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['c3'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['d4'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['d4'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['e5'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['e5'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['f6'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['f6'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['g7'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['g7'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['h8'],1]
+        frame1 = [0x86,ch_sq['h8'],2 ]
         data1 = frame1 + crc16.calculate(frame1)
         ser.write(data1)
         time.sleep(0.1)
