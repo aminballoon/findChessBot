@@ -1,0 +1,4 @@
+float32 angular_velocity_q1
+float32 linear_velocity_q2
+float32 angular_velocity_q3
+float32 angular_velocity_q4
