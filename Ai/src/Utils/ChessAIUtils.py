@@ -17,7 +17,7 @@ class AI:
         self.isWhite = 0
         self.gamma = 0.2
         self.isEndgame = 0
-        self.pathh = '/home/aminballoon/Bally_ws/src/Ai/src/Utils'
+        self.pathh = '/home/trapoom555/fcb_ws/src/ai/src/Utils'
         if(FEN == None):
             self.s = chess.Board() # game state
         else:

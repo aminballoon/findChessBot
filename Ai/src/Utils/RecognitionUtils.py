@@ -20,7 +20,7 @@ import Utils.ImageProcessingUtils as df
 ''' -------------------------------------- LOAD ML MODEL --------------------------------------'''
 
 def loadModels():
-  clf_save_path = "/home/aminballoon/Bally_ws/src/Ai/src/Model/CNNClassification_150421_val_acc0p9393"
+  clf_save_path = "/home/trapoom555/fcb_ws/src/ai/src/Model/CNNClassification_150421_val_acc0p9393"
   clf = tf.keras.models.load_model(clf_save_path)
   return clf
 

@@ -15,6 +15,9 @@ from findchessbot.srv import Capture
 from findchessbot.srv import Castling
 from findchessbot.srv import PicknPlace
 from findchessbot.srv import PromotePawn
+from ai.srv import ForceRecognize
+from ai.srv import AIComputeAndPlay
+
 sys.path.insert(0,'.')
 # Need to Set before playing
 AISide = chess.WHITE
@@ -73,20 +76,23 @@ class AiClientAsync(Node):
         self.future = self.PromotePawn.call_async(self.PromotePawn)
         self.get_logger().info('sent_promote_pawn_request_request')
 
-def main(args=None):
-    rclpy.init(args=args)
+class AiServer(Node):
+    def __init__(self):
+        super().__init__('ai_server')
+        # Argument | Return
+        self.forceRecognize = self.create_service(ForceRecognize, '/ai/ForceRecognize', self.forceRecognize_callback) # None | FEN
+        self.aiComputeAndPlay = self.create_service(AIComputeAndPlay, '/ai/AIComputeAndPlay', self.aiComputeAndPlay_callback) # FEN | FEN (moved)
 
-    ai_client = AiClientAsync()
-    cam = cv2.VideoCapture(4)
-    print("[Waiting] Program")
-    time.sleep(3.0)
-    print("[Ready] Program")
+    def forceRecognize_callback(self, request, response):
+        cam = cv2.VideoCapture(2)
+        print("[Waiting] Program")
+        ret, img = cam.read()
+        cam.release()
+        time.sleep(1.0)
+        print("[Ready] Program")
 
-    while True:
-        input('[Enter] To Trigger The Program')
-        # rawImgPath = '/home/trapoom555/Desktop/ChessDetection/Data/WIN_20210326_10_40_07_Pro.jpg'
-        # img = cv2.imread(rawImgPath)
-
+        # Capture
+        cam = cv2.VideoCapture(2)
         ret, img = cam.read()
         cv2.imshow('preview', img)
         cv2.waitKey(0)
@@ -94,24 +100,17 @@ def main(args=None):
         cv2.destroyAllWindows()
         b, dst = completePipeline(img)
         b.turn = AISide
-        print("ANSSSSSS")
+
         print(b)
-        print(b.fen())
+        response.fen_out = b.fen()
+        return response
 
+    def aiComputeAndPlay_callback(self, request, response):
+        ai_client = AiClientAsync()
+        ai = AI(max_depth = 6, timeMax = 45, FEN = request.fen_in)
+        uci_ai, flag, promotePiece = ai.think()
 
-        confirm = input("Is the Game State correct ? [Y/n] : ")
-
-        if(confirm == 'Y' or confirm == 'yes' or confirm == 'y'):
-            ai = AI(max_depth = 6, timeMax = 45, FEN = b.fen())
-            uci_ai, flag, promotePiece = ai.think()
-            print(uci_ai)
-        elif(confirm == 'N' or confirm == 'no' or confirm == 'n'):
-            fen = input("Please Input the Correct FEN : ")
-            ai = AI(max_depth = 6, timeMax = 45, FEN = fen)
-            uci_ai, flag, promotePiece = ai.think()
-            print(uci_ai)
-        else:
-            continue
+        response.uci_move = uci_ai
 
         ''' WRITING SRV TO ROS '''
         ''' flag {0: Normal move, 1: Capture piece, 2: Promote pawn, 3: King side Castling, 4: Queen side Castling} '''
@@ -125,6 +124,29 @@ def main(args=None):
             ai_client.send_castling_request(True)
         elif flag == 4:
             ai_client.send_castling_request(False)
+
+        return response
+
+
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    Server = AiServer()
+    Server.get_logger().info("Server Started")
+    try:
+        while rclpy.ok():
+            rclpy.spin_once(Server)
+
+    except KeyboardInterrupt:
+        print('repeater stopped cleanly')
+    except BaseException:
+        print('exception in repeater:', file=sys.stderr)
+        raise
+    finally:
+        Server.destroy_node()
+        rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

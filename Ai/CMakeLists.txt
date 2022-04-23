@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(Ai)
+project(ai)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -31,8 +31,18 @@ install(PROGRAMS
 )
 
 ####################### END ##########################
- 
- 
+
+find_package(rosidl_default_generators REQUIRED)
+set(srv_files
+  "srv/AIComputeAndPlay.srv"
+  "srv/ForceRecognize.srv"
+)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${srv_files}
+)
+
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
