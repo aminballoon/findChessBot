@@ -153,7 +153,7 @@ volatile float theta[] = {	2356, 2191, 1976, 1713, 1429, 1166, 951, 785, 2521,
 							3682, 3927, 4391, 5034, 5498, 5743, 5878, 3762, 3927, 4172, 4515,
 							4910, 5253, 5498, 5663, 3927, 4092, 4307, 4570, 4854, 5117, 5333, 5498 	};
 
-volatile float radias[] = { 247, 215, 190, 177, 177, 190, 215, 247, 215, 177, 146,
+volatile float radias[] = { 247, 215, 190, 177, 177, 190, 215, 252, 215, 177, 146,
 							127, 127, 146, 177, 215, 190, 146, 106, 79, 79, 106, 146,
 							190, 177, 127, 79, 35, 35, 79, 127, 177, 177, 127, 79, 35,
 							35, 79, 127, 177, 190, 146, 106, 79, 79, 106, 146, 190, 215,
@@ -295,7 +295,9 @@ void fcb_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear
 
 }
 float offset_x = 430.0;
-float offset_y = 0.59371 ;
+float offset_y = 9.5; //10.79371
+float offset_x_new = 0;
+float offset_y_new = 0;
 int indexy;
 float pos_x,pos_y;
 void Update_State_Machine()
@@ -309,10 +311,12 @@ void Update_State_Machine()
 			{
 				test_value_r = radias[indexy];
 				test_value_theta = theta[indexy];
-				pos_x = (test_value_r*cos(test_value_theta/1000.0)) + offset_x;
-				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y;
+				offset_x_new = ((0.16075 * (test_value_r*cos(test_value_theta/1000.0))) + 0.02289)/10.0 ;
+//				offset_y_new = ((0.29560 * (test_value_r*sin(test_value_theta/1000.0))) + 1.05911)/10.0 ;
+				pos_x = (test_value_r*cos(test_value_theta/1000.0)) + offset_x + offset_x_new;
+				pos_y = (test_value_r*sin(test_value_theta/1000.0)) + offset_y + offset_y_new;
 				fcb_IK(pos_x, pos_y, 0, 0);
-				Max_Time = 3;
+				Max_Time = 5;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
 				fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder, Planning_q4, 0.0, 0.0, 0.0, 0.0);
@@ -357,8 +361,10 @@ void Update_State_Machine()
 	case 52:
 		HAL_TIM_Base_Stop_IT(&htim14);
 		fcb_joint1.Goal_Velocity = 0;
+		fcb_joint4.Goal_Velocity = 0;
 		fcb_joint3.Goal_Velocity = 0;
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
+		stepperJ4.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
 		fcb_joint1.C0 = fcb_joint1.Encoder;
 		fcb_joint4.C0 = fcb_joint4.Encoder;
@@ -391,6 +397,7 @@ void Update_State_Machine()
 	case 54:
 		fcb_joint2.Goal_Velocity = 0;
 		stepperJ2.StepperOpenLoopSpeedM(0.0);
+		fcb_joint2.C0 = fcb_joint2.Encoder;
 		HAL_TIM_Base_Stop_IT(&htim14);
 		if (Gripper_State[first-1] == 1)
 		{
@@ -419,6 +426,7 @@ void Update_State_Machine()
 	case 56:
 		fcb_joint2.Goal_Velocity = 0;
 		stepperJ2.StepperOpenLoopSpeedM(0.0);
+		fcb_joint2.C0 = fcb_joint2.Encoder;
 		HAL_TIM_Base_Stop_IT(&htim14);
 		fcb_joint2.C0 = 0;
 		fcb_joint2.C1 = 0;
@@ -846,9 +854,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint1.Kp_p = 0.2;
 		fcb_joint1.Ki_p = 0.0001;
 		fcb_joint1.Kd_p = 0.0001;
-		fcb_joint3.Kp_p = 0.002;
+		fcb_joint3.Kp_p = 0.05;
 		fcb_joint3.Ki_p = 0.0;
-		fcb_joint3.Kd_p = 0.0;
+		fcb_joint3.Kd_p = 0.01;
 //		fcb_joint3.Kp_p = 0.0006;
 //		fcb_joint3.Ki_p = 0.00001;
 //		fcb_joint3.Kd_p = 0.00001;
@@ -1034,9 +1042,9 @@ int main(void)
 	stepperJ4.StepperEnable();
 
 //	gripper.setDegreeGripperClose(80);
-	gripper.setDegreeGripperClose(120);
+	gripper.setDegreeGripperClose(145);
 //	gripper.setDegreeGripperClose(40);
-	gripper.setDegreeGripperOpen(50);
+	gripper.setDegreeGripperOpen(57);
 	gripper.ServoEnable();
 	gripper.GripperClose();
 	while(!Limit_sw_Z_Top)
