@@ -110,6 +110,9 @@ RobotJoint fcb_joint4;
 RobotJoint fcb_Y;
 RobotJoint fcb_X;
 
+
+
+
 ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 #endif
@@ -283,11 +286,6 @@ void fcb_IK(float gripper_linear_x, float gripper_linear_y, float gripper_linear
 	float q4 = yaw - q1 - q3;
 	float q2 = z + H4 - H3 - H1;
 
-//	Planning_q1 = q1;
-//	Planning_q2 = q2;
-//	Planning_q3 = q3;
-//	Planning_q4 = q4;
-
 	Planning_q1 = q1*1000.0;
 	Planning_q2 = q2*1000.0;
 	Planning_q3 = q3*1000.0;
@@ -363,12 +361,15 @@ void Update_State_Machine()
 		fcb_joint1.Goal_Velocity = 0;
 		fcb_joint4.Goal_Velocity = 0;
 		fcb_joint3.Goal_Velocity = 0;
+		fcb_joint1.Output_Joint_W = 0;
+		fcb_joint3.Output_Joint_W = 0;
+		fcb_joint4.Output_Joint_W = 0;
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
 		stepperJ4.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
-		fcb_joint1.C0 = fcb_joint1.Encoder;
-		fcb_joint4.C0 = fcb_joint4.Encoder;
-		fcb_joint3.C0 = fcb_joint3.Encoder;
+		fcb_joint1.C0 = fcb_joint1.kalman_pos;
+		fcb_joint4.C0 = fcb_joint4.kalman_pos;
+		fcb_joint3.C0 = fcb_joint3.kalman_pos;
 		fcb_joint1.C1 = 0;
 		fcb_joint3.C1 = 0;
 		fcb_joint1.C2 = 0;
@@ -842,34 +843,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint3.KalmanFillter(fcb_joint3.Encoder);
 		fcb_joint3.kalman_pos = fcb_joint3.X11;
 		fcb_joint3.kalman_velo = fcb_joint3.X21;
-		// -1570, 785
 
-//		fcb_joint1.Kp_p = 0.001;
-//		fcb_joint1.Ki_p = 0.0008;
-//		fcb_joint1.Kd_p = 0.0004;
-//		fcb_joint3.Kp_p = 0.015; // 0.015
-//		fcb_joint3.Ki_p = 0.009; // 0.009
-//		fcb_joint3.Kd_p = 0.0015; // 0.0015
 
-		fcb_joint1.Kp_p = 0.2;
-		fcb_joint1.Ki_p = 0.0001;
-		fcb_joint1.Kd_p = 0.0001;
-		fcb_joint3.Kp_p = 0.05;
+//		fcb_joint1.Kp_p = 0.3;
+//		fcb_joint1.Ki_p = 0.0;
+//		fcb_joint1.Kd_p = 0.003;
+//		fcb_joint3.Kp_p = 0.05;
+//		fcb_joint3.Ki_p = 0.0;
+//		fcb_joint3.Kd_p = 0.01;
+
+		fcb_joint1.Kp_p = 0.0;
+		fcb_joint1.Ki_p = 0.0;
+		fcb_joint1.Kd_p = 0.0;
+		fcb_joint3.Kp_p = 0.0;
 		fcb_joint3.Ki_p = 0.0;
-		fcb_joint3.Kd_p = 0.01;
-//		fcb_joint3.Kp_p = 0.0006;
-//		fcb_joint3.Ki_p = 0.00001;
-//		fcb_joint3.Kd_p = 0.00001;
+		fcb_joint3.Kd_p = 0.0;
 
-		fcb_joint1.Kp_v = 0.0;
+		fcb_joint1.Kp_v = 3.0;
 		fcb_joint1.Ki_v = 0.0;
 		fcb_joint1.Kd_v = 0.0;
-		fcb_joint3.Kp_v = 0.0;
+		fcb_joint3.Kp_v = 3.0;
 		fcb_joint3.Ki_v = 0.0;
 		fcb_joint3.Kd_v = 0.0;
 
-		fcb_joint1.Error_p = fcb_joint1.Goal_Position - fcb_joint1.Encoder;
-		fcb_joint3.Error_p = fcb_joint3.Goal_Position - fcb_joint3.Encoder;
+		fcb_joint1.Error_p = fcb_joint1.Goal_Position - fcb_joint1.kalman_pos;
+		fcb_joint3.Error_p = fcb_joint3.Goal_Position - fcb_joint3.kalman_pos;
 		fcb_joint1.Error_v = fcb_joint1.Goal_Velocity - fcb_joint1.kalman_velo;
 		fcb_joint3.Error_v = fcb_joint3.Goal_Velocity - fcb_joint3.kalman_velo;
 
@@ -894,16 +892,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 									(fcb_joint3.Ki_v * fcb_joint3.Sum_Error_v ) +
 									(fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v) ) ;
 
-//		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Output_Joint_W);
+		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Output_Joint_W);
 //		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Output_Joint_W);
-//		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Output_Joint_W);
+		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Output_Joint_W);
 
 //		stepperJ1.StepperOpenLoopSpeedM(0.0);
 //		stepperJ3.StepperOpenLoopSpeedM(0.0);
 
-		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
+//		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
 //		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
-		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
+//		stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Goal_Velocity);
 //		stepperJ4.StepperOpenLoopSpeedM(fcb_joint4.Goal_Velocity);
 //
 //		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
@@ -916,8 +914,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint1.Old_Error_v = fcb_joint1.Error_v;
 		fcb_joint3.Old_Error_v = fcb_joint3.Error_v;
 
-		fcb_joint1.Old_p = fcb_joint1.Encoder;
-		fcb_joint3.Old_p = fcb_joint3.Encoder;
+		fcb_joint1.Old_p = fcb_joint1.kalman_pos;
+		fcb_joint3.Old_p = fcb_joint3.kalman_pos;
 		fcb_joint1.Old_v = fcb_joint1.kalman_velo;
 		fcb_joint3.Old_v = fcb_joint1.kalman_velo;
 
@@ -1060,6 +1058,8 @@ int main(void)
 	gripper.GripperOpen();
 	Limit_sw_Z_Top = false;
 
+
+
 	encoderJ1.AMT21_Read();
 	HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 	if (HALENCJ1OK == HAL_OK) {
@@ -1082,6 +1082,36 @@ int main(void)
 	if (HALENCJ4OK == HAL_OK) {
 		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;}
 
+	fcb_joint1.p11 = 3.60381982 / 100000000.0 ;
+	fcb_joint1.p12 = 1.08884194 / 10000000.0;
+	fcb_joint1.p21 = 1.0888423 / 10000000.0;
+	fcb_joint1.p22 = 6.59951866 / 10000000.0;
+
+	fcb_joint3.p11 = 3.60381982 / 100000000.0;
+	fcb_joint3.p12 = 1.08884194 / 10000000.0;
+	fcb_joint3.p21 = 1.0888423 / 10000000.0;
+	fcb_joint3.p22 = 6.59951866 / 10000000.0;
+
+
+	fcb_joint1.Q = 0.001;
+	fcb_joint1.R = 0.000003;
+
+	fcb_joint3.Q = 0.001;
+	fcb_joint3.R = 0.000003;
+
+//	fcb_joint1.KalmanFillter(fcb_joint1.Encoder);
+	fcb_joint1.X11 = fcb_joint1.Encoder;
+	fcb_joint1.X21 = 0.0;
+	fcb_joint1.kalman_pos = fcb_joint1.X11;
+	fcb_joint1.kalman_velo = 0.0;
+	fcb_joint1.Goal_Position = fcb_joint1.Encoder;
+
+//	fcb_joint3.KalmanFillter(fcb_joint3.Encoder);
+	fcb_joint3.X11 = fcb_joint3.Encoder;
+	fcb_joint3.X21 = 0.0;
+	fcb_joint3.kalman_pos = fcb_joint3.X11;
+	fcb_joint3.kalman_velo = 0.0;
+	fcb_joint3.Goal_Position = fcb_joint3.Encoder;
 
 	#endif
 
