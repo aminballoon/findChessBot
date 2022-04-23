@@ -1,6 +1,6 @@
 ################################################################################
 # Automatically-generated file. Do not edit!
-# Toolchain: GNU Tools for STM32 (9-2020-q2-update)
+# Toolchain: GNU Tools for STM32 (10.3-2021.10)
 ################################################################################
 
 -include ../makefile.init
@@ -58,14 +58,14 @@ BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ART
 EXECUTABLES += \
 STM32H743ZI2_Module8-9.elf \
 
+MAP_FILES += \
+STM32H743ZI2_Module8-9.map \
+
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
 STM32H743ZI2_Module8-9.list \
-
-OBJCOPY_BIN += \
-STM32H743ZI2_Module8-9.bin \
 
 
 # All Target
@@ -75,8 +75,8 @@ all: main-build
 main-build: STM32H743ZI2_Module8-9.elf secondary-outputs
 
 # Tool invocations
-STM32H743ZI2_Module8-9.elf: $(OBJS) $(USER_OBJS) C:\Users\aminb\Documents\GitHub\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "STM32H743ZI2_Module8-9.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\aminb\Documents\GitHub\findChessBot\STM32H7\STM32H743ZITX_FLASH.ld" -Wl,-Map="STM32H743ZI2_Module8-9.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+STM32H743ZI2_Module8-9.elf STM32H743ZI2_Module8-9.map: $(OBJS) $(USER_OBJS) /home/aminballoon/Documents/GitHub/findChessBot/STM32H7/STM32H743ZITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "STM32H743ZI2_Module8-9.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/aminballoon/Documents/GitHub/findChessBot/STM32H7/STM32H743ZITX_FLASH.ld" -Wl,-Map="STM32H743ZI2_Module8-9.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -90,17 +90,12 @@ STM32H743ZI2_Module8-9.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOO
 	@echo 'Finished building: $@'
 	@echo ' '
 
-STM32H743ZI2_Module8-9.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "STM32H743ZI2_Module8-9.bin"
-	@echo 'Finished building: $@'
-	@echo ' '
-
 # Other Targets
 clean:
-	-$(RM) STM32H743ZI2_Module8-9.bin STM32H743ZI2_Module8-9.elf STM32H743ZI2_Module8-9.list default.size.stdout
+	-$(RM) STM32H743ZI2_Module8-9.elf STM32H743ZI2_Module8-9.list STM32H743ZI2_Module8-9.map default.size.stdout
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

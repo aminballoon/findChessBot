@@ -1,7 +1,0 @@
-chess==1.4.0
-matplotlib
-opencv-python
-tensorflow
-numpy
-scipy
-scikit-learn
