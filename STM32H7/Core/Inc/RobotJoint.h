@@ -20,7 +20,7 @@ public:
 	RobotJoint();
 	~RobotJoint();
 
-	volatile const float dt = 0.002;
+	volatile const float dt = 0.001;
 	volatile const float dt2 = pow(this->dt, 2);
 	volatile const float dt3 = pow(this->dt, 3);
 	volatile const float dt4 = pow(this->dt, 4);
