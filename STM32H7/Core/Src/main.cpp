@@ -117,7 +117,7 @@ ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 #endif
 volatile float Setpoint_J2_Up = -200.0;
-volatile float Setpoint_J2_Down = -10000.0;
+volatile float Setpoint_J2_Down = -9500.0;
 volatile bool State_FIN = false;
 volatile float Max_Time = 0;
 volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
@@ -158,7 +158,7 @@ volatile float theta[] = {	2356, 2191, 1976, 1713, 1429, 1166, 951, 785, 2521,
 							3682, 3927, 4391, 5034, 5498, 5743, 5878, 3762, 3927, 4172, 4515,
 							4910, 5253, 5498, 5663, 3927, 4092, 4307, 4570, 4854, 5117, 5333, 5498 	};
 
-volatile float radias[] = { 247, 215, 190, 177, 177, 190, 215, 252, 215, 177, 146,
+volatile float radias[] = { 247, 215, 190, 177, 177, 190, 215, 247, 215, 177, 146,
 							127, 127, 146, 177, 215, 190, 146, 106, 79, 79, 106, 146,
 							190, 177, 127, 79, 35, 35, 79, 127, 177, 177, 127, 79, 35,
 							35, 79, 127, 177, 190, 146, 106, 79, 79, 106, 146, 190, 215,
@@ -315,10 +315,10 @@ void Update_State_Machine()
 			{
 				test_value_r = radias[indexy];
 				test_value_theta = theta[indexy];
-				offset_x_new = ((0.16075 * (test_value_r*cos((test_value_theta-785)/1000.0))) + 0.02289)/10.0 ;
-				offset_y_new = ((0.29560 * (test_value_r*sin((test_value_theta-785)/1000.0))) + 1.05911)/10.0 ;
-				pos_x = (test_value_r*cos((test_value_theta-785)/1000.0)) + offset_x + offset_x_new;
-				pos_y = (test_value_r*sin((test_value_theta-785)/1000.0)) + offset_y + offset_y_new;
+				offset_x_new = ((0.16075 * (test_value_r*cos((test_value_theta)/1000.0))) + 0.02289)/10.0 ;
+				offset_y_new = ((0.29560 * (test_value_r*sin((test_value_theta)/1000.0))) + 1.05911)/10.0 ;
+				pos_x = (test_value_r*cos((test_value_theta)/1000.0)) + offset_x + offset_x_new;
+				pos_y = (test_value_r*sin((test_value_theta)/1000.0)) + offset_y + offset_y_new;
 				fcb_IK(pos_x, pos_y, 0, 0);
 				Max_Time = 7;
 				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
