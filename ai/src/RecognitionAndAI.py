@@ -46,9 +46,9 @@ class AiClientAsync(Node):
 
     def send_castling_request(self, is_king_side):
         if AISide == chess.WHITE:
-            row = 1
+            row = '1'
         else:
-            row = 8
+            row = '8'
         if is_king_side == True:
             self.CastlingReq.chess_square_pick_king = 'e' + row
             self.CastlingReq.chess_square_place_king = 'g' + row
@@ -69,11 +69,11 @@ class AiClientAsync(Node):
         self.get_logger().info('sent_move_chess_piece_request')
 
     def send_promote_pawn_request(self, chess_square_pawn, chess_square_place):
-        self.PromotePawn.chess_square_pawn = chess_square_pawn
-        self.PromotePawn.chess_square_trash = '99'
-        self.PromotePawn.chess_square_pick_queen = '00'
-        self.PromotePawn.chess_square_place = chess_square_place
-        self.future = self.PromotePawn.call_async(self.PromotePawn)
+        self.PromotePawnReq.chess_square_pick_pawn = chess_square_pawn
+        self.PromotePawnReq.chess_square_pawn_to_trash = '99'
+        self.PromotePawnReq.chess_square_pick_queen = '00'
+        self.PromotePawnReq.chess_square_place = chess_square_place
+        self.future = self.PromotePawn.call_async(self.PromotePawnReq)
         self.get_logger().info('sent_promote_pawn_request_request')
 
 class AiServer(Node):
@@ -84,46 +84,56 @@ class AiServer(Node):
         self.aiComputeAndPlay = self.create_service(AIComputeAndPlay, '/ai/AIComputeAndPlay', self.aiComputeAndPlay_callback) # FEN | FEN (moved)
 
     def forceRecognize_callback(self, request, response):
-        cam = cv2.VideoCapture(2)
-        print("[Waiting] Program")
-        ret, img = cam.read()
-        cam.release()
-        time.sleep(1.0)
-        print("[Ready] Program")
+        try:
+            cam = cv2.VideoCapture(2)
+            print("[Waiting] Program")
+            ret, img = cam.read()
+            cam.release()
+            time.sleep(1.0)
+            print("[Ready] Program")
 
-        # Capture
-        cam = cv2.VideoCapture(2)
-        ret, img = cam.read()
-        cv2.imshow('preview', img)
-        cv2.waitKey(0)
-        cam.release()
-        cv2.destroyAllWindows()
-        b, dst = completePipeline(img)
-        b.turn = AISide
+            # Capture
+            cam = cv2.VideoCapture(2)
+            ret, img = cam.read()
+            # cv2.imshow('preview', img)
+            # cv2.waitKey(0)
+            # cam.release()
+            # cv2.destroyAllWindows()
+            b, dst = completePipeline(img)
+            b.turn = AISide
 
-        print(b)
-        response.fen_out = b.fen()
+            print(b)
+            response.fen_out = b.fen()
+            response.is_success = True
+        except:
+            response.is_success = False
         return response
 
     def aiComputeAndPlay_callback(self, request, response):
-        ai_client = AiClientAsync()
-        ai = AI(max_depth = 6, timeMax = 45, FEN = request.fen_in)
-        uci_ai, flag, promotePiece = ai.think()
+        try:
+            ai_client = AiClientAsync()
+            ai = AI(max_depth = 6, timeMax = 45, FEN = request.fen_in)
+            uci_ai, flag, promotePiece = ai.think()
 
-        response.uci_move = uci_ai
+            response.uci_move = uci_ai
 
-        ''' WRITING SRV TO ROS '''
-        ''' flag {0: Normal move, 1: Capture piece, 2: Promote pawn, 3: King side Castling, 4: Queen side Castling} '''
-        if flag == 0:
-            ai_client.send_pick_n_place_request(uci_ai[:2], uci_ai[2:])
-        elif flag == 1:
-            ai_client.send_capture_request(uci_ai[:2], uci_ai[2:])
-        elif flag == 2:
-            ai_client.send_promote_pawn_request(uci_ai[:2], uci_ai[2:])
-        elif flag == 3:
-            ai_client.send_castling_request(True)
-        elif flag == 4:
-            ai_client.send_castling_request(False)
+            ''' WRITING SRV TO ROS '''
+            ''' flag {0: Normal move, 1: Capture piece, 2: Promote pawn, 3: King side Castling, 4: Queen side Castling} '''
+            if flag == 0:
+                ai_client.send_pick_n_place_request(uci_ai[:2], uci_ai[2:])
+            elif flag == 1:
+                ai_client.send_capture_request(uci_ai[:2], uci_ai[2:])
+            elif flag == 2:
+                ai_client.send_promote_pawn_request(uci_ai[:2], uci_ai[2:])
+            elif flag == 3:
+                ai_client.send_castling_request(True)
+            elif flag == 4:
+                ai_client.send_castling_request(False)
+
+            response.is_success = True
+        except Exception as e:
+            print(e)
+            response.is_success = False
 
         return response
 

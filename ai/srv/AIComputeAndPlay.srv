@@ -1,3 +1,4 @@
 string fen_in
 ---
 string uci_move
+bool is_success
