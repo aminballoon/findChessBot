@@ -63,6 +63,7 @@ class MCU_Server(Node):
     def Mode1(self,Command): # Mode1 = Control State
         frame1 = [0x86,self.chess_squares[Command],2]
         data = frame1 + self.crc16.calculate(frame1)
+        self.get_logger().info(str(Command) + " : " + data)
         # H7.write(data1)
         # time.sleep(0.1)
         print(data)
@@ -85,10 +86,6 @@ class MCU_Server(Node):
         response.result = True
         print("capture_callback")
         print(request)
-        print("\n\n")
-        
-        
-        
         self.Mode1(request.chess_square_eat)
         self.Mode1(request.chess_square_pick)
         self.Mode1(request.chess_square_place)
@@ -100,7 +97,12 @@ class MCU_Server(Node):
         response.result = True
         print("castling_callback")
         print(request)
-        print("\n\n")
+        self.Mode1(request.chess_square_pick_king)
+        self.Mode1(request.chess_square_place_king)
+        self.Mode1(request.chess_square_pick_rook)
+        self.Mode1(request.chess_square_place_rook)
+
+
         # self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
         return response
 
@@ -109,6 +111,9 @@ class MCU_Server(Node):
         print("picknplace_callback")
         print(request)
         print("\n\n")
+        self.Mode1(request.chess_square_pick)
+        self.Mode1(request.chess_square_place)
+
         # self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
         return response
 
@@ -117,6 +122,11 @@ class MCU_Server(Node):
         print("promotepawn_callback")
         print(request)
         print("\n\n")
+        self.Mode1(request.chess_square_pick_pawn)
+        self.Mode1(request.chess_square_pawn_to_trash)
+        self.Mode1(request.chess_square_pick_queen)
+        self.Mode1(request.chess_square_place)
+
         # self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
         return response
 
