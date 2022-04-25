@@ -42,6 +42,7 @@
 #include "Stepper.h"
 #include "ServoMotor.h"
 #include "RobotJoint.h"
+#include "AS5047U.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,7 +116,17 @@ RobotJoint fcb_X;
 
 ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
+
+//AS5047U chessSPIEncoder(&hspi3, SPI3_CS_GPIO_Port, SPI3_CS_Pin);
+
 #endif
+
+//uint16_t zero_position;
+//float zero_position_map;
+//uint16_t current_angle;
+//float current_angle_map;
+//float angle;
+
 volatile float Setpoint_J2_Up = -200.0;
 volatile float Setpoint_J2_Down = -9500.0;
 volatile bool State_FIN = false;
@@ -661,6 +672,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
 		}
 
+//		current_angle = chessSPIEncoder.getRawRotation();
+//		current_angle_map = chessSPIEncoder.read2angle(current_angle);
+//		angle = current_angle_map - zero_position_map;
+//		angle = chessSPIEncoder.normalize(angle);
 //			int i;
 //			for (i = 1; i < num; i++) {
 //				box_q1[i - 1] = box_q1[i];
@@ -762,6 +777,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (HALENCJ4OK == HAL_OK) {
 			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
 		}
+
+//		current_angle = chessSPIEncoder.getRawRotation();
+//		current_angle_map = chessSPIEncoder.read2angle(current_angle);
+//		angle = current_angle_map - zero_position_map;
+//		angle = chessSPIEncoder.normalize(angle);
 
 		fcb_joint1.KalmanFillter(fcb_joint1.Encoder);
 		fcb_joint1.kalman_pos = fcb_joint1.X11;
@@ -1157,6 +1177,9 @@ int main(void)
 	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 	if (HALENCJ4OK == HAL_OK) {
 		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;}
+
+//	  zero_position = chessSPIEncoder.getRawRotation();
+//	  zero_position_map = chessSPIEncoder.read2angle(zero_position);
 
 	fcb_joint1.p11 = 3.60381982 / 100000000.0 ;
 	fcb_joint1.p12 = 1.08884194 / 10000000.0;

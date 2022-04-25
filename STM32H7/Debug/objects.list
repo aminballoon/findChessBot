@@ -1,4 +1,5 @@
 "./Core/Src/AMT21.o"
+"./Core/Src/AS5047U.o"
 "./Core/Src/Controller.o"
 "./Core/Src/RobotJoint.o"
 "./Core/Src/ServoMotor.o"
