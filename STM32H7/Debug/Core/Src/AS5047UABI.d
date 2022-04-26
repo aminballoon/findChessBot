@@ -1,4 +1,5 @@
-Core/Src/AS5047U.o: ../Core/Src/AS5047U.cpp ../Core/Inc/AS5047U.h \
+Core/Src/AS5047UABI.o: ../Core/Src/AS5047UABI.cpp \
+ ../Core/Inc/AS5047UABI.h \
  ../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h7xx.h \
  ../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h743xx.h \
  ../Drivers/CMSIS/Include/core_cm7.h \
@@ -34,10 +35,9 @@ Core/Src/AS5047U.o: ../Core/Src/AS5047U.cpp ../Core/Inc/AS5047U.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h \
- ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
- ../Core/Inc/crc.h ../Core/Inc/main.h
+ ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h
 
-../Core/Inc/AS5047U.h:
+../Core/Inc/AS5047UABI.h:
 
 ../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h7xx.h:
 
@@ -110,7 +110,3 @@ Core/Src/AS5047U.o: ../Core/Src/AS5047U.cpp ../Core/Inc/AS5047U.h \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h:
 
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h:
-
-../Core/Inc/crc.h:
-
-../Core/Inc/main.h:

@@ -1,0 +1,9 @@
+AS5047UABI.cpp:9:1:AS5047UABI::AS5047UABI(TIM_HandleTypeDef*, uint32_t, uint32_t)	24	static
+AS5047UABI.cpp:14:1:AS5047UABI::~AS5047UABI()	16	static
+AS5047UABI.cpp:17:6:void AS5047UABI::EncoderReadEnable()	16	static
+AS5047UABI.cpp:21:6:void AS5047UABI::EncoderReadDisable()	16	static
+AS5047UABI.cpp:25:6:void AS5047UABI::setZero()	16	static
+AS5047UABI.cpp:28:10:uint16_t AS5047UABI::getRawCounter()	16	static
+AS5047UABI.cpp:31:7:float AS5047UABI::getDegAngle()	16	static
+AS5047UABI.cpp:34:7:float AS5047UABI::getRadAngle()	16	static
+AS5047UABI.cpp:37:7:float AS5047UABI::getMRadAngle()	16	static

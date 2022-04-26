@@ -1,18 +1,6 @@
-AS5047U.cpp:12:1:AS5047U::AS5047U(SPI_HandleTypeDef*, GPIO_TypeDef*, uint16_t)	24	static
-AS5047U.cpp:27:6:void AS5047U::init()	16	static
-AS5047U.cpp:41:6:void AS5047U::close()	16	static
-AS5047U.cpp:52:6:void AS5047U::open()	16	static
-AS5047U.cpp:62:9:uint8_t AS5047U::spiCalcEvenParity(uint16_t)	24	static
-AS5047U.cpp:82:10:uint16_t AS5047U::read(uint16_t)	24	static
-AS5047U.cpp:124:10:uint16_t AS5047U::write(uint16_t, uint16_t)	24	static
-AS5047U.cpp:175:10:uint16_t AS5047U::getRawRotation()	16	static
-AS5047U.cpp:184:5:int AS5047U::getRotation()	24	static
-AS5047U.cpp:200:10:uint16_t AS5047U::getState()	16	static
-AS5047U.cpp:207:9:uint8_t AS5047U::error()	16	static
-AS5047U.cpp:215:9:uint8_t AS5047U::getGain()	24	static
-AS5047U.cpp:223:10:uint16_t AS5047U::getErrors()	16	static
-AS5047U.cpp:230:6:void AS5047U::setZeroPosition(uint16_t)	16	static
-AS5047U.cpp:237:10:uint16_t AS5047U::getZeroPosition()	16	static
-cmath:290:5:constexpr typename __gnu_cxx::__promote_2<_Tp, _Up>::__type std::fmod(_Tp, _Up) [with _Tp = float; _Up = int]	16	static
-AS5047U.cpp:244:7:float AS5047U::normalize(float)	16	static
-AS5047U.cpp:262:7:float AS5047U::read2angle(uint16_t)	16	static
+AS5047U.cpp:10:1:AS5047U::AS5047U(SPI_HandleTypeDef*, GPIO_TypeDef*, uint16_t, bool, float)	32	static
+AS5047U.cpp:32:1:AS5047U::~AS5047U()	16	static
+AS5047U.cpp:36:7:float AS5047U::EncPulse2Rad_Read(uint8_t)	16	static
+AS5047U.cpp:91:26:HAL_StatusTypeDef AS5047U::AS5047U_Read(uint16_t, uint16_t*)	32	static
+AS5047U.cpp:123:17:uint16_t AS5047U::AS5047U_Position_Highspeed_Read(uint8_t)	32	static
+AS5047U.cpp:170:6:void AS5047U::AS5047U_Read_Error()	32	static

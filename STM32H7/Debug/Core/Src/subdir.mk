@@ -20,6 +20,7 @@ C_SRCS += \
 CPP_SRCS += \
 ../Core/Src/AMT21.cpp \
 ../Core/Src/AS5047U.cpp \
+../Core/Src/AS5047UABI.cpp \
 ../Core/Src/Controller.cpp \
 ../Core/Src/RobotJoint.cpp \
 ../Core/Src/ServoMotor.cpp \
@@ -42,6 +43,7 @@ C_DEPS += \
 OBJS += \
 ./Core/Src/AMT21.o \
 ./Core/Src/AS5047U.o \
+./Core/Src/AS5047UABI.o \
 ./Core/Src/Controller.o \
 ./Core/Src/RobotJoint.o \
 ./Core/Src/ServoMotor.o \
@@ -62,6 +64,7 @@ OBJS += \
 CPP_DEPS += \
 ./Core/Src/AMT21.d \
 ./Core/Src/AS5047U.d \
+./Core/Src/AS5047UABI.d \
 ./Core/Src/Controller.d \
 ./Core/Src/RobotJoint.d \
 ./Core/Src/ServoMotor.d \
@@ -78,7 +81,7 @@ Core/Src/%.o: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/AMT21.d ./Core/Src/AMT21.o ./Core/Src/AS5047U.d ./Core/Src/AS5047U.o ./Core/Src/Controller.d ./Core/Src/Controller.o ./Core/Src/RobotJoint.d ./Core/Src/RobotJoint.o ./Core/Src/ServoMotor.d ./Core/Src/ServoMotor.o ./Core/Src/Stepper.d ./Core/Src/Stepper.o ./Core/Src/crc.d ./Core/Src/crc.o ./Core/Src/dma.d ./Core/Src/dma.o ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/spi.d ./Core/Src/spi.o ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/usart.d ./Core/Src/usart.o
+	-$(RM) ./Core/Src/AMT21.d ./Core/Src/AMT21.o ./Core/Src/AS5047U.d ./Core/Src/AS5047U.o ./Core/Src/AS5047UABI.d ./Core/Src/AS5047UABI.o ./Core/Src/Controller.d ./Core/Src/Controller.o ./Core/Src/RobotJoint.d ./Core/Src/RobotJoint.o ./Core/Src/ServoMotor.d ./Core/Src/ServoMotor.o ./Core/Src/Stepper.d ./Core/Src/Stepper.o ./Core/Src/crc.d ./Core/Src/crc.o ./Core/Src/dma.d ./Core/Src/dma.o ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/spi.d ./Core/Src/spi.o ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/usart.d ./Core/Src/usart.o
 
 .PHONY: clean-Core-2f-Src
 

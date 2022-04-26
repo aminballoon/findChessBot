@@ -38,7 +38,7 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Core/Inc/crc.h ../Core/Inc/main.h ../Core/Inc/dma.h ../Core/Inc/spi.h \
  ../Core/Inc/tim.h ../Core/Inc/usart.h ../Core/Inc/gpio.h \
  ../Core/Inc/AMT21.h ../Core/Inc/Stepper.h ../Core/Inc/ServoMotor.h \
- ../Core/Inc/RobotJoint.h ../Core/Inc/AS5047U.h
+ ../Core/Inc/RobotJoint.h ../Core/Inc/AS5047UABI.h
 
 ../Core/Inc/main.h:
 
@@ -136,4 +136,4 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 
 ../Core/Inc/RobotJoint.h:
 
-../Core/Inc/AS5047U.h:
+../Core/Inc/AS5047UABI.h:

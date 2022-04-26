@@ -4,270 +4,191 @@
  *  Created on: Apr 25, 2022
  *      Author: SakuranohanaTH
  */
-#include <AS5047U.h>
+#include "AS5047U.h"
+#include "crc.h"
 
-/**
- * Constructor
- */
-AS5047U::AS5047U(SPI_HandleTypeDef* hspi, GPIO_TypeDef* arg_ps, uint16_t arg_cs){
-	this->_cs = arg_cs;
-	this->_ps = arg_ps;
-	this->_spi = hspi;
-	this->errorFlag = 0;
-	this->position = 0;
+AS5047U::AS5047U(SPI_HandleTypeDef *_hspi, GPIO_TypeDef *_cs_port, uint16_t _cs_pin, bool _onCRC, float _offset){
+	this->hspiHandle = _hspi;
+	this->CSGPIOTypedef = _cs_port;
+	this->CSGPIOPin = _cs_pin;
+	if(_onCRC){
+		this->hcrcHandle = &hcrc;
+		this->onCRC = true;
+	}
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+	this->CORDIC_Overflow = 0;
+	this->Offset_Compensation_Not_Finished = 0;
+	this->Watchdog_Error = 0;
+	this->CRC_Error = 0;
+	this->Command_Error = 0;
+	this->Framing_Error = 0;
+	this->P2ram_Error = 0;
+	this->P2ram_Warning = 0;
+	this->MagHalf = 0;
+	this->Agc_warning = 0;
+	this->Offset = _offset * 0.000383495f;
 }
 
-#define EN_SPI HAL_GPIO_WritePin(_ps, _cs, GPIO_PIN_RESET);
-#define DIS_SPI HAL_GPIO_WritePin(_ps, _cs, GPIO_PIN_SET);
-
-/**
- * Initialiser
- * Sets up the SPI interface
- */
-void AS5047U::init(){
-
-	//You can write here various checking functions
-
-	this->close();
-	this->open();
-
+AS5047U::~AS5047U(){
 
 }
 
-/**
- * Closes the SPI connection
- * SPI has an internal SPI-device counter, for each init()-call the close() function must be called exactly 1 time
- */
-void AS5047U::close(){
-	if (HAL_SPI_DeInit(this->_spi) != HAL_OK)
-	{
-		//User error function
+float AS5047U::EncPulse2Rad_Read(uint8_t inv_dir){
+	this->AS5047U_Position_Highspeed_Read(inv_dir);
+	return (this->Position * 0.000383495f) - this->Offset;
+//	return (Enc->Position * 0.000383495f);
+}
+
+
+//
+///*
+// * Data Frame Format
+// *
+// * for 24 bits Data frame
+// * 23	x			(Do not Care -> 0)
+// * 22	R/W			(0 for read , 1 for write)
+// * 21:8 ADDR[13:0]
+// * 7:0	CRC-8
+// *
+// *
+// * for 16 bits Data frame high throughput
+// *
+// * 15 	x			(Do not Care -> 0)
+// * 14 	R/W			(0 for read , 1 for write)
+// * 13:0 ADDR[13:0]
+// */
+//
+//
+//
+//
+///*
+// * This function for Non-Volatile Registers (OTP) Only
+// */
+//
+inline void AS5047U::AS5047U_Write(uint16_t Register_Address, uint16_t Data){
+	if(!(this->onCRC)){
+		return;
+	}
+	uint8_t Buffer[3] = {};
+
+	Buffer[0] = ((uint8_t) (Register_Address >> 8)) & 0xBF;
+	Buffer[1] = (uint8_t) (Register_Address & 0xFF);
+	Buffer[2] = (uint8_t) HAL_CRC_Calculate(this->hcrcHandle, (uint32_t *)Buffer, 2) ^ 0xFF;
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	for (uint16_t i=0; i <= 550 ; i++);  			//delay before sent data (#Base clock 550MHz)
+	HAL_SPI_Transmit(this->hspiHandle, Buffer, 3, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+
+	Buffer[0] = (uint8_t) (Data >> 8);
+	Buffer[1] = (uint8_t) (Data & 0xFF);
+	Buffer[2] = (uint8_t) HAL_CRC_Calculate(this->hcrcHandle, (uint32_t *)Buffer, 2) ^ 0xFF;
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	for (uint16_t i=0; i <= 550 ; i++);  			//delay before sent data (#Base clock 550MHz)
+	HAL_SPI_Transmit(this->hspiHandle, Buffer, 3, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+}
+
+inline HAL_StatusTypeDef AS5047U::AS5047U_Read(uint16_t Register_Address, uint16_t *Data){
+	if(!(this->onCRC)){
+		return HAL_ERROR;
+	}
+	uint8_t Buffer[3] = {};
+
+	for (uint16_t i=0; i <= 480 ; i++);  			//delay before sent data (#Base clock 550MHz)
+	Buffer[0] = ((uint8_t) (Register_Address >> 8)) | 0x40;
+	Buffer[1] = (uint8_t) (Register_Address & 0xFF);
+	Buffer[2] = (uint8_t) HAL_CRC_Calculate(this->hcrcHandle, (uint32_t *)Buffer, 2) ^ 0xFF;
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(this->hspiHandle, Buffer, 3, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+
+	for (uint16_t i=0; i <= 480 ; i++);  			//delay before sent data (#Base clock 550MHz)
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Receive(this->hspiHandle, Buffer, 3, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+	uint8_t AS5047U_crc = (uint8_t) HAL_CRC_Calculate(this->hcrcHandle, (uint32_t*)Buffer, 2) ^ 0xFF;
+	if (AS5047U_crc == Buffer[2]){
+		return HAL_OK;
+	}
+	else{
+		return HAL_ERROR;
 	}
 }
+//
+//
+///*
+// * This function for read Encoder without CRC
+// * (high throughput)
+// */
+inline uint16_t AS5047U::AS5047U_Position_Highspeed_Read(uint8_t dir){
+	uint8_t cmd[2] = { 0x3F,0xFF };
+	uint8_t Buffer[2] = {};
+	for (uint16_t i=0; i <= 400; i++);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+//	for (uint16_t i=0; i <= 400; i++);
+	HAL_SPI_Transmit(this->hspiHandle, cmd, 2, 100);
+//	for (uint16_t i=0; i <= 400; i++);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
 
-/**
- * Openthe SPI connection
- * SPI has an internal SPI-device counter, for each init()-call the close() function must be called exactly 1 time
- */
-void AS5047U::open(){
-	if (HAL_SPI_Init(this->_spi) != HAL_OK)
-	{
-		//User error function
+	for (uint16_t i=0; i <= 400; i++);			//delay before sent data (#Base clock 550MHz)
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+//	for (uint16_t i=0; i <= 400; i++);
+	HAL_SPI_Receive(this->hspiHandle, Buffer, 2, 100);
+//	for (uint16_t i=0; i <= 400; i++);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+	if (dir == 1){
+		this->Position = (uint16_t)((((uint16_t)Buffer[0]&0x3F) << 8) | (uint16_t)Buffer[1]) ^ 0x3FFF;
 	}
-}
-
-/**
- * Utility function used to calculate even parity of word
- */
-uint8_t AS5047U::spiCalcEvenParity(uint16_t value){
-	uint8_t cnt = 0;
-	uint8_t i;
-
-	for (i = 0; i < 16; i++)
-	{
-		if (value & 0x1)
-		{
-			cnt++;
-		}
-		value >>= 1;
+	else{
+		this->Position = ((((uint16_t)Buffer[0]&0x3F) << 8) | (uint16_t)Buffer[1]);
 	}
-	return cnt & 0x1;
+	return this->Position;
 }
 
-/*
- * Read a register from the sensor
- * Takes the address of the register as a 16 bit word
- * Returns the value of the register
- */
-uint16_t AS5047U::read(uint16_t registerAddress){
+inline int16_t AS5047U::AS5047U_Speed_Highspeed_Read() {
 
-	uint8_t data[2];
+	uint8_t cmd[2] = { 0x3F, 0xFF };
+	int16_t Output_Data;
+	uint8_t Buffer[2] = { };
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(this->hspiHandle, cmd, 2, 1);
+		HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
 
-	uint16_t command = 0b0100000000000000; // PAR=0 R/W=R
-	command = command | registerAddress;
+	for (uint16_t i = 0; i <= 550; i++);		//delay before sent data (#Base clock 550MHz)
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Receive(this->hspiHandle, Buffer, 2, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
 
-	//Add a parity bit on the the MSB
-	command |= ((uint16_t)this->spiCalcEvenParity(command)<<15);
-
-	//Split the command into two bytes
-	data[1] = command & 0xFF;
-	data[0] = ( command >> 8 ) & 0xFF;
-
-//	EN_SPI;
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(this->_spi, (uint8_t *)&data, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_RESET);
-	HAL_SPI_Receive(this->_spi, (uint8_t *)&data, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_SET);
-
-	if (data[1] & 0x40) {
-		this->errorFlag = 1;
-	} else {
-		this->errorFlag = 0;
+	if ((Buffer[0] >> 5) == 0) {
+		Output_Data = (((int16_t) Buffer[0] & 0x3F) << 8) | (int16_t) Buffer[1];
+	} else if ((Buffer[0] >> 5) == 1) {
+		Output_Data = (((int16_t) Buffer[0] | 0xC0) << 8) | (int16_t) Buffer[1];
 	}
-
-	//Return the data, stripping the parity and error bits
-	return (( ( data[1] & 0xFF ) << 8 ) | ( data[0] & 0xFF )) & ~0xC000;
+	return Output_Data;
 }
 
-/*
- * Write to a register
- * Takes the 16-bit  address of the target register and the 16 bit word of data
- * to be written to that register
- * Returns the value of the register after the write has been performed. This
- * is read back from the sensor to ensure a sucessful write.
- */
-uint16_t AS5047U::write(uint16_t registerAddress, uint16_t data) {
+void AS5047U::AS5047U_Read_Error() {
+	uint16_t Status;
+	uint8_t cmd[2] = { 0x00,0x01 };
+	uint8_t Buffer[2] = {};
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(this->hspiHandle, cmd, 2, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+	for (uint16_t i=0; i <= 550 ; i++);			//delay before sent data (#Base clock 550MHz)
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_RESET);
+	HAL_SPI_Receive(this->hspiHandle, Buffer, 2, 1);
+	HAL_GPIO_WritePin(this->CSGPIOTypedef, this->CSGPIOPin, GPIO_PIN_SET);
+	Status = (((uint16_t)Buffer[0]&0x3F) << 8) | (uint16_t)Buffer[1];
 
-	uint8_t dat[2];
-
-	uint16_t command = 0b0000000000000000; // PAR=0 R/W=W
-	command |= registerAddress;
-
-	//Add a parity bit on the the MSB
-	command |= ((uint16_t)this->spiCalcEvenParity(command)<<15);
-
-	//Split the command into two bytes
-	dat[1] = command & 0xFF;
-	dat[0] = ( command >> 8 ) & 0xFF;
-
-	//Start the write command with the target address
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(this->_spi, (uint8_t *)&dat, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_SET);
-
-	uint16_t dataToSend = 0b0000000000000000;
-	dataToSend |= data;
-
-	//Craft another packet including the data and parity
-	dataToSend |= ((uint16_t)this->spiCalcEvenParity(dataToSend)<<15);
-	dat[1] = command & 0xFF;
-	dat[0] = ( command >> 8 ) & 0xFF;
-
-	//Now send the data packet
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(this->_spi, (uint8_t *)&dat, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_SET);
-
-	//Send a NOP to get the new data in the register
-	dat[1] = 0x00;
-	dat[0] = 0x00;
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(this->_spi, (uint8_t *)&dat, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_SPI_Receive(this->_spi, (uint8_t *)&dat, 2, 0xFFFF);
-	while (HAL_SPI_GetState(this->_spi) != HAL_SPI_STATE_READY) {}
-	HAL_GPIO_WritePin(this->_ps, this->_cs, GPIO_PIN_SET);
-
-	//Return the data, stripping the parity and error bits
-	return (( ( dat[1] & 0xFF ) << 8 ) | ( dat[0] & 0xFF )) & ~0xC000;
+	AS5047U_Read(0x0001, &Status);
+	this->CORDIC_Overflow 					= (uint8_t) ((Status >> 10) & 0x01);
+	this->Offset_Compensation_Not_Finished 	= (uint8_t) ((Status >> 9) & 0x01);
+	this->Watchdog_Error 					= (uint8_t) ((Status >> 7) & 0x01);
+	this->CRC_Error 						= (uint8_t) ((Status >> 6) & 0x01);
+	this->Command_Error 					= (uint8_t) ((Status >> 5) & 0x01);
+	this->Framing_Error 					= (uint8_t) ((Status >> 4) & 0x01);
+	this->P2ram_Error 						= (uint8_t) ((Status >> 3) & 0x01);
+	this->P2ram_Warning 					= (uint8_t) ((Status >> 2) & 0x01);
+	this->MagHalf 							= (uint8_t) ((Status >> 1) & 0x01);
+	this->Agc_warning 						= (uint8_t) (Status & 0x01);
 }
-
-/**
- * Returns the raw angle directly from the sensor
- */
-uint16_t AS5047U::getRawRotation(){
-	return this->read(AS5047U_ANGLE);
-}
-
-/**
- * Get the rotation of the sensor relative to the zero position.
- *
- * @return {int} between -2^13 and 2^13
- */
-int AS5047U::getRotation(){
-	uint16_t data;
-	int rotation;
-
-	data = this->getRawRotation();
-	rotation = (int)data - (int)position;
-	if(rotation > 8191) rotation = -((0x3FFF)-rotation); //more than -180
-	//if(rotation < -0x1FFF) rotation = rotation+0x3FFF;
-
-	return rotation;
-}
-
-/**
- * returns the value of the state register
- * @return 16 bit word containing flags
- */
-uint16_t AS5047U::getState(){
-	return this->read(AS5047U_DIAG_AGC);
-}
-
-/*
- * Check if an error has been encountered.
- */
-uint8_t AS5047U::error(){
-	return this->errorFlag;
-}
-
-/**
- * Returns the value used for Automatic Gain Control (Part of diagnostic
- * register)
- */
-uint8_t AS5047U::getGain(){
-	uint16_t data = this->getState();
-	return (uint8_t) data & 0xFF;
-}
-
-/*
- * Get and clear the error register by reading it
- */
-uint16_t AS5047U::getErrors(){
-	return this->read(AS5047U_CLEAR_ERROR_FLAG);
-}
-
-/*
- * Set the zero position
- */
-void AS5047U::setZeroPosition(uint16_t arg_position){
-	this->position = arg_position % 0x3FFF;
-}
-
-/*
- * Returns the current zero position
- */
-uint16_t AS5047U::getZeroPosition(){
-	return this->position;
-}
-
-/*
- * Returns normalized angle value
- */
-float AS5047U::normalize(float angle) {
-	// http://stackoverflow.com/a/11498248/3167294
-	#ifdef ANGLE_MODE_1
-		angle += 180;
-	#endif
-	angle = fmod(angle, 360);
-	if (angle < 0) {
-		angle += 360;
-	}
-	#ifdef ANGLE_MODE_1
-		angle -= 180;
-	#endif
-	return angle;
-}
-
-/*
- * Returns caalculated angle value
- */
-float AS5047U::read2angle(uint16_t angle) {
-	/*
-	 * 14 bits = 2^(14) - 1 = 16.383
-	 *
-	 * https://www.arduino.cc/en/Reference/Map
-	 *
-	 */
-	return (float)angle * ((float)360 / 16383);
-};
-
-
-
