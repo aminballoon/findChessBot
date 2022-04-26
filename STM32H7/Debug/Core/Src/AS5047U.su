@@ -1,6 +1,6 @@
-AS5047U.cpp:10:1:AS5047U::AS5047U(SPI_HandleTypeDef*, GPIO_TypeDef*, uint16_t, bool, float)	32	static
-AS5047U.cpp:32:1:AS5047U::~AS5047U()	16	static
-AS5047U.cpp:36:7:float AS5047U::EncPulse2Rad_Read(uint8_t)	16	static
-AS5047U.cpp:91:26:HAL_StatusTypeDef AS5047U::AS5047U_Read(uint16_t, uint16_t*)	32	static
-AS5047U.cpp:123:17:uint16_t AS5047U::AS5047U_Position_Highspeed_Read(uint8_t)	32	static
-AS5047U.cpp:170:6:void AS5047U::AS5047U_Read_Error()	32	static
+../Core/Src/AS5047U.cpp:10:1:AS5047U::AS5047U(SPI_HandleTypeDef*, GPIO_TypeDef*, uint16_t, bool, float)	32	static
+../Core/Src/AS5047U.cpp:32:1:AS5047U::~AS5047U()	16	static
+../Core/Src/AS5047U.cpp:36:7:float AS5047U::EncPulse2Rad_Read(uint8_t)	16	static
+../Core/Src/AS5047U.cpp:91:26:HAL_StatusTypeDef AS5047U::AS5047U_Read(uint16_t, uint16_t*)	32	static
+../Core/Src/AS5047U.cpp:123:17:uint16_t AS5047U::AS5047U_Position_Highspeed_Read(uint8_t)	32	static
+../Core/Src/AS5047U.cpp:170:6:void AS5047U::AS5047U_Read_Error()	32	static

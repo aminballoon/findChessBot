@@ -115,7 +115,7 @@ ServoMotor gripper(&htim4, TIM_CHANNEL_3);
 HAL_StatusTypeDef HALENCJ1OK, HALENCJ2OK, HALENCJ3OK, HALENCJ4OK;
 
 AS5047UABI chessABIEncoder(&htim8, TIM_CHANNEL_1, TIM_CHANNEL_2);
-float angle_chess;
+volatile float angle_chess, angle_chess_deg;
 
 #endif
 
@@ -299,32 +299,42 @@ void Update_State_Machine() {
 	switch (control_state) {
 	case 41: // Update Trajectory
 		indexy = Call_queue();
-		if (indexy != 255) {
-			test_value_r = radias[indexy];
-			test_value_theta = theta[indexy];
-			offset_x_new = ((0.16075
-					* (test_value_r * cos((test_value_theta) / 1000.0)))
-					+ 0.02289) / 10.0;
-			offset_y_new = ((0.29560
-					* (test_value_r * sin((test_value_theta) / 1000.0)))
-					+ 1.05911) / 10.0;
-			pos_x = (test_value_r * cos((test_value_theta) / 1000.0)) + offset_x
-					+ offset_x_new;
-			pos_y = (test_value_r * sin((test_value_theta) / 1000.0)) + offset_y
-					+ offset_y_new;
-			fcb_IK(pos_x, pos_y, 0, 0);
-			Max_Time = 7;
-			fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder,
-					Planning_q1, 0.0, 0.0, 0.0, 0.0);
-			fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder,
-					Planning_q3, 0.0, 0.0, 0.0, 0.0);
-			fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder,
-					Planning_q4, 0.0, 0.0, 0.0, 0.0);
-			t = 0;
-			joint13_on = true;
-			HAL_TIM_Base_Start_IT(&htim14);
-			control_state = 52;
-		} else {
+		if (indexy != 255)
+		{
+			if (indexy == 99)
+				{
+					Planning_q1 = 1400;
+					Planning_q3 = -1400;
+					Planning_q4 = 0;
+				}
+			else if (indexy == 123)
+			{
+					Planning_q1 = 1100;
+					Planning_q3 = -600;
+					Planning_q4 = 0;
+			}
+			else
+				{
+					test_value_r = radias[indexy];
+					test_value_theta = theta[indexy];
+					offset_x_new = ((0.16075* (test_value_r * cos((test_value_theta + angle_chess) / 1000.0))) + 0.02289) / 10.0;
+					offset_y_new = ((0.29560* (test_value_r * sin((test_value_theta + angle_chess) / 1000.0))) + 1.05911) / 10.0;
+					pos_x = (test_value_r * cos((test_value_theta + angle_chess) / 1000.0)) + offset_x + offset_x_new;
+					pos_y = (test_value_r * sin((test_value_theta + angle_chess) / 1000.0)) + offset_y + offset_y_new;
+					fcb_IK(pos_x, pos_y, 0, 0);
+				}
+				Max_Time = 7;
+				fcb_joint1.UpdateQuinticCoff(Max_Time, fcb_joint1.Encoder, Planning_q1, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint3.UpdateQuinticCoff(Max_Time, fcb_joint3.Encoder, Planning_q3, 0.0, 0.0, 0.0, 0.0);
+				fcb_joint4.UpdateQuinticCoff(Max_Time, fcb_joint4.Encoder, Planning_q4, 0.0, 0.0, 0.0, 0.0);
+				t = 0;
+				joint13_on = true;
+				HAL_TIM_Base_Start_IT(&htim14);
+				control_state = 52;
+		}
+
+		else if (indexy == 255)
+		{
 			control_state = 0;
 		}
 
@@ -371,9 +381,9 @@ void Update_State_Machine() {
 		stepperJ1.StepperOpenLoopSpeedM(0.0);
 		stepperJ4.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
-		fcb_joint1.C0 = fcb_joint1.kalman_pos;
-		fcb_joint4.C0 = fcb_joint4.kalman_pos;
-		fcb_joint3.C0 = fcb_joint3.kalman_pos;
+		fcb_joint1.C0 = fcb_joint1.Encoder;
+		fcb_joint4.C0 = fcb_joint4.Encoder;
+		fcb_joint3.C0 = fcb_joint3.Encoder;
 //		fcb_joint1.C0 = fcb_joint1.Goal_Position;
 //		fcb_joint4.C0 = fcb_joint4.Goal_Position;
 //		fcb_joint3.C0 = fcb_joint3.Goal_Position;
@@ -626,6 +636,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609;
 		}
 		angle_chess = chessABIEncoder.getMRadAngle();
+		angle_chess_deg = chessABIEncoder.getDegAngle();
 //		current_angle = chessSPIEncoder.getRawRotation();
 //		current_angle_map = chessSPIEncoder.read2angle(current_angle);
 //		angle = current_angle_map - zero_position_map;
@@ -730,7 +741,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609;
 		}
 		angle_chess = chessABIEncoder.getMRadAngle();
-//		angle_chess = chessABIEncoder.getAngle();
+		angle_chess_deg = chessABIEncoder.getDegAngle();
 //		current_angle = chessSPIEncoder.getRawRotation();
 //		current_angle_map = chessSPIEncoder.read2angle(current_angle);
 //		angle = current_angle_map - zero_position_map;
@@ -929,10 +940,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Output_Joint_W);
 			stepperJ2.StepperOpenLoopSpeedM(0.0);
 			stepperJ3.StepperOpenLoopSpeedM(fcb_joint3.Output_Joint_W);
+			stepperJ4.StepperOpenLoopSpeedM(fcb_joint4.Goal_Velocity);
 		} else {
 			stepperJ1.StepperOpenLoopSpeedM(0.0);
 			stepperJ3.StepperOpenLoopSpeedM(0.0);
 			stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
+			stepperJ4.StepperOpenLoopSpeedM(0.0);
 		}
 
 //		stepperJ1.StepperOpenLoopSpeedM(0.0);
@@ -946,7 +959,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Goal_Velocity);
 //		stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
 //		stepperJ3.StepperOpenLoopSpeedM(0);
-		stepperJ4.StepperOpenLoopSpeedM(0);
+
 
 		fcb_joint1.Old_Error_p = fcb_joint1.Error_p;
 		fcb_joint2.Old_Error_p = fcb_joint2.Error_p;
@@ -1149,7 +1162,7 @@ int main(void)
 	fcb_joint3.p22 = 6.59951866 / 10000000.0;
 
 	fcb_joint1.Q = 0.001;
-	fcb_joint1.R = 0.0000003;
+	fcb_joint1.R = 0.000001;
 
 	fcb_joint2.Q = 0.001;
 	fcb_joint2.R = 0.00003;

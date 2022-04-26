@@ -1,7 +1,7 @@
 import serial
 from CRC16 import CRC16
 import time, threading
-import keyboard
+# import keyboard
 import random
 
 ch_sq = {
@@ -16,7 +16,7 @@ for i in ['a','b','c','d','e','f','g','h']:
 
 if __name__ == '__main__':
     try:
-        ser = serial.Serial('COM8', 115200, timeout=1)
+        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
         crc16 = CRC16()
 
         # frame1 = [0x86,0]
@@ -66,45 +66,45 @@ if __name__ == '__main__':
         # ser.write(data1)
  
 
-        frame1 = [0x86,ch_sq['a1'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['a1'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['d8'],2]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['d8'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['a8'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['a8'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['b2'],2]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['b2'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['h1'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['h1'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
  
-        frame1 = [0x86,ch_sq['e1'],2]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['e1'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['h8'],1]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['h8'],1]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
-        frame1 = [0x86,ch_sq['e5'],2]
-        data1 = frame1 + crc16.calculate(frame1)
-        ser.write(data1)
-        time.sleep(0.1)
+        # frame1 = [0x86,ch_sq['e5'],2]
+        # data1 = frame1 + crc16.calculate(frame1)
+        # ser.write(data1)
+        # time.sleep(0.1)
 
         # frame1 = [0x86,ch_sq['h8'],1 ]
         # data1 = frame1 + crc16.calculate(frame1)
