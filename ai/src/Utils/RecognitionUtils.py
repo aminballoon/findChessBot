@@ -237,7 +237,7 @@ def getMatrixFromImage(img):
         ans = ans.flatten()
         # cv2.imshow('ha', img_show)
         # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
         return ans, img_show
 
     else:
@@ -393,3 +393,177 @@ def completePipeline(img):
   print("Points : {}".format(points))
   b, dst = Classification(img, points, clf)
   return b, dst
+
+
+''' -------------------------------------- Existance --------------------------------------'''
+
+def RecurrentRecognitionFunction(img, dict_grad, prev_fen):
+  points, img_show = getMatrixFromImage(img)
+  print("Complete Detect All Points")
+  print("Points : {}".format(points))
+  fen = CropFit(img, points, dict_grad, prev_fen)
+  return fen
+
+
+def CropFit(im, points, dict_grad, prev_fen):
+  colorupper = 45
+  colorlower = 53
+  #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+  board = chess.Board(prev_fen)
+  # points 8 x 1
+  global deOnehot
+  xs = [points[0], points[2], points[4], points[6]]
+  ys = [points[1], points[3], points[5], points[7]]
+  pts1 = np.float32(np.concatenate((np.array(xs).reshape(-1,1),np.array(ys).reshape(-1,1)),axis = -1))
+  pts1, sortOrder = order_points(pts1)
+  pts2 = np.float32([[0,0],[300,0],[300,300],[0,300]])
+  M = cv2.getPerspectiveTransform(pts1,pts2)
+  # do some Padding
+  padcornerx, padcornery = mapLatticeInverse([-50,350,350,-50], [-50,-50,350,350], M)
+  pts3 = np.float32(np.concatenate((np.array(padcornerx).reshape(-1,1),np.array(padcornery).reshape(-1,1)),axis = -1))
+  pts4 = np.float32([[0,0],[400,0],[400,400],[0,400]])
+  padM = cv2.getPerspectiveTransform(pts3,pts4)
+  dst = cv2.warpPerspective(im,padM,(400,400))
+
+  # dst = cv2.warpPerspective(im,M,(400,400))
+
+  allx, ally = findLattice(sortOrder)
+  halfX = int(np.abs(allx[1] - allx[0]) / 2)
+  halfY = int(np.abs(ally[10] - ally[0]) / 2)
+  charNot = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  numNot =  ['1', '2', '3', '4', '5', '6', '7', '8']
+  disappear = []
+  appear = []
+  notations = []
+  diff_grads = []
+  # Xglob, Yglob = mapLatticeInverse(allx, ally, padM)
+  Xglob, Yglob = mapLatticeInverse(allx, ally, M)
+  counter = 10
+  predicts = []
+  for i in range(8):
+    for j in range(8):
+      if(j == 0 and counter != 10):
+        counter += 1
+      if(sortOrder[0] == 0):
+        notation = charNot[i] + numNot[j]
+      elif(sortOrder[0] == 1):
+        notation = charNot[7-j] + numNot[i]
+      elif(sortOrder[0] == 2):
+        notation = charNot[7-i] + numNot[7-j]
+      else:
+        notation = charNot[j] + numNot[7-i]
+      cropimg = dst[max(int(ally[counter] - 2*halfY),0):min(int(ally[counter]), 400), max(int(allx[counter] - 2*halfX),0):min(int(allx[counter]), 400)]
+      cropimg = cropimg[8:cropimg.shape[0]-8, 8:cropimg.shape[0]-8]
+      resized_color = cv2.resize(cropimg,(100,100))
+      plt.imshow(resized_color[:,:,::-1])
+      plt.axis('off')
+      # plt.show()
+      cropimg_gray = cv2.cvtColor(cropimg, cv2.COLOR_BGR2GRAY)
+      # cv2.imshow('ha',cropimg_gray)
+      # cv2.waitKey(0)
+      gx = cv2.Sobel(cropimg_gray, cv2.CV_32F, 1, 0, ksize=1).flatten()
+      gy = cv2.Sobel(cropimg_gray, cv2.CV_32F, 0, 1, ksize=1).flatten()
+      grad = np.sum(gx**2 + gy**2)
+      notations.append(notation)
+      diff_grads.append(abs(dict_grad[notation] - grad))
+      if(grad > 10000):
+          isExist = True
+      else:
+          isExist = False
+      if board.piece_at(notationToSquareIdx(notation)) == None and isExist == True:
+          appear.append(notation)
+      if board.piece_at(notationToSquareIdx(notation)) != None and isExist == False:
+          disappear.append(notation)
+
+      counter += 1
+  # move
+  if len(appear) == 1 and len(disappear) == 1:
+      uci = disappear[0] + appear[0]
+  # castling
+  if len(appear) == 2 and len(disappear) == 2:
+      if 'g1' in appear:
+          uci = 'e1g1'
+      if 'c1' in appear:
+          uci = 'e1c1'
+      if 'g8' in appear:
+          uci = 'g8'
+      if 'c8' in appear:
+          uci = 'e8c8'
+  # capture
+  if len(appear) == 0 and len(disappear) == 1:
+      sort_diff_grads = sorted(diff_grads)
+      if notations[diff_grads.index(sort_diff_grads[-1])] != disappear[0]:
+          uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-1])]
+      else:
+          uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-2])]
+
+  board.push(chess.Move.from_uci(uci))
+  print(board)
+  return board.fen()
+
+def calculateSOG(img):
+  points, img_show = getMatrixFromImage(img)
+  print("Complete Detect All Points")
+  print("Points : {}".format(points))
+  return CropFitSOG(img, points)
+
+
+def CropFitSOG(im, points):
+  dict_grad = {}
+  xs = [points[0], points[2], points[4], points[6]]
+  ys = [points[1], points[3], points[5], points[7]]
+  pts1 = np.float32(np.concatenate((np.array(xs).reshape(-1,1),np.array(ys).reshape(-1,1)),axis = -1))
+  pts1, sortOrder = order_points(pts1)
+  pts2 = np.float32([[0,0],[300,0],[300,300],[0,300]])
+  M = cv2.getPerspectiveTransform(pts1,pts2)
+  # do some Padding
+  padcornerx, padcornery = mapLatticeInverse([-50,350,350,-50], [-50,-50,350,350], M)
+  pts3 = np.float32(np.concatenate((np.array(padcornerx).reshape(-1,1),np.array(padcornery).reshape(-1,1)),axis = -1))
+  pts4 = np.float32([[0,0],[400,0],[400,400],[0,400]])
+  padM = cv2.getPerspectiveTransform(pts3,pts4)
+  dst = cv2.warpPerspective(im,padM,(400,400))
+
+  # dst = cv2.warpPerspective(im,M,(400,400))
+
+  allx, ally = findLattice(sortOrder)
+  halfX = int(np.abs(allx[1] - allx[0]) / 2)
+  halfY = int(np.abs(ally[10] - ally[0]) / 2)
+  charNot = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+  numNot =  ['1', '2', '3', '4', '5', '6', '7', '8']
+  disappear = []
+  appear = []
+  # Xglob, Yglob = mapLatticeInverse(allx, ally, padM)
+  Xglob, Yglob = mapLatticeInverse(allx, ally, M)
+  print(len(allx))
+  print(len(ally))
+  counter = 10
+  predicts = []
+  for i in range(8):
+    for j in range(8):
+      if(j == 0 and counter != 10):
+        counter += 1
+      if(sortOrder[0] == 0):
+        notation = charNot[i] + numNot[j]
+      elif(sortOrder[0] == 1):
+        notation = charNot[7-j] + numNot[i]
+      elif(sortOrder[0] == 2):
+        notation = charNot[7-i] + numNot[7-j]
+      else:
+        notation = charNot[j] + numNot[7-i]
+      cropimg = dst[max(int(ally[counter] - 2*halfY),0):min(int(ally[counter]), 400), max(int(allx[counter] - 2*halfX),0):min(int(allx[counter]), 400)]
+      cropimg = cropimg[8:cropimg.shape[0]-8, 8:cropimg.shape[0]-8]
+      resized_color = cv2.resize(cropimg,(100,100))
+      plt.imshow(resized_color[:,:,::-1])
+      plt.axis('off')
+      # plt.show()
+      cropimg_gray = cv2.cvtColor(cropimg, cv2.COLOR_BGR2GRAY)
+      # cv2.imshow('ha',cropimg_gray)
+      # cv2.waitKey(0)
+      gx = cv2.Sobel(cropimg_gray, cv2.CV_32F, 1, 0, ksize=1).flatten()
+      gy = cv2.Sobel(cropimg_gray, cv2.CV_32F, 0, 1, ksize=1).flatten()
+      grad = np.sum(gx**2 + gy**2)
+      print("{} : ".format(notation))
+      print(grad)
+      dict_grad[notation] = grad
+      counter += 1
+  return dict_grad

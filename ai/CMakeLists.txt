@@ -36,6 +36,8 @@ find_package(rosidl_default_generators REQUIRED)
 set(srv_files
   "srv/AIComputeAndPlay.srv"
   "srv/ForceRecognize.srv"
+  "srv/RecurrentRecognition.srv"
+  "srv/CaptureBeforeHumanPlay.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

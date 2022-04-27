@@ -5,6 +5,8 @@ import chess.polyglot
 import chess.svg
 import random
 from timeit import default_timer as timer
+import os
+import sys
 
 class AI:
     def __init__(self, max_depth, timeMax, FEN = None):
@@ -30,11 +32,12 @@ class AI:
                 'Q':+90,'q':-90,
                 'K':+900,'k':-900
             }
+        os.chdir('/home/trapoom555/fcb_ws/src/ai/src/Utils')
         # import NNUE
-        self.nnue = cdll.LoadLibrary(self.pathh + "/libnnueprobe.so")
+        self.nnue = cdll.LoadLibrary("./libnnueprobe.so")
         self.nnue.nnue_init(b"gek-net.bin")
         # read opening book
-        self.reader = chess.polyglot.open_reader(self.pathh + '/GMopenings.bin')
+        self.reader = chess.polyglot.open_reader('GMopenings.bin')
         # set isWhite
         self.setisWhite()
 
@@ -50,9 +53,6 @@ class AI:
     def setState(self, state):
         self.s = state
         self.isWhite = state.turn
-
-    def getSVG(self, size=350):
-        return chess.svg.board(self.s, size=size)
 
     def endgameScore(self, c):
         if(self.isEndgame):
@@ -318,33 +318,3 @@ class AI:
                 self.s.push_san(nextmove)
                 return entry.move.uci(), flag, promotePiece
                 break
-
-'''
-[Example Program]
-flag {0: Normal move, 1: Capture piece, 2: Promote pawn, 3: King side Castling, 4: Queen side Castling}
-
-
-ai = AI(max_depth = 6, timeMax = 45, FEN = None)
-
-while True:
-    m = input("move : ")
-    try:
-        ai.s.push_uci(m)
-    except:
-        print("Game State can't reach your input")
-        continue
-    print("------------------------")
-    print(ai.s)
-    uci_ai, flag, promotePiece = ai.think()
-    print("------------------------")
-    print("AI Move : {}".format(uci_ai))
-    print("AI Flag : {}".format(flag))
-    print("AI PromotePiece : {}".format(promotePiece))
-    print(ai.s)
-
-    # Save SVG
-    # f = open("haha.svg", "w")
-    # f.write(ai.getSVG())
-    # f.close()
-
-'''

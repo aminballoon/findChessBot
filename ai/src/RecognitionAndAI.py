@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 
-from Utils.RecognitionUtils import completePipeline
+from Utils.RecognitionUtils import completePipeline, RecurrentRecognitionFunction, calculateSOG
 from Utils.ChessAIUtils import AI
 import cv2
 import chess
@@ -17,8 +17,11 @@ from findchessbot.srv import PicknPlace
 from findchessbot.srv import PromotePawn
 from ai.srv import ForceRecognize
 from ai.srv import AIComputeAndPlay
+from ai.srv import RecurrentRecognition
+from ai.srv import CaptureBeforeHumanPlay
 
 sys.path.insert(0,'.')
+sys.path.insert(0,'./Utils')
 # Need to Set before playing
 AISide = chess.WHITE
 
@@ -81,16 +84,20 @@ class AiServer(Node):
         super().__init__('ai_server')
         # Argument | Return
         self.forceRecognize = self.create_service(ForceRecognize, '/ai/ForceRecognize', self.forceRecognize_callback) # None | FEN
-        self.aiComputeAndPlay = self.create_service(AIComputeAndPlay, '/ai/AIComputeAndPlay', self.aiComputeAndPlay_callback) # FEN | FEN (moved)
+        self.aiComputeAndPlay = self.create_service(AIComputeAndPlay, '/ai/AIComputeAndPlay', self.aiComputeAndPlay_callback) # FEN | uci_move
+        self.recurrentRecognition = self.create_service(RecurrentRecognition, '/ai/RecurrentRecognition', self.recurrentRecognition_callback) # FEN | uci_move
+        self.captureBeforeHumanPlay = self.create_service(CaptureBeforeHumanPlay, '/ai/CaptureBeforeHumanPlay', self.captureBeforeHumanPlay_callback) # FEN | uci_move
+
+        self.dict_grad = None
 
     def forceRecognize_callback(self, request, response):
         try:
-            cam = cv2.VideoCapture(2)
-            print("[Waiting] Program")
-            ret, img = cam.read()
-            cam.release()
-            time.sleep(1.0)
-            print("[Ready] Program")
+            # cam = cv2.VideoCapture(2)
+            # print("[Waiting] Program")
+            # ret, img = cam.read()
+            # cam.release()
+            # time.sleep(1.0)
+            # print("[Ready] Program")
 
             # Capture
             cam = cv2.VideoCapture(2)
@@ -137,6 +144,32 @@ class AiServer(Node):
 
         return response
 
+    def captureBeforeHumanPlay_callback(self, request, response):
+        try:
+            cam = cv2.VideoCapture(2)
+            ret, img = cam.read()
+            cam.release()
+            dict_grad = calculateSOG(img)
+            print(dict_grad)
+            self.dict_grad = dict_grad
+            response.is_success = True
+        except Exception as e:
+            print(e)
+            response.is_success = False
+        return response
+
+    def recurrentRecognition_callback(self, request, response):
+        try:
+            cam = cv2.VideoCapture(2)
+            ret, img = cam.read()
+            cam.release()
+            fen = RecurrentRecognitionFunction(img, self.dict_grad, request.prev_fen_in)
+            response.fen_out = fen
+            response.is_success = True
+        except Exception as e:
+            print(e)
+            response.is_success = False
+        return response
 
 
 
@@ -159,4 +192,10 @@ def main(args=None):
 
 
 if __name__ == '__main__':
+    cam = cv2.VideoCapture(2)
+    print("[Waiting] Program")
+    ret, img = cam.read()
+    cam.release()
+    time.sleep(1.0)
+    print("[Ready] Program")
     main()

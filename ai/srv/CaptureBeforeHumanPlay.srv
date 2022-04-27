@@ -1,0 +1,3 @@
+string fen_in
+---
+bool is_success

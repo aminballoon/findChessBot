@@ -1,0 +1,4 @@
+string prev_fen_in
+---
+string fen_out
+bool is_success
