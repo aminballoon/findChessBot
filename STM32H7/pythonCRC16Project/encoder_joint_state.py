@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # print(serial.to_bytes(frame_data_joint_jog_q1))
 
     ser = serial.Serial(
-        port='COM3',
+        port='/dev/ttyUSB0',
         baudrate=115200,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
@@ -80,16 +80,26 @@ if __name__ == '__main__':
     j4 = 0
 
     while True:
-        x = ser.read(12)
+        x = ser.read(8)
+        
         l = (list(x))
-        j1 = (l[0] << 16) | (l[1] << 8) | l[2]
-        j2 = (l[3] << 16) | (l[4] << 8) | l[5]
-        j3 = (l[6] << 16) | (l[7] << 8) | l[8]
-        j4 = (l[9] << 16) | (l[10] << 8) | l[11]
+        print(l)
+        # j3 = (l[0] << 16) | (l[1] << 8) | l[2]
+        # j4 = (l[3] << 16) | (l[4] << 8) | l[5]
+        # j1 = (l[6] << 16) | (l[7] << 8) | l[8]
+        # j2 = (l[9] << 16) | (l[10] << 8) | l[11]
+        j3 = (l[0] << 8) | l[1]
+        j4 = (l[2] << 8) | l[3]
+        j1 = (l[4] << 8) | l[5]
+        j2 = (l[6] << 8) | l[7]
         # print("J1: " + str(j1))
-        print(j2)
-        print("J2: " + str((j2 - 16711680) * -1))
+
+        # # print(j2)
+        # print("J2: " + str((j2 - 16711680) * -1))
+        # # if j3 > 14680063:
+        # #     j3 = (j3 - 16711680)/2 -(2**15)
         # print("J3: " + str(j3))
+        
         # print("J4: " + str(j4))
 
 # ser.close()
