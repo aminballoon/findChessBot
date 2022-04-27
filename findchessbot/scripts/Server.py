@@ -30,7 +30,7 @@ class FindChessBot_Server(Node):
         # self.JogJointmove = self.create_subscription(JogJoint, '/findchessbot/cmd/move/jogjoint', self.jogjoint_callback, 1)
         # self.JogLinearmove = self.create_subscription(JogLinear, '/findchessbot/cmd/move/joglinear', self.joglinear_callback, 1)
         self.Capture = self.create_service(Capture, '/findchessbot/capture',self.capture_callback)
-        self.Casting = self.create_service(Castling, '/findchessbot/casting',self.casting_callback)
+        self.Castling = self.create_service(Castling, '/findchessbot/castling',self.castling_callback)
         self.PicknPlace = self.create_service(PicknPlace, '/findchessbot/picknplace',self.picknplace_callback)
         self.PromotePawn = self.create_service(PromotePawn, '/findchessbot/promotepawn',self.promotepawn_callback)
         # Capture, Castling, PicknPlace, PromotePawn
@@ -56,7 +56,7 @@ class FindChessBot_Server(Node):
         # self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
         return response
 
-    def casting_callback(self, request, response):
+    def castling_callback(self, request, response):
         response.result = True
         print("castling_callback")
         print(request)

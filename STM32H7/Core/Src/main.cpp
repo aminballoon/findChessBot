@@ -126,11 +126,9 @@ volatile bool State_FIN = false;
 volatile float Max_Time = 0;
 volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
 volatile int8_t dx = 0, dy = 0, dz = 0, dyaw = 0;
-volatile int16_t to_X_pose = 0, to_Y_pose = 0, to_Z_pose = 0, to_Yaw_pose = 0;
-volatile float px, py, pz, pyaw;
 volatile uint16_t CRCValue = 0;
 volatile uint16_t ExpectedCRCValue = 0;
-volatile int gripperstate, trajstate;
+volatile int gripperstate;
 #define Rx_BUFFER_SIZE   20
 uint8_t Old_Rx_Buffer[Rx_BUFFER_SIZE] = { 0 };
 uint8_t New_Rx_Buffer[Rx_BUFFER_SIZE] = { 0 };
@@ -218,13 +216,11 @@ bool Insert_queue(int value, int gripper_value) {
 int Call_queue() {
 	int output;
 	if (first == -1 || first > bot) {
-		printf("Don't have stack in queue \n");
 		for (int num = 0; num <= bot + 1; num++) {
 			queue[num] = 0;
 		}
 		first = -1;
 		bot = -1;
-		printf("Clear queue \n");
 		output = 255;
 	} else {
 		output = queue[first];
@@ -314,14 +310,15 @@ void Update_State_Machine() {
 					Planning_q3 = -600;
 					Planning_q4 = 0;
 			}
-			else
+			else if (indexy != 99 && indexy != 123 && indexy != 255)
 				{
 					test_value_r = radias[indexy];
+					// + angle_chess
 					test_value_theta = theta[indexy];
-					offset_x_new = ((0.16075* (test_value_r * cos((test_value_theta + angle_chess) / 1000.0))) + 0.02289) / 10.0;
-					offset_y_new = ((0.29560* (test_value_r * sin((test_value_theta + angle_chess) / 1000.0))) + 1.05911) / 10.0;
-					pos_x = (test_value_r * cos((test_value_theta + angle_chess) / 1000.0)) + offset_x + offset_x_new;
-					pos_y = (test_value_r * sin((test_value_theta + angle_chess) / 1000.0)) + offset_y + offset_y_new;
+					offset_x_new = ((0.16075* (test_value_r * cos((test_value_theta ) / 1000.0))) + 0.02289) / 10.0;
+					offset_y_new = ((0.29560* (test_value_r * sin((test_value_theta ) / 1000.0))) + 1.05911) / 10.0;
+					pos_x = (test_value_r * cos((test_value_theta ) / 1000.0)) + offset_x + offset_x_new;
+					pos_y = (test_value_r * sin((test_value_theta) / 1000.0)) + offset_y + offset_y_new;
 					fcb_IK(pos_x, pos_y, 0, 0);
 				}
 				Max_Time = 7;
@@ -338,9 +335,6 @@ void Update_State_Machine() {
 		{
 			control_state = 0;
 		}
-
-//		Planning_q1
-//		Planning_q3
 
 		break;
 
@@ -381,6 +375,7 @@ void Update_State_Machine() {
 
 	case 52:
 		HAL_TIM_Base_Stop_IT(&htim14);
+		t = 0;
 		fcb_joint1.Goal_Velocity = 0;
 		fcb_joint4.Goal_Velocity = 0;
 		fcb_joint3.Goal_Velocity = 0;
@@ -393,10 +388,6 @@ void Update_State_Machine() {
 		fcb_joint1.C0 = fcb_joint1.Encoder;
 		fcb_joint4.C0 = fcb_joint4.Encoder;
 		fcb_joint3.C0 = fcb_joint3.Encoder;
-//		fcb_joint1.C0 = fcb_joint1.Goal_Position;
-//		fcb_joint4.C0 = fcb_joint4.Goal_Position;
-//		fcb_joint3.C0 = fcb_joint3.Goal_Position;
-
 		fcb_joint1.C1 = 0;
 		fcb_joint3.C1 = 0;
 		fcb_joint1.C2 = 0;
@@ -424,6 +415,7 @@ void Update_State_Machine() {
 
 	case 54:
 		HAL_TIM_Base_Stop_IT(&htim14);
+		t = 0;
 		fcb_joint2.Goal_Velocity = 0;
 		stepperJ2.StepperOpenLoopSpeedM(0.0);
 		fcb_joint2.C0 = fcb_joint2.Encoder;
@@ -465,6 +457,7 @@ void Update_State_Machine() {
 		stepperJ4.StepperOpenLoopSpeedM(0.0);
 		stepperJ3.StepperOpenLoopSpeedM(0.0);
 		HAL_TIM_Base_Stop_IT(&htim14);
+		t = 0;
 		fcb_joint2.C1 = 0;
 		fcb_joint2.C2 = 0;
 		fcb_joint2.C3 = 0;
@@ -575,12 +568,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 //						HAL_UART_Transmit_DMA(&huart3, (uint8_t*) "B", 1);
 					}
 
-				} else if (Old_Rx_Buffer[0] == 0x91 && cmdDataSize == 8) {
-					px = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
-					py = (Old_Rx_Buffer[3] << 8) | Old_Rx_Buffer[4];
-					pz = (Old_Rx_Buffer[5] << 8) | Old_Rx_Buffer[6];
-					pyaw = Old_Rx_Buffer[7];
 				}
+//				else if (Old_Rx_Buffer[0] == 0x91 && cmdDataSize == 8) {
+//					px = (Old_Rx_Buffer[1] << 8) | Old_Rx_Buffer[2];
+//					py = (Old_Rx_Buffer[3] << 8) | Old_Rx_Buffer[4];
+//					pz = (Old_Rx_Buffer[5] << 8) | Old_Rx_Buffer[6];
+//					pyaw = Old_Rx_Buffer[7];
+//				}
 
 			}
 		} else {
@@ -620,107 +614,113 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 
 	if (htim == &htim5) {	//
-		encoderJ1.AMT21_Read();
-		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
-		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609;
-		}
-
-		encoderJ2.AMT21_Read();
-		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
-		if (HALENCJ2OK == HAL_OK) {
-			encoderJ2.unwarp();
-			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609;
-		}
-
-		encoderJ3.AMT21_Read();
-		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
-		if (HALENCJ3OK == HAL_OK) {
-			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609;
-		}
-
-		encoderJ4.AMT21_Read();
-		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
-		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609;
-		}
-		angle_chess = chessABIEncoder.getMRadAngle();
-		angle_chess_deg = chessABIEncoder.getDegAngle();
-//		current_angle = chessSPIEncoder.getRawRotation();
-//		current_angle_map = chessSPIEncoder.read2angle(current_angle);
-//		angle = current_angle_map - zero_position_map;
-//		angle = chessSPIEncoder.normalize(angle);
-//			int i;
-//			for (i = 1; i < num; i++) {
-//				box_q1[i - 1] = box_q1[i];
-//				box_q2[i - 1] = box_q2[i];
-//				box_q3[i - 1] = box_q3[i];
-//				box_q4[i - 1] = box_q4[i];
-//			}
-//			box_q1[num - 1] = dq1 / 10.0;
-//			box_q2[num - 1] = dq2 / 10.0;
-//			box_q3[num - 1] = dq3 / 10.0;
-//			box_q4[num - 1] = dq4 / 10.0;
+//		encoderJ1.AMT21_Read();
+//		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
+//		if (HALENCJ1OK == HAL_OK) {
+//			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609;
+//		}
 //
-//			u_q1 = 0.0;
-//			u_q2 = 0.0;
-//			u_q3 = 0.0;
-//			u_q4 = 0.0;
+//		encoderJ2.AMT21_Read();
+//		HALENCJ2OK = encoderJ2.AMT21_Check_Value();
+//		if (HALENCJ2OK == HAL_OK) {
+//			encoderJ2.unwarp();
+//			fcb_joint2.Encoder = encoderJ2.getUnwarpValue() / 2.609;
+//		}
 //
-//			for (i = 0; i < num; i++) {
-//				u_q1 += box_q1[i];
-//				u_q2 += box_q2[i];
-//				u_q3 += box_q3[i];
-//				u_q4 += box_q4[i];
-//			}
-
-		//		stepperJ1.StepperSetFrequency(u_q1 * 3);
-		//		stepperJ2.StepperSetFrequency(u_q2 * 1.5);
-		//		stepperJ3.StepperSetFrequency(u_q3 * 2);
-		//		stepperJ4.StepperSetFrequency(u_q4 * 2);
-		//
-//			stepperJ1.StepperSetFrequency(dq1);
-//			stepperJ2.StepperSetFrequency(dq2*10.0);
-//			stepperJ3.StepperSetFrequency(dq3);
-//			stepperJ4.StepperSetFrequency(dq4);
-
-		fcb_X.UpdateIVK(fcb_joint1.Encoder, 0.0, fcb_joint3.Encoder, 0.0, dx,
-				dy, dz, 0.0);
-
-		stepperJ1.StepperOpenLoopSpeedM(fcb_X.w_q1);
-//			stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
-		stepperJ3.StepperOpenLoopSpeedM(fcb_X.w_q3);
-
-//			int i;
-//					for (i = 1 ; i<num ; i++)
-//					{
-//						box_q1[i-1] = box_q1[i];
-//						box_q2[i-1] = box_q2[i];
-//						box_q3[i-1] = box_q3[i];
-//						box_q4[i-1] = box_q4[i];
-//					}
-//					 box_q1[num-1] = fcb_X.w_q1;
-//					 box_q2[num-1] = dz;
-//					 box_q3[num-1] = fcb_X.w_q3;
-//					 box_q4[num-1] = fcb_X.w_q4;
+//		encoderJ3.AMT21_Read();
+//		HALENCJ3OK = encoderJ3.AMT21_Check_Value();
+//		if (HALENCJ3OK == HAL_OK) {
+//			fcb_joint3.Encoder = encoderJ3.getAngPos180() / 2.609;
+//		}
 //
-//					u_q1 = 0.0;
-//					u_q2 = 0.0;
-//					u_q3 = 0.0;
-//					u_q4 = 0.0;
+//		encoderJ4.AMT21_Read();
+//		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
+//		if (HALENCJ4OK == HAL_OK) {
+//			fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609;
+//		}
+//		angle_chess = chessABIEncoder.getMRadAngle();
+//		angle_chess_deg = chessABIEncoder.getDegAngle();
+////		current_angle = chessSPIEncoder.getRawRotation();
+////		current_angle_map = chessSPIEncoder.read2angle(current_angle);
+////		angle = current_angle_map - zero_position_map;
+////		angle = chessSPIEncoder.normalize(angle);
+////			int i;
+////			for (i = 1; i < num; i++) {
+////				box_q1[i - 1] = box_q1[i];
+////				box_q2[i - 1] = box_q2[i];
+////				box_q3[i - 1] = box_q3[i];
+////				box_q4[i - 1] = box_q4[i];
+////			}
+////			box_q1[num - 1] = dq1 / 10.0;
+////			box_q2[num - 1] = dq2 / 10.0;
+////			box_q3[num - 1] = dq3 / 10.0;
+////			box_q4[num - 1] = dq4 / 10.0;
+////
+////			u_q1 = 0.0;
+////			u_q2 = 0.0;
+////			u_q3 = 0.0;
+////			u_q4 = 0.0;
+////
+////			for (i = 0; i < num; i++) {
+////				u_q1 += box_q1[i];
+////				u_q2 += box_q2[i];
+////				u_q3 += box_q3[i];
+////				u_q4 += box_q4[i];
+////			}
 //
-//					for(i = 0; i < num; i++)
-//					{
-//						u_q1 += box_q1[i];
-//						u_q2 += box_q2[i];
-//						u_q3 += box_q3[i];
-//						u_q4 += box_q4[i];
-//					}
-
-//					stepperJ1.StepperOpenLoopSpeed(u_q1/num);
-//					stepperJ2.StepperSetFrequency(u_q2/3.0);
-//					stepperJ3.StepperOpenLoopSpeed(u_q3/num);
-//					stepperJ4.StepperOpenLoopSpeed(u_q4/num);
+//		//		stepperJ1.StepperSetFrequency(u_q1 * 3);
+//		//		stepperJ2.StepperSetFrequency(u_q2 * 1.5);
+//		//		stepperJ3.StepperSetFrequency(u_q3 * 2);
+//		//		stepperJ4.StepperSetFrequency(u_q4 * 2);
+//		//
+////			stepperJ1.StepperSetFrequency(dq1);
+////			stepperJ2.StepperSetFrequency(dq2*10.0);
+////			stepperJ3.StepperSetFrequency(dq3);
+////			stepperJ4.StepperSetFrequency(dq4);
+//
+//		fcb_X.UpdateIVK(fcb_joint1.Encoder, 0.0, fcb_joint3.Encoder, 0.0, dx,
+//				dy, dz, 0.0);
+//
+//		stepperJ1.StepperOpenLoopSpeedM(fcb_X.w_q1);
+////			stepperJ2.StepperOpenLoopSpeedM(fcb_joint2.Goal_Velocity);
+//		stepperJ3.StepperOpenLoopSpeedM(fcb_X.w_q3);
+//
+////			int i;
+////					for (i = 1 ; i<num ; i++)
+////					{
+////						box_q1[i-1] = box_q1[i];
+////						box_q2[i-1] = box_q2[i];
+////						box_q3[i-1] = box_q3[i];
+////						box_q4[i-1] = box_q4[i];
+////					}
+////					 box_q1[num-1] = fcb_X.w_q1;
+////					 box_q2[num-1] = dz;
+////					 box_q3[num-1] = fcb_X.w_q3;
+////					 box_q4[num-1] = fcb_X.w_q4;
+////
+////					u_q1 = 0.0;
+////					u_q2 = 0.0;
+////					u_q3 = 0.0;
+////					u_q4 = 0.0;
+////
+////					for(i = 0; i < num; i++)
+////					{
+////						u_q1 += box_q1[i];
+////						u_q2 += box_q2[i];
+////						u_q3 += box_q3[i];
+////						u_q4 += box_q4[i];
+////					}
+//
+////					stepperJ1.StepperOpenLoopSpeed(u_q1/num);
+////					stepperJ2.StepperSetFrequency(u_q2/3.0);
+////					stepperJ3.StepperOpenLoopSpeed(u_q3/num);
+////					stepperJ4.StepperOpenLoopSpeed(u_q4/num);
+		if (State_FIN) {
+			Balloon++;
+			Update_State_Machine();
+			Update_State_Machine();
+			State_FIN = false;
+		}
 
 	}
 
@@ -768,12 +768,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		fcb_joint3.kalman_pos = fcb_joint3.X11;
 		fcb_joint3.kalman_velo = fcb_joint3.X21;
 
-		if (State_FIN) {
-			Balloon++;
-			Update_State_Machine();
-			Update_State_Machine();
-			State_FIN = false;
-		}
 
 	}
 
@@ -1215,7 +1209,7 @@ int main(void)
 
 #endif
 
-//		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
+		HAL_TIM_Base_Start_IT(&htim5); // Jog 		100 Hz
 //		HAL_TIM_Base_Start_IT(&htim6); // Set home 	200 Hz
 //		HAL_TIM_Base_Start_IT(&htim7); // Control 	1000 Hz
 //		HAL_TIM_Base_Start_IT(&htim12); // 			2000 Hz

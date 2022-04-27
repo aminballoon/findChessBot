@@ -81,6 +81,9 @@ install(PROGRAMS
   scripts/Action_Server.py
   scripts/Test_traj.py
   scripts/Serial_Commu.py
+  scripts/UIFinal.py
+  scripts/Test.py
+  scripts/Ui.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

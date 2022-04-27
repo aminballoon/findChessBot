@@ -1,4 +1,4 @@
-float32 angular_velocity_q1
-float32 linear_velocity_q2
-float32 angular_velocity_q3
-float32 angular_velocity_q4
+int32 angular_velocity_q1
+int32 linear_velocity_q2
+int32 angular_velocity_q3
+int32 angular_velocity_q4
