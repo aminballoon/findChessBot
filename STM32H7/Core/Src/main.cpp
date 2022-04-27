@@ -1006,18 +1006,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	}
 	if (htim == &htim17) {
-		uint8_t encoder_state[12] = { (uint8_t) (((int16_t) fcb_joint1.Encoder
-				>> 16) & 0xFF), (uint8_t) (((int16_t) fcb_joint1.Encoder >> 8)
-				& 0xFF), (uint8_t) (((int16_t) fcb_joint1.Encoder) & 0xFF),
+		uint8_t encoder_state[12] = { (uint8_t) (((int32_t) fcb_joint1.Encoder
+				>> 16) & 0xFF), (uint8_t) (((int32_t) fcb_joint1.Encoder >> 8)
+				& 0xFF), (uint8_t) (((int32_t) fcb_joint1.Encoder) & 0xFF),
 				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 16) & 0xFF),
 				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 8) & 0xFF),
 				(uint8_t) (((int32_t) fcb_joint2.Encoder) & 0xFF),
 				(uint8_t) (((int32_t) fcb_joint3.Encoder >> 16) & 0xFF),
-				(uint8_t) (((int16_t) fcb_joint3.Encoder >> 8) & 0xFF),
-				(uint8_t) (((int16_t) fcb_joint3.Encoder) & 0xFF),
+				(uint8_t) (((int32_t) fcb_joint3.Encoder >> 8) & 0xFF),
+				(uint8_t) (((int32_t) fcb_joint3.Encoder) & 0xFF),
 				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 16) & 0xFF),
-				(uint8_t) (((int16_t) fcb_joint4.Encoder >> 8) & 0xFF),
-				(uint8_t) (((int16_t) fcb_joint4.Encoder) & 0xFF), };
+				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 8) & 0xFF),
+				(uint8_t) (((int32_t) fcb_joint4.Encoder) & 0xFF), };
 		HAL_UART_Transmit_DMA(&huart2, (uint8_t*) &encoder_state, 12);
 	}
 }
@@ -1099,7 +1099,7 @@ int main(void)
 	stepperJ3.StepperEnable();
 
 	stepperJ4.StepperSetFrequency(0.0f);
-	stepperJ4.StepperSetMicrostep(1);
+	stepperJ4.StepperSetMicrostep(16);
 	stepperJ4.StepperSetRatio(3);
 	stepperJ4.StepperEnable();
 
