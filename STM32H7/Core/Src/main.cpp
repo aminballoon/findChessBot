@@ -120,7 +120,8 @@ volatile float angle_chess, angle_chess_deg;
 #endif
 
 volatile float Setpoint_J2_Up = -200.0;
-volatile float Setpoint_J2_Down = -9500.0;
+volatile float Setpoint_J2_Down_pick = -8500.0;
+volatile float Setpoint_J2_Down_place = -7500.0;
 volatile bool State_FIN = false;
 volatile float Max_Time = 0;
 volatile int8_t dq1 = 0, dq2 = 0, dq3 = 0, dq4 = 0;
@@ -289,7 +290,7 @@ void fcb_IK(float gripper_linear_x, float gripper_linear_y,
 }
 
 float offset_x = 430.0;
-float offset_y = 9.5; //10.79371
+float offset_y = -10.0; //10.79371
 float offset_x_new = 0;
 float offset_y_new = 0;
 int indexy;
@@ -344,10 +345,18 @@ void Update_State_Machine() {
 		break;
 
 	case 42:
-		Max_Time = 12;
+		Max_Time = 10;
 		joint13_on = false;
-		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder,
-				Setpoint_J2_Down, 0.0, 0.0, 0.0, 0.0);
+
+		if (Gripper_State[first - 1] == 1) {
+			fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder,
+			Setpoint_J2_Down_pick, 0.0, 0.0, 0.0, 0.0);
+		} else if (Gripper_State[first - 1] == 2) {
+			fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder,
+			Setpoint_J2_Down_place, 0.0, 0.0, 0.0, 0.0);
+		}
+
+
 		t = 0;
 		HAL_TIM_Base_Start_IT(&htim14);
 		control_state = 54;
@@ -355,7 +364,7 @@ void Update_State_Machine() {
 		break;
 
 	case 43:
-		Max_Time = 12;
+		Max_Time = 10;
 		joint13_on = false;
 		fcb_joint2.UpdateQuinticCoff(Max_Time, fcb_joint2.Encoder,
 				Setpoint_J2_Up, 0.0, 0.0, 0.0, 0.0);
@@ -719,7 +728,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		encoderJ1.AMT21_Read();
 		HALENCJ1OK = encoderJ1.AMT21_Check_Value();
 		if (HALENCJ1OK == HAL_OK) {
-			fcb_joint1.Encoder = encoderJ1.getAngPos180() / 2.609;
+			fcb_joint1.Encoder = (encoderJ1.getAngPos180() / 2.609);
 		}
 
 		encoderJ2.AMT21_Read();
