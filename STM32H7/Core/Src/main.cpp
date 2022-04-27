@@ -633,7 +633,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		encoderJ4.AMT21_Read();
 		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609;
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609;
 		}
 		angle_chess = chessABIEncoder.getMRadAngle();
 		angle_chess_deg = chessABIEncoder.getDegAngle();
@@ -738,7 +738,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		encoderJ4.AMT21_Read();
 		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 		if (HALENCJ4OK == HAL_OK) {
-			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609;
+			fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609;
 		}
 		angle_chess = chessABIEncoder.getMRadAngle();
 		angle_chess_deg = chessABIEncoder.getDegAngle();
@@ -793,7 +793,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //		encoderJ4.AMT21_Read();
 //		HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 //		if (HALENCJ4OK == HAL_OK) {
-//			fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609 ;
+//			fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609 ;
 //		}
 		// #############################################################################
 
@@ -936,6 +936,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				+ (fcb_joint3.Kp_v * fcb_joint3.Error_v)
 				+ (fcb_joint3.Ki_v * fcb_joint3.Sum_Error_v)
 				+ (fcb_joint3.Kd_v * (fcb_joint3.Error_v - fcb_joint3.Old_v));
+
 		if (joint13_on) {
 			stepperJ1.StepperOpenLoopSpeedM(fcb_joint1.Output_Joint_W);
 			stepperJ2.StepperOpenLoopSpeedM(0.0);
@@ -1006,19 +1007,31 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	}
 	if (htim == &htim17) {
-		uint8_t encoder_state[12] = { (uint8_t) (((int32_t) fcb_joint1.Encoder
-				>> 16) & 0xFF), (uint8_t) (((int32_t) fcb_joint1.Encoder >> 8)
-				& 0xFF), (uint8_t) (((int32_t) fcb_joint1.Encoder) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 16) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 8) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint2.Encoder) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint3.Encoder >> 16) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint3.Encoder >> 8) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint3.Encoder) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 16) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 8) & 0xFF),
-				(uint8_t) (((int32_t) fcb_joint4.Encoder) & 0xFF), };
-		HAL_UART_Transmit_DMA(&huart2, (uint8_t*) &encoder_state, 12);
+//		uint8_t encoder_state[12] =
+//				{ (uint8_t) (((int32_t) fcb_joint3.Encoder>> 16) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint3.Encoder >> 8) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint3.Encoder) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 16) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint4.Encoder >> 8) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint4.Encoder) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint1.Encoder >> 16) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint1.Encoder >> 8) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint1.Encoder) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 16) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint2.Encoder >> 8) & 0xFF),
+//				(uint8_t) (((int32_t) fcb_joint2.Encoder) & 0xFF), };
+		uint8_t encoder_state[8] =
+				{
+				(uint8_t) (((int16_t) (fcb_joint3.Encoder/10.0) >> 8) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint3.Encoder/10.0)) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint4.Encoder/10.0) >> 8) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint4.Encoder/10.0)) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint1.Encoder/10.0) >> 8) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint1.Encoder/10.0)) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint2.Encoder/10.0) >> 8) & 0xFF),
+				(uint8_t) (((int16_t) (fcb_joint2.Encoder/10.0)) & 0xFF), };
+
+		HAL_UART_Transmit_DMA(&huart2, (uint8_t*) &encoder_state, 8);
 	}
 }
 
@@ -1144,7 +1157,7 @@ int main(void)
 	encoderJ4.AMT21_Read();
 	HALENCJ4OK = encoderJ4.AMT21_Check_Value();
 	if (HALENCJ4OK == HAL_OK) {
-		fcb_joint4.Encoder = encoderJ4.getAngPos180() / 2.609;
+		fcb_joint4.Encoder = encoderJ4.getAngPos180() / -2.609;
 	}
 
 //	angle_chess = chessSPIEncoder.readAngle();
@@ -1204,6 +1217,8 @@ int main(void)
 	chessABIEncoder.setZero();
 	HAL_TIM_Base_Start_IT(&htim16); // 			1000Hz
 	HAL_TIM_Base_Start_IT(&htim17);	// Joint State 50Hz
+//	stepperJ4.StepperOpenLoopSpeedM(1000.0);
+//	stepperJ4.StepperSetFrequency(1000.0f);
 //	encoderJ2.AMT21_Set_Zero();
 
   /* USER CODE END 2 */
@@ -1213,6 +1228,7 @@ int main(void)
 	while (1) {
 	}
     /* USER CODE END WHILE */
+
 
     /* USER CODE BEGIN 3 */
 

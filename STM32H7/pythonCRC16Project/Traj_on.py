@@ -16,7 +16,7 @@ for i in ['a','b','c','d','e','f','g','h']:
 
 if __name__ == '__main__':
     try:
-        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
+        ser = serial.Serial('/dev/ttyACM0', 115200, timeout=3)
         crc16 = CRC16()
 
         # frame1 = [0x86,0]
@@ -116,15 +116,17 @@ if __name__ == '__main__':
         # ser.write(data1)
         # time.sleep(0.1)
 
-        # frame1 = [0x86,ch_sq['d6'],1]
-        # data1 = frame1 + crc16.calculate(frame1)
-        # ser.write(data1)
-        # time.sleep(0.1)
 
-        # frame1 = [0x86,ch_sq['a1'],1]
-        # data1 = frame1 + crc16.calculate(frame1)
-        # ser.write(data1)
-        # time.sleep(0.1)
+
+        frame1 = [0x86,ch_sq['a1'],1]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
+
+        frame1 = [0x86,ch_sq['c4'],2]
+        data1 = frame1 + crc16.calculate(frame1)
+        ser.write(data1)
+        time.sleep(0.1)
 
         control_state = 41
         frame1 = [0x87,control_state]

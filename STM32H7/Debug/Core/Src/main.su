@@ -7,11 +7,11 @@
 ../Core/Src/main.cpp:258:6:void fcb_IK(float, float, float, float)	80	static
 ../Core/Src/main.cpp:297:6:void Update_State_Machine()	16	static
 ../Core/Src/main.cpp:485:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	40	static
-../Core/Src/main.cpp:593:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	48	static
-../Core/Src/main.cpp:1031:5:int main()	8	static
-../Core/Src/main.cpp:1228:6:void SystemClock_Config()	120	static
-../Core/Src/main.cpp:1286:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
-../Core/Src/main.cpp:1308:6:void Error_Handler()	8	static,ignoring_inline_asm
-../Core/Src/main.cpp:1319:1:void __static_initialization_and_destruction_0(int, int)	24	static
-../Core/Src/main.cpp:1319:1:cpp)	8	static
-../Core/Src/main.cpp:1319:1:cpp)	8	static
+../Core/Src/main.cpp:593:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	40	static
+../Core/Src/main.cpp:1044:5:int main()	8	static
+../Core/Src/main.cpp:1244:6:void SystemClock_Config()	120	static
+../Core/Src/main.cpp:1302:6:void HAL_GPIO_EXTI_Callback(uint16_t)	16	static
+../Core/Src/main.cpp:1324:6:void Error_Handler()	8	static,ignoring_inline_asm
+../Core/Src/main.cpp:1335:1:void __static_initialization_and_destruction_0(int, int)	24	static
+../Core/Src/main.cpp:1335:1:cpp)	8	static
+../Core/Src/main.cpp:1335:1:cpp)	8	static
