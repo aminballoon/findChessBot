@@ -355,7 +355,7 @@ def Classification(im, points, model):
       # 48-52
       plt.imshow(resized, cmap = 'gray')
       plt.axis('off')
-      plt.show()
+      # plt.show()
       resized = resized.reshape(-1,100,100,1)
       # print(resized)
       predict = model.predict(resized)
@@ -363,7 +363,7 @@ def Classification(im, points, model):
       # print(deCategorical[np.argmax(predict[0])])
       counter += 1
   # Color Cluster
-  kmeans = KMeans(n_clusters=2, random_state=0).fit(colors)
+  # kmeans = KMeans(n_clusters=2, random_state=0).fit(colors)
   print(len(colors))
   for i in range(8):
     for j in range(8):
@@ -378,8 +378,11 @@ def Classification(im, points, model):
       predict = predicts[8*i+j]
       if(deCategorical[np.argmax(predict[0])] != 'none'):
         sym = deCategorical[np.argmax(predict[0])]
-        color = kmeans.predict(colors[8*i+j].reshape(1,-1))
-        if color[0] == 1:
+        # color = kmeans.predict(colors[8*i+j].reshape(1,-1))
+        # if color[0] == 1:
+        #   sym = sym.upper()
+        print(colors[8*i+j].mean())
+        if colors[8*i+j].mean() > 70: # Binary Threshold
           sym = sym.upper()
         board.set_piece_at(notationToSquareIdx(notation), chess.Piece.from_symbol(sym))
       counter += 1

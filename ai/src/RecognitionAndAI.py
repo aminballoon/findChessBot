@@ -104,13 +104,33 @@ class AiServer(Node):
             ret, img = cam.read()
             cv2.imshow('preview', img)
             cv2.waitKey(0)
-            # cam.release()
-            # cv2.destroyAllWindows()
-            b, dst = completePipeline(img)
-            b.turn = AISide
+            cam.release()
+            cv2.destroyAllWindows()
 
+            # img = cv2.imread('/home/trapoom555/Desktop/ChessDetection/Data/WIN_20210326_10_21_31_Pro.jpg')
+            b, dst = completePipeline(img)
+            new_b = chess.Board('8/8/8/8/8/8/8/8 w - - 0 1')
+
+            cam = cv2.VideoCapture(2)
+            ret, img = cam.read()
+            cam.release()
+            # time.sleep(5.0)
+            dict_grad = calculateSOG(img)
+            charNot = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+            numNot =  ['1', '2', '3', '4', '5', '6', '7', '8']
+            for i in range(8):
+              for j in range(8):
+                notation = charNot[i] + numNot[j]
+                if dict_grad[notation] > 10000: # There is a Piece
+                  # print("there is a piece at " + notation)
+                  # print(b.piece_at(chess.parse_square(notation)))
+                  new_b.set_piece_at(chess.parse_square(notation), b.piece_at(chess.parse_square(notation)))
+
+            new_b.turn = AISide
             print(b)
-            response.fen_out = b.fen()
+            print("After Suppression")
+            print(new_b)
+            response.fen_out = new_b.fen()
             response.is_success = True
         except:
             response.is_success = False
@@ -193,8 +213,11 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    cam = cv2.VideoCapture(2)
     print("[Waiting] Program")
+    cam = cv2.VideoCapture(2)
+    ret, img = cam.read()
+    cam.release()
+    cam = cv2.VideoCapture(4)
     ret, img = cam.read()
     cam.release()
     time.sleep(1.0)
