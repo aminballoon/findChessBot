@@ -340,11 +340,11 @@ void Update_State_Machine() {
 					test_value_r = radias[indexy];
 					// + angle_chess
 					test_value_theta = theta[indexy];
-					offset_x_new = ((0.16075* (test_value_r * cos((test_value_theta ) / 1000.0))) + 0.02289) / 10.0;
-					offset_y_new = ((0.29560* (test_value_r * sin((test_value_theta ) / 1000.0))) + 1.05911) / 10.0;
-					pos_x = (test_value_r * cos((test_value_theta ) / 1000.0)) + offset_x + offset_x_new;
-					pos_y = (test_value_r * sin((test_value_theta) / 1000.0)) + offset_y + offset_y_new;
-					fcb_IK(pos_x, pos_y, 0, 0);
+					offset_x_new = ((0.16075* (test_value_r * cos((test_value_theta + angle_chess) / 1000.0))) + 0.02289) / 10.0;
+					offset_y_new = ((0.29560* (test_value_r * sin((test_value_theta + angle_chess) / 1000.0))) + 1.05911) / 10.0;
+					pos_x = (test_value_r * cos((test_value_theta + angle_chess) / 1000.0)) + offset_x + offset_x_new;
+					pos_y = (test_value_r * sin((test_value_theta + angle_chess) / 1000.0)) + offset_y + offset_y_new;
+					fcb_IK(pos_x, pos_y, 0, angle_chess);
 
 				}
 
