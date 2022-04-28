@@ -29,12 +29,12 @@ uint16_t AS5047UABI::getRawCounter(){
 	return this->enc_htim->Instance->CNT;
 }
 float AS5047UABI::getDegAngle(){
-	return ((float)this->enc_htim->Instance->CNT / 2047.0f) * 360.0f;
+	return ((float)this->enc_htim->Instance->CNT / 2000.0f) * 360.0f;
 }
 float AS5047UABI::getRadAngle(){
-	return ((float)this->enc_htim->Instance->CNT / 2047.0f) * 6.28f;
+	return ((float)this->enc_htim->Instance->CNT / 2000.0f) * 6.28f;
 }
 float AS5047UABI::getMRadAngle(){
-	return ((float)this->enc_htim->Instance->CNT / 2047.0f) * 6280.0f;
+	return ((float)this->enc_htim->Instance->CNT / 2000.0f) * 6280.0f;
 }
 
