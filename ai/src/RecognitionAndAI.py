@@ -121,7 +121,8 @@ class AiServer(Node):
             ai_client = AiClientAsync()
             ai = AI(max_depth = 6, timeMax = 45, FEN = request.fen_in)
             uci_ai, flag, promotePiece = ai.think()
-
+            print("ha")
+            print(uci_ai)
             response.uci_move = uci_ai
 
             ''' WRITING SRV TO ROS '''
@@ -131,7 +132,7 @@ class AiServer(Node):
             elif flag == 1:
                 ai_client.send_capture_request(uci_ai[:2], uci_ai[2:])
             elif flag == 2:
-                ai_client.send_promote_pawn_request(uci_ai[:2], uci_ai[2:])
+                ai_client.send_promote_pawn_request(uci_ai[:2], uci_ai[2:4])
             elif flag == 3:
                 ai_client.send_castling_request(True)
             elif flag == 4:

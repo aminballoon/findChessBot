@@ -7,12 +7,13 @@ from threading import Thread
 import chess
 import chess.svg
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtCore import QUrl
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+# from PyQt5.QtCore import QUrl
+# from PyQt5.QtWebEngineWidgets import QWebEngineView
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import String
+import webbrowser
 # from std_msgs.msg import FLOAT32
 from ai.srv import AIComputeAndPlay, CaptureBeforeHumanPlay, ForceRecognize, RecurrentRecognition
 from findchessbot.srv import Capture, Castling, PicknPlace, PromotePawn, McuMode
@@ -119,8 +120,8 @@ class GuiNode(Node):
         self.rerereq.prev_fen_in = fen
         self.future = self.rere.call_async(self.rerereq)
         self.get_logger().info('recurrent')
-    def sendfen(self):
-        self.aiComputeAndPlay.fen_in = FEN
+    def sendfen(self,fen):
+        self.aiComputeAndPlay.fen_in = fen
         self.future = self.AiComputeAndPlay.call_async(self.aiComputeAndPlay)
         self.get_logger().info('compute n play')
 class Ui_MainWindow(QtWidgets.QMainWindow,object):
@@ -303,10 +304,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow,object):
         # self.CHESSAI.setGeometry(QtCore.QRect(540, 180, 301, 51))
         # self.CHESSAI.setObjectName("CHESS AI")
         # self.CHESSAI.clicked.connect(lambda: self.chessaiserver)
-        self.browser = QWebEngineView(self.tab_3)
-        self.browser.setUrl(QUrl("http://127.0.0.1:5000"))
+        self.browser = QtWidgets.QPushButton(self.tab_3)
         self.browser.setGeometry(QtCore.QRect(0,0,900,900))
         self.browser.setObjectName("browser")
+        self.browser.clicked.connect(lambda: self.web())
         # self.setCentralWidget(self.browser)
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -332,6 +333,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow,object):
         self.thread2.started.connect(lambda: self.worker2.process_messages2(self.LJVx.value(),self.LJVY.value(),self.LJVZ.value(),self.LJWyaw.value()))
         self.LJSTART.clicked.connect(self.enqueue_message2)
         self.LJSTOP.clicked.connect(self.closeEvent2)
+    def web(self):
+        webbrowser.open("127.0.0.1:5000")
     def firsttime(self):
         self.ros_node.chess1()
         status = 0
@@ -379,7 +382,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow,object):
         self.chessboardSvg = chess.svg.board(self.chessboard).encode("UTF-8")
         self.widgetSvg.load(self.chessboardSvg)
     def comnplay(self):
-        self.ros_node.sendfen()
+        self.ros_node.sendfen(self.chessboard.fen())
         status = 0
         while rclpy.ok() and status ==0:
             rclpy.spin_once(self.ros_node)

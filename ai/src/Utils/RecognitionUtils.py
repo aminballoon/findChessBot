@@ -353,10 +353,12 @@ def Classification(im, points, model):
       colors.append(resized_color[colorupper:colorlower,colorupper:colorlower,:].reshape(-1,3).mean(axis = 0))
       resized = cv2.cvtColor(resized_color, cv2.COLOR_BGR2GRAY)
       # 48-52
-      # plt.imshow(resized, cmap = 'gray')
-      # plt.axis('off')
-      # plt.show()
-      predict = model.predict(resized.reshape(-1,100,100,1) / 255.)
+      plt.imshow(resized, cmap = 'gray')
+      plt.axis('off')
+      plt.show()
+      resized = resized.reshape(-1,100,100,1)
+      # print(resized)
+      predict = model.predict(resized)
       predicts.append(predict)
       # print(deCategorical[np.argmax(predict[0])])
       counter += 1
@@ -479,8 +481,10 @@ def CropFit(im, points, dict_grad, prev_fen):
   # move
   if len(appear) == 1 and len(disappear) == 1:
       uci = disappear[0] + appear[0]
+      print("move")
   # castling
   if len(appear) == 2 and len(disappear) == 2:
+      print("castling")
       if 'g1' in appear:
           uci = 'e1g1'
       if 'c1' in appear:
@@ -491,13 +495,25 @@ def CropFit(im, points, dict_grad, prev_fen):
           uci = 'e8c8'
   # capture
   if len(appear) == 0 and len(disappear) == 1:
+      print("capture")
       sort_diff_grads = sorted(diff_grads)
-      if notations[diff_grads.index(sort_diff_grads[-1])] != disappear[0]:
-          uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-1])]
-      else:
-          uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-2])]
+      # if notations[diff_grads.index(sort_diff_grads[-1])] != disappear[0]:
+      #     uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-1])]
+      # else:
+      #     uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[-2])]
+      idx = -1
+      while True:
+          if notations[diff_grads.index(sort_diff_grads[idx])] != disappear[0]:
+              uci = disappear[0] + notations[diff_grads.index(sort_diff_grads[idx])]
 
+              if chess.Move.from_uci(uci) in list(board.legal_moves):
+                  break
+          idx -= 1
+  print(uci)
+  print("prev")
+  print(board)
   board.push(chess.Move.from_uci(uci))
+  print("predicted")
   print(board)
   return board.fen()
 

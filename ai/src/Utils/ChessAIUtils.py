@@ -294,6 +294,10 @@ class AI:
             elif '=' in bm_san:
                 flag = 2 # Promote pawn
                 promotePiece = bm_san.split('=')[1]
+            elif bm_san == 'O-O':
+                flag = 3 # King side Castling
+            elif bm_san == 'O-O-O':
+                flag = 4 # Queen side Castling
             else:
                 flag = 0 # Normal move
             self.s.push(bm)
@@ -304,6 +308,7 @@ class AI:
                 print(entry.move)
                 nextmove = self.s.san(entry.move)
                 promotePiece = None
+
                 if 'x' in nextmove:
                     flag = 1 # Capture piece
                 elif '=' in nextmove:
