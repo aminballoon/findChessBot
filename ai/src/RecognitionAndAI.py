@@ -100,10 +100,10 @@ class AiServer(Node):
             # print("[Ready] Program")
 
             # Capture
-            cam = cv2.VideoCapture(2)
+            cam = cv2.VideoCapture(4)
             ret, img = cam.read()
-            # cv2.imshow('preview', img)
-            # cv2.waitKey(0)
+            cv2.imshow('preview', img)
+            cv2.waitKey(0)
             # cam.release()
             # cv2.destroyAllWindows()
             b, dst = completePipeline(img)

@@ -356,7 +356,7 @@ def Classification(im, points, model):
       # plt.imshow(resized, cmap = 'gray')
       # plt.axis('off')
       # plt.show()
-      predict = model.predict(resized.reshape(-1,100,100,1))
+      predict = model.predict(resized.reshape(-1,100,100,1) / 255.)
       predicts.append(predict)
       # print(deCategorical[np.argmax(predict[0])])
       counter += 1
@@ -551,7 +551,7 @@ def CropFitSOG(im, points):
       else:
         notation = charNot[j] + numNot[7-i]
       cropimg = dst[max(int(ally[counter] - 2*halfY),0):min(int(ally[counter]), 400), max(int(allx[counter] - 2*halfX),0):min(int(allx[counter]), 400)]
-      cropimg = cropimg[8:cropimg.shape[0]-8, 8:cropimg.shape[0]-8]
+      cropimg = cropimg[10:cropimg.shape[0]-10, 10:cropimg.shape[0]-10]
       resized_color = cv2.resize(cropimg,(100,100))
       plt.imshow(resized_color[:,:,::-1])
       plt.axis('off')
