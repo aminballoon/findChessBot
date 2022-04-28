@@ -319,8 +319,8 @@ void Update_State_Machine() {
 				{
 					Max_Time = 7;
 					Traj_time_Cal = 7;
-					Planning_q1 = 1400;
-					Planning_q3 = -1400;
+					Planning_q1 = 1900;
+					Planning_q3 = -1100;
 					Planning_q4 = 0;
 				}
 			else if (indexy == 123)

@@ -4548,11 +4548,11 @@ void Update_State_Machine() {
  8002a26:	4b15      	ldr	r3, [pc, #84]	; (8002a7c <_Z20Update_State_Machinev+0xd4>)
  8002a28:	2207      	movs	r2, #7
  8002a2a:	601a      	str	r2, [r3, #0]
-					Planning_q1 = 1400;
+					Planning_q1 = 1900;
  8002a2c:	4b14      	ldr	r3, [pc, #80]	; (8002a80 <_Z20Update_State_Machinev+0xd8>)
  8002a2e:	4a15      	ldr	r2, [pc, #84]	; (8002a84 <_Z20Update_State_Machinev+0xdc>)
  8002a30:	601a      	str	r2, [r3, #0]
-					Planning_q3 = -1400;
+					Planning_q3 = -1100;
  8002a32:	4b15      	ldr	r3, [pc, #84]	; (8002a88 <_Z20Update_State_Machinev+0xe0>)
  8002a34:	4a15      	ldr	r2, [pc, #84]	; (8002a8c <_Z20Update_State_Machinev+0xe4>)
  8002a36:	601a      	str	r2, [r3, #0]
@@ -4595,9 +4595,9 @@ void Update_State_Machine() {
  8002a78:	40e00000 	.word	0x40e00000
  8002a7c:	24000c18 	.word	0x24000c18
  8002a80:	24000bf4 	.word	0x24000bf4
- 8002a84:	44af0000 	.word	0x44af0000
+ 8002a84:	44ed8000 	.word	0x44ed8000
  8002a88:	24000bfc 	.word	0x24000bfc
- 8002a8c:	c4af0000 	.word	0xc4af0000
+ 8002a8c:	c4898000 	.word	0xc4898000
  8002a90:	24000c00 	.word	0x24000c00
  8002a94:	44898000 	.word	0x44898000
  8002a98:	c4160000 	.word	0xc4160000
