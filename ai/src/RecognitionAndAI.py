@@ -92,6 +92,8 @@ class AiServer(Node):
 
     def forceRecognize_callback(self, request, response):
         try:
+            whiteBGRColor = [ 86, 100, 106] # Gold
+            blackBGRColor = [27, 23, 35] # Brown
             # cam = cv2.VideoCapture(2)
             # print("[Waiting] Program")
             # ret, img = cam.read()
@@ -108,7 +110,7 @@ class AiServer(Node):
             cv2.destroyAllWindows()
 
             # img = cv2.imread('/home/trapoom555/Desktop/ChessDetection/Data/WIN_20210326_10_21_31_Pro.jpg')
-            b, dst = completePipeline(img)
+            b, dst = completePipeline(img, whiteBGRColor, blackBGRColor)
             new_b = chess.Board('8/8/8/8/8/8/8/8 w - - 0 1')
 
             cam = cv2.VideoCapture(2)

@@ -302,7 +302,7 @@ def mapLatticeInverse(allx, ally, M):
     resy.append(py)
   return resx, resy
 
-def Classification(im, points, model):
+def Classification(im, points, model, whiteBGRColor, blackBGRColor):
   colorupper = 45
   colorlower = 53
   #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -381,9 +381,15 @@ def Classification(im, points, model):
         # color = kmeans.predict(colors[8*i+j].reshape(1,-1))
         # if color[0] == 1:
         #   sym = sym.upper()
-        print(colors[8*i+j].mean())
-        if colors[8*i+j].mean() > 70: # Binary Threshold
+
+
+        # Binary Threshold
+        # if colors[8*i+j].mean() > 70: # Binary Threshold
+        #   sym = sym.upper()
+
+        if np.linalg.norm(colors[8*i+j] - blackBGRColor) > np.linalg.norm(colors[8*i+j] - whiteBGRColor): # Binary Threshold
           sym = sym.upper()
+
         board.set_piece_at(notationToSquareIdx(notation), chess.Piece.from_symbol(sym))
       counter += 1
   return board, dst
@@ -391,12 +397,12 @@ def Classification(im, points, model):
 ''' -------------------------------------- COMBINED --------------------------------------'''
 
 
-def completePipeline(img):
+def completePipeline(img, whiteBGRColor, blackBGRColor):
   clf = loadModels()
   points, img_show = getMatrixFromImage(img)
   print("Complete Detect All Points")
   print("Points : {}".format(points))
-  b, dst = Classification(img, points, clf)
+  b, dst = Classification(img, points, clf, whiteBGRColor, blackBGRColor)
   return b, dst
 
 
