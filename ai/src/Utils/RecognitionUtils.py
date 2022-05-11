@@ -521,10 +521,11 @@ def CropFit(im, points, dict_grad, prev_fen):
   print(uci)
   print("prev")
   print(board)
-  board.push(chess.Move.from_uci(uci))
-  print("predicted")
-  print(board)
-  return board.fen()
+  if chess.Move.from_uci(uci) in list(board.legal_moves):
+      board.push(chess.Move.from_uci(uci))
+      print("predicted")
+      print(board)
+      return board.fen()
 
 def calculateSOG(img):
   points, img_show = getMatrixFromImage(img)

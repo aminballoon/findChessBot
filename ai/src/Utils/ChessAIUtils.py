@@ -296,10 +296,16 @@ class AI:
                 promotePiece = bm_san.split('=')[1]
             elif bm_san == 'O-O':
                 flag = 3 # King side Castling
+            elif bm_san == 'O-O+':
+                flag = 3 # King side Castling
             elif bm_san == 'O-O-O':
+                flag = 4 # Queen side Castling
+            elif bm_san == 'O-O-O+':
                 flag = 4 # Queen side Castling
             else:
                 flag = 0 # Normal move
+            print("flag")
+            print(flag)
             self.s.push(bm)
             return bm.uci(), flag, promotePiece
         else:
@@ -316,10 +322,16 @@ class AI:
                     promotePiece = nextmove.split('=')[1]
                 elif nextmove == 'O-O':
                     flag = 3 # King side Castling
+                elif nextmove == 'O-O+':
+                    flag = 3 # King side Castling
                 elif nextmove == 'O-O-O':
+                    flag = 4 # Queen side Castling
+                elif nextmove == 'O-O-O+':
                     flag = 4 # Queen side Castling
                 else:
                     flag = 0 # Normal move
+                print("flag")
+                print(flag)
                 self.s.push_san(nextmove)
                 return entry.move.uci(), flag, promotePiece
                 break
