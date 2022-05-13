@@ -92,8 +92,8 @@ class AiServer(Node):
 
     def forceRecognize_callback(self, request, response):
         try:
-            whiteBGRColor = [ 86, 100, 106] # Gold
-            blackBGRColor = [27, 23, 35] # Brown
+            whiteBGRColor = [ 78, 125,  51] # Gold
+            blackBGRColor = [ 89,  33, 158] # Brown
             # cam = cv2.VideoCapture(2)
             # print("[Waiting] Program")
             # ret, img = cam.read()
